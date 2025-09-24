@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     const customer = await StripeService.createStripeCustomer(email, name);
     
     // Buscar os planos disponíveis
-    const plans = StripeService.getAvailablePlans();
+    const plans = await StripeService.getAvailablePlans();
     const selectedPlan = plans.find((plan: any) => plan.type === planType);
     
     if (!selectedPlan) {

@@ -80,9 +80,20 @@ export interface StripeWebhookEvent {
   id: string;
   type: string;
   data: {
-    object: any;
+    object: Record<string, unknown>;
   };
   created: number;
+}
+
+// Tipo para planos retornados pela API
+export interface AvailablePlan {
+  type: string;
+  name: string;
+  dailyLimit: number;
+  priceId: string;
+  productId: string;
+  priceCents: number;
+  currency?: string;
 }
 
 // Planos disponíveis (constantes)

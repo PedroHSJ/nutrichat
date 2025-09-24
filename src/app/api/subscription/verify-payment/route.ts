@@ -1,6 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import StripeService, { stripe } from '@/lib/stripe';
 import { UserSubscriptionService } from '@/lib/subscription';
+import Stripe from 'stripe';
+
+// Tipos para objetos do Stripe
+interface StripeSubscription {
+  id: string;
+  status: string;
+  current_period_end: number;
+  items: {
+    data: Array<{
+      price: {
+        id: string;
+      };
+    }>;
+  };
+}
+
+interface StripeCustomer {
+  id: string;
+  email: string;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Obter informações do plano
-    const subscription = session.subscription as any;
+    const subscription = session.subscription as StripeSubscription | null;
     let planInfo = null;
 
     if (subscription && subscription.items?.data?.[0]?.price?.id) {
@@ -87,7 +107,7 @@ export async function POST(request: NextRequest) {
 /**
  * Helper para garantir que a subscription existe no banco (fallback)
  */
-async function ensureSubscriptionInDatabase(subscription: any, session: any) {
+async function ensureSubscriptionInDatabase(subscription: StripeSubscription, session: Stripe.Checkout.Session) {
   try {
     // Verificar se já existe no banco
     const { supabase } = await import('@/lib/supabase');
@@ -111,7 +131,7 @@ async function ensureSubscriptionInDatabase(subscription: any, session: any) {
     console.log('[STRIPE] Subscription não existe no banco, criando como fallback');
 
     // Buscar customer no Stripe para obter email
-    const customer = await stripe.customers.retrieve(session.customer as string) as any;
+    const customer = await stripe.customers.retrieve(session.customer as string) as StripeCustomer;
     
     if (!customer.email) {
       console.error('[STRIPE] Customer sem email, não é possível criar fallback');
