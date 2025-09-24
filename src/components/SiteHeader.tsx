@@ -26,6 +26,12 @@ export function SiteHeader() {
               href="/" 
               className="text-sm font-medium hover:text-primary transition-colors"
             >
+              Início
+            </Link>
+            <Link 
+              href="/chat" 
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
               Chat
             </Link>
             <Link 
@@ -40,12 +46,6 @@ export function SiteHeader() {
               className="text-sm font-medium hover:text-primary transition-colors"
             >
               Login
-            </Link>
-            <Link 
-              href="/about" 
-              className="text-sm font-medium hover:text-primary transition-colors"
-            >
-              Sobre
             </Link>
           </nav>
 
@@ -82,6 +82,13 @@ export function SiteHeader() {
                 className="text-sm font-medium hover:text-primary transition-colors px-2 py-1"
                 onClick={() => setMobileMenuOpen(false)}
               >
+                Início
+              </Link>
+              <Link 
+                href="/chat"
+                className="text-sm font-medium hover:text-primary transition-colors px-2 py-1"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 Chat
               </Link>
               <Link 
@@ -93,11 +100,11 @@ export function SiteHeader() {
                 Planos
               </Link>
               <Link 
-                href="/about"
+                href="/login"
                 className="text-sm font-medium hover:text-primary transition-colors px-2 py-1"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Sobre
+                Login
               </Link>
               <div className="pt-2">
                 <Button asChild className="w-full">
