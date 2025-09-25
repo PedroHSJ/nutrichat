@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import StripeService from '@/lib/stripe';
-import { AvailablePlan } from '@/types/subscription';
 
 /**
  * GET /api/subscription/plans
@@ -10,7 +9,7 @@ export async function GET() {
   try {
     const plans = await StripeService.getAvailablePlans();
     
-    const formattedPlans = plans.map((plan: AvailablePlan) => ({
+    const formattedPlans = plans.map((plan) => ({
       type: plan.type,
       name: plan.name,
       dailyLimit: plan.dailyLimit,
@@ -19,7 +18,7 @@ export async function GET() {
       priceCents: plan.priceCents,
       currency: plan.currency || 'brl',
       priceFormatted: `R$ ${(plan.priceCents / 100).toFixed(2).replace('.', ',')}`,
-      features: []
+      features: plan.features || []
     }));
     
     return NextResponse.json({

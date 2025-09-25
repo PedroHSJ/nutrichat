@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se o plano existe
-    const planInfo = SubscriptionService.getPlanByPriceId(priceId);
+    const planInfo = await SubscriptionService.getPlanByPriceId(priceId);
     if (!planInfo) {
       return NextResponse.json(
         { 

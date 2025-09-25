@@ -9,23 +9,8 @@ export const subscriptionConfig: SubscriptionConfig = {
   subscriptionBypass: process.env.SUBSCRIPTION_BYPASS === 'true',
   stripePublishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
   stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
-  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
-  plans: {
-    [SUBSCRIPTION_PLANS.BASIC]: {
-      name: 'Plano Básico',
-      dailyLimit: 50,
-      priceId: process.env.STRIPE_BASIC_PRICE_ID || 'price_basic_placeholder',
-      productId: process.env.STRIPE_BASIC_PRODUCT_ID || 'prod_basic_placeholder',
-      priceCents: 1999 // R$ 19,99
-    },
-    [SUBSCRIPTION_PLANS.PRO]: {
-      name: 'Plano Pro',
-      dailyLimit: 150,
-      priceId: process.env.STRIPE_PRO_PRICE_ID || 'price_pro_placeholder',
-      productId: process.env.STRIPE_PRO_PRODUCT_ID || 'prod_pro_placeholder',
-      priceCents: 4999 // R$ 49,99
-    }
-  }
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || ''
+  // Removendo plans hardcoded - agora vêm do banco
 };
 
 // =====================================================
@@ -312,68 +297,115 @@ export class SubscriptionService {
   }
   
   /**
-   * Obter informações do plano pelo price_id
+   * Obter informações do plano pelo price_id (busca do banco)
    */
-  static getPlanByPriceId(priceId: string) {
-    for (const [planType, planConfig] of Object.entries(subscriptionConfig.plans)) {
-      if (planConfig.priceId === priceId) {
-        return {
-          type: planType,
-          ...planConfig
-        };
-      }
-    }
-    return null;
+  static async getPlanByPriceId(priceId: string) {
+    const { UserSubscriptionService } = await import('@/lib/subscription');
+    const plans = await UserSubscriptionService.getAvailablePlans();
+    
+    return plans.find(plan => plan.stripe_price_id === priceId) || null;
   }
   
   /**
-   * Listar todos os planos disponíveis com preços do Stripe
+   * Listar todos os planos disponíveis (busca planos do banco + preços da Stripe)
    */
   static async getAvailablePlans() {
     try {
-      // Se em desenvolvimento e sem chave válida, retornar dados mockados
+      const { UserSubscriptionService } = await import('@/lib/subscription');
+      const dbPlans = await UserSubscriptionService.getAvailablePlans();
+      
+      if (dbPlans.length === 0) {
+        throw new Error('Nenhum plano encontrado no banco');
+      }
+      
+      // Se em desenvolvimento e sem chave Stripe válida, usar preços do banco
       if (this.isDevelopment() && !stripeSecretKey) {
-        console.warn('[DEV MODE] Usando preços mockados');
-        return Object.entries(subscriptionConfig.plans).map(([type, config]) => ({
-          type,
-          ...config
+        console.warn('[DEV MODE] Usando preços do banco (Stripe não configurado)');
+        return dbPlans.map(plan => ({
+          type: plan.slug,
+          name: plan.name,
+          dailyLimit: plan.daily_interactions_limit,
+          priceId: plan.stripe_price_id,
+          productId: plan.stripe_product_id,
+          priceCents: plan.price_cents, // preço do banco
+          currency: plan.currency || 'brl',
+          features: plan.features || []
         }));
       }
-
-      // Buscar preços reais do Stripe
-      const plans = [];
       
-      for (const [type, config] of Object.entries(subscriptionConfig.plans)) {
-        try {
-          const price = await stripe.prices.retrieve(config.priceId);
-          plans.push({
-            type,
-            name: config.name,
-            dailyLimit: config.dailyLimit,
-            priceId: config.priceId,
-            productId: config.productId,
-            priceCents: price.unit_amount || config.priceCents, // Fallback para valor configurado
-            currency: price.currency || 'brl'
-          });
-        } catch (error) {
-          console.warn(`[Stripe] Erro ao buscar preço ${config.priceId}, usando fallback:`, error);
-          plans.push({
-            type,
-            ...config,
-            currency: 'brl'
-          });
-        }
+      // Buscar preços reais da Stripe para cada plano
+      const plansWithStripeData = await Promise.all(
+        dbPlans.map(async (plan) => {
+          try {
+            console.log(`[Stripe] Buscando preço: ${plan.stripe_price_id}`);
+            const stripePrice = await stripe.prices.retrieve(plan.stripe_price_id);
+            
+            return {
+              type: plan.slug,
+              name: plan.name,
+              dailyLimit: plan.daily_interactions_limit,
+              priceId: plan.stripe_price_id,
+              productId: plan.stripe_product_id,
+              priceCents: stripePrice.unit_amount || plan.price_cents, // Stripe como prioridade
+              currency: stripePrice.currency || plan.currency || 'brl',
+              features: plan.features || [],
+              // Dados adicionais do Stripe
+              stripeData: {
+                active: stripePrice.active,
+                recurring: stripePrice.recurring,
+                created: stripePrice.created
+              }
+            };
+          } catch (error) {
+            console.warn(`[Stripe] Erro ao buscar preço ${plan.stripe_price_id}, usando dados do banco:`, error);
+            // Fallback para dados do banco em caso de erro
+            return {
+              type: plan.slug,
+              name: plan.name,
+              dailyLimit: plan.daily_interactions_limit,
+              priceId: plan.stripe_price_id,
+              productId: plan.stripe_product_id,
+              priceCents: plan.price_cents, // fallback do banco
+              currency: plan.currency || 'brl',
+              features: plan.features || []
+            };
+          }
+        })
+      );
+      
+      return plansWithStripeData;
+      
+    } catch (error) {
+      console.error('Erro ao buscar planos:', error);
+      
+      // Fallback para dados mockados em desenvolvimento
+      if (this.isDevelopment()) {
+        console.warn('[DEV MODE] Usando preços mockados como fallback completo');
+        return [
+          {
+            type: 'basic',
+            name: 'Plano Básico',
+            dailyLimit: 50,
+            priceId: 'price_basic_placeholder',
+            productId: 'prod_basic_placeholder',
+            priceCents: 1999,
+            currency: 'brl',
+            features: ['50 interações por dia', 'Suporte via email']
+          },
+          {
+            type: 'pro', 
+            name: 'Plano Pro',
+            dailyLimit: 150,
+            priceId: 'price_pro_placeholder',
+            productId: 'prod_pro_placeholder',
+            priceCents: 4999,
+            currency: 'brl',
+            features: ['150 interações por dia', 'Suporte prioritário', 'API access']
+          }
+        ];
       }
       
-      return plans;
-    } catch (error) {
-      console.error('[Stripe] Erro ao buscar planos:', error);
-      // Fallback para configuração local
-      return Object.entries(subscriptionConfig.plans).map(([type, config]) => ({
-        type,
-        ...config,
-        currency: 'brl'
-      }));
+      return [];
     }
   }
 }

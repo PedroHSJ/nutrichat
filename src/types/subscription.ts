@@ -2,12 +2,16 @@
 export interface SubscriptionPlan {
   id: string;
   name: string;
+  slug: string;
+  description?: string;
   stripe_price_id: string;
   stripe_product_id: string;
   daily_interactions_limit: number;
   price_cents: number; // preço em centavos
+  currency?: string;
   interval: 'month' | 'year';
   features: string[];
+  active?: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -111,7 +115,8 @@ export interface SubscriptionConfig {
   stripePublishableKey: string;
   stripeSecretKey: string;
   stripeWebhookSecret: string;
-  plans: {
+  // plans agora é opcional - dados vêm do banco
+  plans?: {
     [key in PlanType]: {
       name: string;
       dailyLimit: number;
