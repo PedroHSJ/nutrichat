@@ -39,7 +39,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Estados de autenticação
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true); // Começar como true para evitar flash
   const [authError, setAuthError] = useState<string | null>(null);
   const [hasConsent, setHasConsent] = useState(false);
   
@@ -52,8 +52,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        setAuthLoading(true);
-        
         // Verificar sessão existente
         const currentUser = await authService.getCurrentSession();
         
@@ -73,10 +71,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             const savedChats = await chatPersistence.loadChats();
             setChats(savedChats);
           }
+        } else {
+          // Garantir que estados estão limpos quando não há usuário
+          setUser(null);
+          setIsAuthenticated(false);
+          setHasConsent(false);
         }
       } catch (error) {
         console.error('Erro na inicialização de autenticação:', error);
         setAuthError('Erro ao verificar sessão');
+        // Em caso de erro, assumir que não está logado
+        setUser(null);
+        setIsAuthenticated(false);
+        setHasConsent(false);
       } finally {
         setAuthLoading(false);
       }
@@ -127,24 +134,26 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const interactionStatus = await UserSubscriptionService.canUserInteract(authUser.id);
       setInteractionStatus(interactionStatus);
       
+      // Aguardar um pouco antes do redirecionamento para garantir que os estados foram atualizados
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Redirecionar para planos se não tiver plano ativo
       if (!interactionStatus.canInteract && interactionStatus.planType === 'free') {
         // Usuário não tem plano, redirecionar para página de planos
         router.push('/plans');
-        return;
-      }
-      
-      // Se tem plano ativo, redirecionar para chat
-      if (consent && interactionStatus.canInteract) {
+      } else if (consent && interactionStatus.canInteract) {
+        // Se tem plano ativo, redirecionar para chat
         router.push('/chat');
       }
+      
+      // Só desabilitar o loading após o redirecionamento ter sido iniciado
+      setAuthLoading(false);
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro no login';
       setAuthError(errorMessage);
+      setAuthLoading(false); // Desabilitar loading em caso de erro
       throw error;
-    } finally {
-      setAuthLoading(false);
     }
   }, [router]);
 
@@ -201,12 +210,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       setCurrentChatId(null);
       setHasConsent(false);
       setAuthError(null);
+      setInteractionStatus(null);
+      
+      // Redirecionar para a página de login após logout
+      router.push('/login');
     } catch (error) {
       console.error('Erro no logout:', error);
     } finally {
       setAuthLoading(false);
     }
-  }, []);
+  }, [router]);
 
   // Solicitar consentimento LGPD
   const requestConsent = useCallback(async () => {
@@ -500,10 +513,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     sendMessage,
     setCurrentChatId,
   };
-
-  useEffect(() => {
-    console.log("loading state changed:", isLoading);
-  }, [isLoading]);  
 
   return (
     <ChatContext.Provider value={value}>
