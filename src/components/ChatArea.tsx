@@ -68,7 +68,7 @@ function LoadingMessage() {
 
 function EmptyState() {
   return (
-    <div className="flex flex-1 items-center justify-center p-8">
+    <div className="flex items-center justify-center p-8 h-full min-h-[400px]">
       <div className="text-center">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
           <Bot className="h-8 w-8 text-muted-foreground" />
@@ -118,21 +118,23 @@ export function ChatArea() {
   };
 
   return (
-    <div className="flex flex-1 flex-col h-full">
+    <div className="flex flex-1 flex-col h-full min-h-0">
       {/* Área de mensagens */}
-      <ScrollArea className="flex-1">
-        {!currentChat || currentChat.messages.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <div className="pb-4">
-            {currentChat.messages.map((msg) => (
-              <MessageBubble key={msg.id} message={msg} />
-            ))}
-            {isLoading && <LoadingMessage />}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </ScrollArea>
+      <div className="flex-1 min-h-0">
+        <ScrollArea className="h-full">
+          {!currentChat || currentChat.messages.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className="p-1">
+              {currentChat.messages.map((msg) => (
+                <MessageBubble key={msg.id} message={msg} />
+              ))}
+              {isLoading && <LoadingMessage />}
+              <div ref={messagesEndRef} className="h-4" />
+            </div>
+          )}
+        </ScrollArea>
+      </div>
 
       {/* Área de input */}
       <div className="border-t bg-background p-4">

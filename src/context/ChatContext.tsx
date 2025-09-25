@@ -402,8 +402,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       // Verificar limite de interações antes de enviar
       if (isAuthenticated && user) {
-        const canInteract = await UserSubscriptionService.canUserInteract(user.id);
-        if (canInteract.canInteract) {
+        const { canInteract } = await UserSubscriptionService.canUserInteract(user.id);
+        if (!canInteract) {
           throw new Error('Você atingiu o limite diário de interações. Tente novamente amanhã ou upgrade seu plano.');
         }
       }
