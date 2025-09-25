@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Chat, Message, ChatContextType } from '@/types/chat';
 import { generateId } from '@/lib/utils';
 import { chatPersistence } from '@/lib/persistence';
@@ -28,6 +29,8 @@ interface AuthContextType extends ChatContextType {
 const ChatContext = createContext<AuthContextType | undefined>(undefined);
 
 export function ChatProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  
   // Estados do chat
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
@@ -36,7 +39,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Estados de autenticação
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [hasConsent, setHasConsent] = useState(false);
   
@@ -119,6 +122,23 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         const savedChats = await chatPersistence.loadChats();
         setChats(savedChats);
       }
+
+      // Verificar se o usuário tem um plano ativo
+      const interactionStatus = await UserSubscriptionService.canUserInteract(authUser.id);
+      setInteractionStatus(interactionStatus);
+      
+      // Redirecionar para planos se não tiver plano ativo
+      if (!interactionStatus.canInteract && interactionStatus.planType === 'free') {
+        // Usuário não tem plano, redirecionar para página de planos
+        router.push('/plans');
+        return;
+      }
+      
+      // Se tem plano ativo, redirecionar para chat
+      if (consent && interactionStatus.canInteract) {
+        router.push('/chat');
+      }
+      
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro no login';
       setAuthError(errorMessage);
@@ -126,7 +146,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     } finally {
       setAuthLoading(false);
     }
-  }, []);
+  }, [router]);
 
   // Função de cadastro
   const signUp = useCallback(async (name: string, email: string, password: string) => {
@@ -148,7 +168,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       
       // Novo usuário ainda não deu consentimento
       setHasConsent(false);
+      
+      // Verificar status de assinatura (novos usuários normalmente não terão plano)
+      const interactionStatus = await UserSubscriptionService.canUserInteract(authUser.id);
+      setInteractionStatus(interactionStatus);
+      
       console.log('SignUp process completed successfully');
+      
+      // Novos usuários sempre são redirecionados para planos
+      router.push('/plans');
+      
     } catch (error) {
       console.error('Error in signUp function:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro no cadastro';
@@ -157,7 +186,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     } finally {
       setAuthLoading(false);
     }
-  }, []);
+  }, [router]);
 
   // Função de logout
   const logout = useCallback(async () => {
@@ -471,6 +500,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     sendMessage,
     setCurrentChatId,
   };
+
+  useEffect(() => {
+    console.log("loading state changed:", isLoading);
+  }, [isLoading]);  
 
   return (
     <ChatContext.Provider value={value}>

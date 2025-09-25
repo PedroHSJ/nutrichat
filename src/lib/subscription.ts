@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { supabaseAdmin } from './supabase-admin';
 import { SubscriptionService } from './stripe';
 import { 
   UserSubscription, 
@@ -177,31 +178,119 @@ export class UserSubscriptionService {
     }
     
     try {
+      // Extrair current_period_start e current_period_end do primeiro item da subscription
+      const firstItem = subscriptionData.items?.data?.[0];
+      const currentPeriodStart = firstItem?.current_period_start;
+      const currentPeriodEnd = firstItem?.current_period_end;
+
+      // Debug: log dos dados recebidos
+      console.log('[DB] Dados da subscription recebidos:', {
+        id: subscriptionData.id,
+        status: subscriptionData.status,
+        subscription_current_period_start: subscriptionData.current_period_start,
+        subscription_current_period_end: subscriptionData.current_period_end,
+        first_item_current_period_start: currentPeriodStart,
+        first_item_current_period_end: currentPeriodEnd,
+        trial_start: subscriptionData.trial_start,
+        trial_end: subscriptionData.trial_end,
+        items_count: subscriptionData.items?.data?.length || 0
+      });
+
+      // Validar dados obrigatórios
+      if (!currentPeriodStart) {
+        throw new Error('current_period_start não pode ser nulo (verificado no primeiro item da subscription)');
+      }
+      if (!currentPeriodEnd) {
+        throw new Error('current_period_end não pode ser nulo (verificado no primeiro item da subscription)');
+      }
+
       const subscriptionRecord = {
         user_id: userId,
         plan_id: planId,
         stripe_customer_id: stripeCustomerId,
         stripe_subscription_id: stripeSubscriptionId,
         status: SubscriptionService.mapStripeStatus(subscriptionData.status),
-        current_period_start: new Date(subscriptionData.current_period_start * 1000),
-        current_period_end: new Date(subscriptionData.current_period_end * 1000),
+        current_period_start: new Date(currentPeriodStart * 1000),
+        current_period_end: new Date(currentPeriodEnd * 1000),
         trial_start: subscriptionData.trial_start ? new Date(subscriptionData.trial_start * 1000) : null,
         trial_end: subscriptionData.trial_end ? new Date(subscriptionData.trial_end * 1000) : null,
         metadata: subscriptionData.metadata || {}
       };
       
-      const { data, error } = await supabase!
+      // Usar supabaseAdmin para bypasses RLS em operações do sistema (webhooks, etc)
+      const client = supabaseAdmin || supabase;
+      
+      console.log('[DB] Executando INSERT na tabela user_subscriptions...');
+      console.log('[DB] Dados do registro:', subscriptionRecord);
+      
+      // Primeiro, verificar se já existe uma subscription com esse stripe_subscription_id
+      const { data: existingSubscription, error: checkError } = await client!
+        .from('user_subscriptions')
+        .select('id, status')
+        .eq('stripe_subscription_id', stripeSubscriptionId)
+        .single();
+
+      if (existingSubscription) {
+        console.log('[DB] ⚠️ Subscription já existe no banco, atualizando ao invés de inserir');
+        console.log('[DB] Subscription existente:', existingSubscription);
+        
+        // Atualizar subscription existente ao invés de inserir nova
+        const { data: updatedData, error: updateError } = await client!
+          .from('user_subscriptions')
+          .update({
+            status: subscriptionRecord.status,
+            current_period_start: subscriptionRecord.current_period_start,
+            current_period_end: subscriptionRecord.current_period_end,
+            trial_start: subscriptionRecord.trial_start,
+            trial_end: subscriptionRecord.trial_end,
+            metadata: subscriptionRecord.metadata,
+            updated_at: new Date()
+          })
+          .eq('stripe_subscription_id', stripeSubscriptionId)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('[DB] ❌ FALHA no UPDATE - Erro ao atualizar assinatura no banco:', updateError);
+          throw new Error(`Falha ao atualizar assinatura existente: ${updateError.message}`);
+        }
+
+        console.log('[DB] ✅ UPDATE REALIZADO COM SUCESSO na tabela user_subscriptions');
+        console.log('[DB] Dados atualizados:', updatedData);
+        console.log(`[DB] Assinatura atualizada para usuário: ${userId} com subscription_id: ${stripeSubscriptionId}`);
+        
+        return updatedData as UserSubscription;
+      }
+
+      // Se não existe, fazer o INSERT normalmente
+      const { data, error } = await client!
         .from('user_subscriptions')
         .insert(subscriptionRecord)
         .select()
         .single();
       
+      console.log('[DB] Resultado do INSERT:', { data, error });
+      
       if (error) {
-        console.error('Erro ao criar assinatura no banco:', error);
-        throw new Error('Falha ao salvar assinatura');
+        console.error('[DB] ❌ FALHA no INSERT - Erro ao criar assinatura no banco:', error);
+        
+        // Melhorar mensagem de erro baseada no código
+        if (error.code === '23502') {
+          throw new Error(`Campo obrigatório não informado: ${error.message}`);
+        } else if (error.code === '23505') {
+          throw new Error('Assinatura já existe para este usuário');
+        } else if (error.code === '42501') {
+          throw new Error('Permissão negada para criar assinatura');
+        } else {
+          throw new Error(`Falha ao salvar assinatura: ${error.message}`);
+        }
       }
       
-      console.log(`[DB] Assinatura criada para usuário ${userId}`);
+      console.log('[DB] ✅ INSERT REALIZADO COM SUCESSO na tabela user_subscriptions');
+      console.log('[DB] Dados inseridos:', data);
+      console.log(`[DB] ID da assinatura criada: ${data?.id}`);
+      console.log(`[DB] Assinatura criada para usuário: ${userId} com subscription_id: ${stripeSubscriptionId}`);
+      
       return data as UserSubscription;
       
     } catch (error) {
@@ -222,10 +311,15 @@ export class UserSubscriptionService {
     }
     
     try {
+      // Extrair current_period_start e current_period_end do primeiro item da subscription
+      const firstItem = subscriptionData.items?.data?.[0];
+      const currentPeriodStart = firstItem?.current_period_start;
+      const currentPeriodEnd = firstItem?.current_period_end;
+
       const updates = {
         status: SubscriptionService.mapStripeStatus(subscriptionData.status),
-        current_period_start: new Date(subscriptionData.current_period_start * 1000),
-        current_period_end: new Date(subscriptionData.current_period_end * 1000),
+        current_period_start: currentPeriodStart ? new Date(currentPeriodStart * 1000) : null,
+        current_period_end: currentPeriodEnd ? new Date(currentPeriodEnd * 1000) : null,
         trial_end: subscriptionData.trial_end ? new Date(subscriptionData.trial_end * 1000) : null,
         canceled_at: subscriptionData.canceled_at ? new Date(subscriptionData.canceled_at * 1000) : null,
         cancel_at: subscriptionData.cancel_at ? new Date(subscriptionData.cancel_at * 1000) : null,
@@ -233,7 +327,10 @@ export class UserSubscriptionService {
         updated_at: new Date()
       };
       
-      const { data, error } = await supabase!
+      // Usar supabaseAdmin para bypasses RLS em operações do sistema (webhooks, etc)
+      const client = supabaseAdmin || supabase;
+      
+      const { data, error } = await client!
         .from('user_subscriptions')
         .update(updates)
         .eq('stripe_subscription_id', subscriptionId)

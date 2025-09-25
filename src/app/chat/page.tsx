@@ -6,19 +6,22 @@ import { ChatSidebar } from '@/components/ChatSidebar';
 import { ChatArea } from '@/components/ChatArea';
 import { ConsentOverlay } from '@/components/ConsentOverlay';
 import { AuthForm } from '@/components/AuthForm';
+import { RouteGuard } from '@/components/RouteGuard';
 import { useChat } from '@/context/ChatContext';
 
 function AuthenticatedApp() {
   return (
-    <SidebarProvider defaultOpen>
-      <div className="flex h-screen w-full">
-        <ChatSidebar />
-        <main className="flex-1 flex flex-col overflow-hidden">
-          <ChatArea />
-        </main>
-      </div>
-      <ConsentOverlay />
-    </SidebarProvider>
+    <RouteGuard requiresPlan={true} redirectToPlans={true}>
+      <SidebarProvider defaultOpen>
+        <div className="flex h-screen w-full">
+          <ChatSidebar />
+          <main className="flex-1 flex flex-col overflow-hidden">
+            <ChatArea />
+          </main>
+        </div>
+        <ConsentOverlay />
+      </SidebarProvider>
+    </RouteGuard>
   );
 }
 

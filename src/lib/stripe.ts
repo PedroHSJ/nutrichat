@@ -77,10 +77,58 @@ export class SubscriptionService {
   }
   
   /**
-   * Criar customer no Stripe
+   * Buscar customer por email
+   */
+  static async findCustomerByEmail(email: string): Promise<Stripe.Customer | null> {
+    try {
+      console.log(`[Stripe] Buscando customer por email: ${email}`);
+      
+      const customers = await stripe.customers.list({
+        email: email,
+        limit: 1
+      });
+      
+      if (customers.data.length > 0) {
+        const customer = customers.data[0];
+        console.log(`[Stripe] Customer encontrado: ${customer.id}`);
+        return customer;
+      }
+      
+      console.log(`[Stripe] Nenhum customer encontrado para email: ${email}`);
+      return null;
+    } catch (error) {
+      console.error('[Stripe] Erro ao buscar customer por email:', error);
+      throw new Error('Falha ao buscar customer no Stripe');
+    }
+  }
+
+  /**
+   * Criar customer no Stripe (ou buscar existente por email)
    */
   static async createStripeCustomer(email: string, name: string): Promise<Stripe.Customer> {
     try {
+      console.log(`[Stripe] Verificando se customer já existe para email: ${email}`);
+      
+      // Primeiro, verificar se já existe um customer com esse email
+      const existingCustomer = await this.findCustomerByEmail(email);
+      
+      if (existingCustomer) {
+        console.log(`[Stripe] ✅ Customer já existe: ${existingCustomer.id} para ${email}`);
+        
+        // Atualizar o nome se necessário
+        if (existingCustomer.name !== name) {
+          console.log(`[Stripe] Atualizando nome do customer de "${existingCustomer.name}" para "${name}"`);
+          const updatedCustomer = await stripe.customers.update(existingCustomer.id, {
+            name: name
+          });
+          return updatedCustomer;
+        }
+        
+        return existingCustomer;
+      }
+      
+      // Se não existe, criar novo customer
+      console.log(`[Stripe] Customer não existe, criando novo para email: ${email}`);
       const customer = await stripe.customers.create({
         email,
         name,
@@ -89,10 +137,10 @@ export class SubscriptionService {
         }
       });
       
-      console.log(`[Stripe] Customer criado: ${customer.id} para ${email}`);
+      console.log(`[Stripe] ✅ Novo customer criado: ${customer.id} para ${email}`);
       return customer;
     } catch (error) {
-      console.error('[Stripe] Erro ao criar customer:', error);
+      console.error('[Stripe] Erro ao criar/buscar customer:', error);
       throw new Error('Falha ao criar customer no Stripe');
     }
   }
@@ -143,7 +191,19 @@ export class SubscriptionService {
    */
   static async getSubscription(subscriptionId: string): Promise<Stripe.Subscription> {
     try {
+      console.log(`[Stripe] Buscando subscription completa: ${subscriptionId}`);
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      
+      // console.log(`[Stripe] Subscription obtida:`, {
+      //   id: subscription.id,
+      //   status: subscription.status,
+      //   current_period_start: subscription.items.data[0]?.current_period_start,
+      //   current_period_end: subscription.items.data[0]?.current_period_end,
+      //   trial_start: subscription.trial_start,
+      //   trial_end: subscription.trial_end,
+      //   customer: subscription.customer,
+      // });
+      console.log(`[Stripe] Subscription completa: ${JSON.stringify(subscription)}`);
       return subscription;
     } catch (error) {
       console.error('[Stripe] Erro ao buscar assinatura:', error);

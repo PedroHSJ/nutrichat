@@ -1,12 +1,22 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Crown, Menu, X } from 'lucide-react';
+import { Crown, Menu, X, LogOut } from 'lucide-react';
 import { useState } from 'react';
+import { useChat } from '@/context/ChatContext';
+import { SubscriptionStatus } from './SubscriptionStatus';
 
 export function SiteHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isAuthenticated, user, logout } = useChat();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/');
+  };
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -28,12 +38,14 @@ export function SiteHeader() {
             >
               Início
             </Link>
-            <Link 
-              href="/chat" 
-              className="text-sm font-medium hover:text-primary transition-colors"
-            >
-              Chat
-            </Link>
+            {isAuthenticated && (
+              <Link 
+                href="/chat" 
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                Chat
+              </Link>
+            )}
             <Link 
               href="/plans" 
               className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1"
@@ -41,12 +53,28 @@ export function SiteHeader() {
               <Crown className="h-4 w-4" />
               Planos
             </Link>
-            <Link 
-              href="/login" 
-              className="text-sm font-medium hover:text-primary transition-colors"
-            >
-              Login
-            </Link>
+            
+            {isAuthenticated ? (
+              <div className="flex items-center gap-4">
+                <SubscriptionStatus />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="flex items-center gap-1"
+                >
+                  <LogOut className="h-3 w-3" />
+                  Sair
+                </Button>
+              </div>
+            ) : (
+              <Link 
+                href="/login" 
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                Login
+              </Link>
+            )}
           </nav>
 
           {/* CTA Button */}

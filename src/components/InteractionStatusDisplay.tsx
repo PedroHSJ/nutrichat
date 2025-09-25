@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { AlertTriangle, Clock, Crown, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserInteractionStatus } from '@/types/subscription';
@@ -14,6 +15,8 @@ export function InteractionStatusDisplay({
   interactionStatus, 
   className = "" 
 }: InteractionStatusDisplayProps) {
+  const router = useRouter();
+  
   if (!interactionStatus) {
     return null;
   }
@@ -153,7 +156,7 @@ export function InteractionStatusDisplay({
           size="sm" 
           className="w-full"
           onClick={() => {
-            window.location.href = '/plans';
+            router.push('/plans');
           }}
         >
           <Crown className="h-4 w-4 mr-2" />
@@ -168,7 +171,7 @@ export function InteractionStatusDisplay({
           size="sm" 
           className="w-full text-xs"
           onClick={() => {
-            window.location.href = '/account/subscription';
+            router.push('/subscription/manage');
           }}
         >
           Gerenciar Assinatura

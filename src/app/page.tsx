@@ -1,14 +1,31 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { SiteHeader } from '@/components/SiteHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, MessageCircle, Clock, Shield, Zap, Users, Crown, ArrowRight } from 'lucide-react';
+import { useChat } from '@/context/ChatContext';
+import { useSubscription } from '@/hooks/use-subscription';
 import Link from 'next/link';
 
 export default function LandingPage() {
+  const { isAuthenticated, user } = useChat();
+  const { hasActivePlan, loading: subscriptionLoading } = useSubscription();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Se o usuário está autenticado e não tem plano ativo, redirecionar para planos
+    if (isAuthenticated && !subscriptionLoading && !hasActivePlan) {
+      router.push('/plans');
+    }
+    // Se o usuário está autenticado e tem plano ativo, redirecionar para chat
+    if (isAuthenticated && !subscriptionLoading && hasActivePlan) {
+      router.push('/chat');
+    }
+  }, [isAuthenticated, hasActivePlan, subscriptionLoading, router]);
   return (
     <>
       <SiteHeader />

@@ -46,8 +46,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Authenticated user:', user);
-
     const body = await request.json();
     const { priceId } = body;
 

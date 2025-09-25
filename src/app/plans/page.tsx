@@ -6,6 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Loader2, Crown, Zap, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useChat } from '@/context/ChatContext';
+import { useSubscription } from '@/hooks/use-subscription';
+import { NoPlanWarning } from '@/components/NoPlanWarning';
+import { RouteGuard } from '@/components/RouteGuard';
 import { supabase } from '@/lib/supabase';
 
 interface Plan {
@@ -20,32 +24,28 @@ interface Plan {
 export default function PlansPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [authLoading, setAuthLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const { user, isAuthenticated } = useChat();
+  const { subscriptionStatus, hasActivePlan, refreshSubscription } = useSubscription();
   const router = useRouter();
 
   useEffect(() => {
     fetchPlans();
-    getCurrentUser();
   }, []);
 
-  const getCurrentUser = async () => {
-    if (!supabase) {
-      setError('Sistema de autenticação não configurado');
-      setAuthLoading(false);
-      return;
+  useEffect(() => {
+    // Se o usuário já tem um plano ativo e está na página de planos, 
+    // perguntar se quer ir para o chat
+    if (hasActivePlan) {
+      const shouldRedirect = confirm(
+        'Você já possui um plano ativo. Deseja ir para o chat ou permanecer aqui para gerenciar sua assinatura?'
+      );
+      if (shouldRedirect) {
+        router.push('/chat');
+      }
     }
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      router.push('/login');
-      return;
-    }
-    setUser(session.user);
-    setAuthLoading(false);
-  };
+  }, [hasActivePlan, router]);
 
   const fetchPlans = async () => {
     try {
@@ -153,7 +153,7 @@ export default function PlansPage() {
     ];
   };
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="container mx-auto py-12">
         <div className="flex justify-center items-center min-h-[400px]">
@@ -178,16 +178,24 @@ export default function PlansPage() {
   }
 
   return (
-    <div className="container mx-auto py-12 px-4">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4">Escolha seu Plano</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Potencialize suas consultas nutricionais com IA especializada. 
-          Escolha o plano ideal para suas necessidades profissionais.
-        </p>
-      </div>
+    <RouteGuard requiresPlan={false} redirectToLogin={true}>
+      <div className="container mx-auto py-12 px-4">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold mb-4">Escolha seu Plano</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Potencialize suas consultas nutricionais com IA especializada. 
+            Escolha o plano ideal para suas necessidades profissionais.
+          </p>
+        </div>
 
-      <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        {/* Aviso para usuários sem plano ativo */}
+        {!hasActivePlan && (
+          <div className="max-w-2xl mx-auto mb-8">
+            <NoPlanWarning />
+          </div>
+        )}
+
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
         {plans.map((plan) => (
           <Card 
             key={plan.type}
@@ -274,5 +282,6 @@ export default function PlansPage() {
         </div>
       </div>
     </div>
+    </RouteGuard>
   );
 }

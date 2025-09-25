@@ -48,6 +48,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Obter informações do plano
+    // Buscar subscription completa se necessário para o fallback
+    let fullSubscription: any = null;
+    if (session.subscription && typeof session.subscription === 'string') {
+      try {
+        const { SubscriptionService } = await import('@/lib/stripe');
+        fullSubscription = await SubscriptionService.getSubscription(session.subscription);
+        console.log('[STRIPE] Subscription completa obtida:', {
+          id: fullSubscription.id,
+          status: fullSubscription.status,
+          current_period_start: fullSubscription.current_period_start,
+          current_period_end: fullSubscription.current_period_end
+        });
+      } catch (error) {
+        console.error('[STRIPE] Erro ao buscar subscription completa:', error);
+      }
+    }
+
     const subscription = session.subscription as StripeSubscription | null;
     let planInfo = null;
 
@@ -74,12 +91,21 @@ export async function POST(request: NextRequest) {
 
     // FALLBACK: Se temos uma subscription válida, verificar se existe no banco
     // Se não existir, criar como backup (caso webhook tenha falhado)
-    if (subscription && subscription.id) {
+    if (fullSubscription && fullSubscription.id) {
       try {
-        await ensureSubscriptionInDatabase(subscription, session);
+        await ensureSubscriptionInDatabase(fullSubscription, session);
       } catch (error) {
-        console.error('[STRIPE] Erro no fallback de criação de assinatura:', error);
-        // Não falhar a verificação por conta disso, apenas logar
+        console.error('[STRIPE] Erro crítico no fallback de criação de assinatura:', error);
+        
+        // Se o erro for crítico (dados inválidos), falhar a verificação
+        if (error instanceof Error && 
+           (error.message.includes('não pode ser nulo') || 
+            error.message.includes('Campo obrigatório'))) {
+          throw new Error(`Erro na criação da assinatura: ${error.message}`);
+        }
+        
+        // Para outros erros, apenas logar (não bloquear)
+        console.warn('[STRIPE] Fallback falhou mas continuando verificação');
       }
     }
 
@@ -107,8 +133,16 @@ export async function POST(request: NextRequest) {
 /**
  * Helper para garantir que a subscription existe no banco (fallback)
  */
-async function ensureSubscriptionInDatabase(subscription: StripeSubscription, session: Stripe.Checkout.Session) {
+async function ensureSubscriptionInDatabase(subscription: any, session: Stripe.Checkout.Session) {
   try {
+    console.log('[STRIPE] Iniciando fallback de criação de subscription');
+    console.log('[STRIPE] Dados da subscription:', {
+      id: subscription.id,
+      status: subscription.status,
+      current_period_start: subscription.current_period_start,
+      current_period_end: subscription.current_period_end,
+      customer: subscription.customer
+    });
     // Verificar se já existe no banco
     const { supabase } = await import('@/lib/supabase');
     
@@ -124,14 +158,24 @@ async function ensureSubscriptionInDatabase(subscription: StripeSubscription, se
       .single();
 
     if (existingSubscription) {
-      console.log('[STRIPE] Subscription já existe no banco, não é necessário criar');
+      console.log('[STRIPE] ✅ Subscription já existe no banco, não é necessário criar');
       return;
     }
 
-    console.log('[STRIPE] Subscription não existe no banco, criando como fallback');
+    // ⚠️ FALLBACK: Só chegamos aqui se o webhook checkout.session.completed falhou
+    // Isso não deveria ser o fluxo normal, mas é uma segurança
+    console.warn('[STRIPE] ⚠️ Subscription não existe no banco - webhook pode ter falhado');
+    console.log('[STRIPE] Criando subscription como fallback de segurança');
 
-    // Buscar customer no Stripe para obter email
-    const customer = await stripe.customers.retrieve(session.customer as string) as StripeCustomer;
+    // Verificar se customer é um objeto ou ID
+    let customer: StripeCustomer;
+    if (typeof session.customer === 'string') {
+      // Se for string, buscar no Stripe
+      customer = await stripe.customers.retrieve(session.customer) as StripeCustomer;
+    } else {
+      // Se já for objeto, usar diretamente
+      customer = session.customer as StripeCustomer;
+    }
     
     if (!customer.email) {
       console.error('[STRIPE] Customer sem email, não é possível criar fallback');
@@ -159,7 +203,15 @@ async function ensureSubscriptionInDatabase(subscription: StripeSubscription, se
     }
 
     // Criar subscription no banco como fallback
-    await UserSubscriptionService.createSubscription(
+    console.log('[STRIPE] Iniciando criação de subscription como fallback...');
+    console.log('[STRIPE] Parâmetros do fallback:', {
+      userId,
+      planId,
+      customerId: customer.id,
+      subscriptionId: subscription.id
+    });
+    
+    const createdSubscription = await UserSubscriptionService.createSubscription(
       userId,
       planId,
       customer.id,
@@ -167,7 +219,8 @@ async function ensureSubscriptionInDatabase(subscription: StripeSubscription, se
       subscription
     );
 
-    console.log('[STRIPE] Subscription criada como fallback com sucesso');
+    console.log('[STRIPE] ✅ Subscription criada como fallback com sucesso!');
+    console.log('[STRIPE] Dados da subscription criada:', createdSubscription);
 
   } catch (error) {
     console.error('[STRIPE] Erro no fallback de criação:', error);
@@ -184,9 +237,9 @@ async function getUserIdByEmail(email: string): Promise<string | null> {
     
     if (!supabase) return null;
     
-    // Buscar em profiles primeiro (mais provável)
+    // Buscar em user_profiles
     const { data, error } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('id')
       .eq('email', email)
       .single();
@@ -195,14 +248,8 @@ async function getUserIdByEmail(email: string): Promise<string | null> {
       return data.id;
     }
 
-    // Se não encontrar, tentar auth.users
-    const { data: authData, error: authError } = await supabase
-      .from('auth.users')
-      .select('id')
-      .eq('email', email)
-      .single();
-      
-    return authData?.id || null;
+    console.error('[STRIPE] Usuário não encontrado em user_profiles:', error);
+    return null;
   } catch (error) {
     console.error('[STRIPE] Erro ao buscar usuário:', error);
     return null;
