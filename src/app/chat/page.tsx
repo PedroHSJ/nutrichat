@@ -25,19 +25,6 @@ function AuthenticatedApp() {
   );
 }
 
-function UnauthenticatedApp() {
-  const { login, signUp, authLoading, authError } = useChat();
-
-  return (
-    <AuthForm
-      onLogin={login}
-      onSignUp={signUp}
-      isLoading={authLoading}
-      error={authError}
-    />
-  );
-}
-
 export default function ChatPage() {
   const { isAuthenticated, authLoading, user } = useChat();
 
@@ -56,7 +43,5 @@ export default function ChatPage() {
   // Mostrar app autenticado ou formulário de login
   if (isAuthenticated && user) {
     return <AuthenticatedApp />;
-  } else {
-    return <UnauthenticatedApp />;
-  }
+  } 
 }

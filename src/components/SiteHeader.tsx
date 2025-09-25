@@ -15,7 +15,6 @@ export function SiteHeader() {
 
   const handleLogout = async () => {
     await logout();
-    router.push('/');
   };
 
   return (
