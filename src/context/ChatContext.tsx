@@ -8,6 +8,7 @@ import { chatPersistence } from '@/lib/persistence';
 import { authService, AuthUser } from '@/lib/auth';
 import { UserSubscriptionService } from '@/lib/subscription';
 import { UserInteractionStatus } from '@/types/subscription';
+import { useAuthHeaders } from '@/hooks/use-auth-headers';
 
 interface AuthContextType extends ChatContextType {
   user: AuthUser | null;
@@ -30,6 +31,7 @@ const ChatContext = createContext<AuthContextType | undefined>(undefined);
 
 export function ChatProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const authHeaders = useAuthHeaders();
   
   // Estados do chat
   const [chats, setChats] = useState<Chat[]>([]);
@@ -444,7 +446,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...authHeaders
+        },
         body: JSON.stringify({ 
           message: content, 
           chatHistory: chats.find(c => c.id === targetChatId)?.messages || [] 

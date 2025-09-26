@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     if (subscription && subscription.items?.data?.[0]?.price?.id) {
       const priceId = subscription.items.data[0].price.id;
-      planInfo = StripeService.getPlanByPriceId(priceId);
+      planInfo = await StripeService.getPlanByPriceId(priceId);
     }
 
     // Preparar dados de resposta
@@ -80,8 +80,8 @@ export async function POST(request: NextRequest) {
       customerId: session.customer,
       subscriptionId: subscription?.id,
       planName: planInfo?.name || 'Plano Desconhecido',
-      planType: planInfo?.type || 'unknown',
-      dailyLimit: planInfo?.dailyLimit,
+      planType: planInfo?.slug || 'unknown',
+      dailyLimit: planInfo?.daily_interactions_limit,
       amount: session.amount_total ? session.amount_total / 100 : null,
       currency: session.currency?.toUpperCase(),
       nextBilling: subscription?.current_period_end ? 

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CreditCard, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useAuthHeaders } from '@/hooks/use-auth-headers';
 
 interface SubscriptionInfo {
   hasSubscription: boolean;
@@ -22,6 +23,16 @@ export default function ManageSubscriptionPage() {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const authHeaders = useAuthHeaders();
+  
+  const handleCancelSubscription = async () => {
+    await fetch('/api/subscription/cancel', {
+      method: 'POST',
+      headers: authHeaders
+    });
+    // Recarregar informações da assinatura
+    fetchSubscriptionInfo();
+  };
 
   useEffect(() => {
     fetchSubscriptionInfo();
@@ -29,29 +40,11 @@ export default function ManageSubscriptionPage() {
 
   const fetchSubscriptionInfo = async () => {
     try {
-      // Obter tokens do localStorage
-      const sessionData = localStorage.getItem('sb-cyjjxtlnvkbdwefgwmtd-auth-token');
-      let accessToken = '';
-      let refreshToken = '';
-
-      if (sessionData) {
-        try {
-          const session = JSON.parse(sessionData);
-          accessToken = session.access_token;
-          refreshToken = session.refresh_token;
-        } catch (e) {
-          console.error('Erro ao parsear sessão:', e);
-        }
-      }
-
       const response = await fetch('/api/subscription/status', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'X-Refresh-Token': refreshToken,
-        },
+        headers: authHeaders,
       });
       const data = await response.json();
-
+      console.log("Subscription data fetched:", data);
       if (response.ok) {
         setSubscription(data);
       } else {
@@ -76,6 +69,10 @@ export default function ManageSubscriptionPage() {
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
+
+  useEffect(() => {
+    console.log("subscription", subscription);
+  }, [subscription]);
 
   if (loading) {
     return (
@@ -217,7 +214,7 @@ export default function ManageSubscriptionPage() {
           </Button>
           
           {!subscription.cancelAtPeriodEnd ? (
-            <Button variant="destructive" className="w-full">
+            <Button variant="destructive" className="w-full" onClick={handleCancelSubscription}>
               Cancelar Assinatura
             </Button>
           ) : (

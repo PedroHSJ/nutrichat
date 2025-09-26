@@ -30,9 +30,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ChatProvider>
-          <GlobalLoader>
             {children}
-          </GlobalLoader>
         </ChatProvider>
       </body>
     </html>

@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { supabaseAdmin } from './supabase-admin';
-import { SubscriptionService } from './stripe';
+import { SubscriptionService, stripe } from './stripe';
 import { 
   UserSubscription, 
   SubscriptionPlan, 
@@ -17,8 +17,8 @@ export class UserSubscriptionService {
   /**
    * Verificar se Supabase está configurado
    */
-  private static isSupabaseConfigured(client?: any): boolean {
-    return !!client;
+  private static isSupabaseConfigured(): boolean {
+    return !!(supabaseAdmin || supabase);
   }
   
   /**
@@ -36,26 +36,28 @@ export class UserSubscriptionService {
   /**
    * Verificar se usuário pode interagir (com bypass opcional)
    */
-  static async canUserInteract(userId: string, client?: any): Promise<UserInteractionStatus> {
+  static async canUserInteract(userId: string): Promise<UserInteractionStatus> {
     // BYPASS PARA DESENVOLVIMENTO/TESTE
-    if (SubscriptionService.subscriptionBypass()) {
-      return {
-        canInteract: true,
-        remainingInteractions: 999,
-        dailyLimit: 999,
-        planName: 'BYPASS MODE',
-        planType: 'premium', // Compatibilidade com sistema antigo
-        subscriptionStatus: 'active' as SubscriptionStatus,
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 dias
-        resetTime: new Date(Date.now() + 24 * 60 * 60 * 1000) // amanhã
-      };
-    }
-    client = client || supabase;
-    if (!this.isSupabaseConfigured(client)) {
+    // if (SubscriptionService.subscriptionBypass()) {
+    //   return {
+    //     canInteract: true,
+    //     remainingInteractions: 999,
+    //     dailyLimit: 999,
+    //     planName: 'BYPASS MODE',
+    //     planType: 'premium', // Compatibilidade com sistema antigo
+    //     subscriptionStatus: 'active' as SubscriptionStatus,
+    //     currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 dias
+    //     resetTime: new Date(Date.now() + 24 * 60 * 60 * 1000) // amanhã
+    //   };
+    // }
+    if (!this.isSupabaseConfigured()) {
       throw new Error('Banco de dados não configurado');
     }
     
     try {
+      // Usar cliente público quando disponível, senão usar admin como fallback
+      const client = supabase || supabaseAdmin;
+
       // Usar função SQL que verifica tudo
       const { data, error } = await client!
         .rpc('can_user_interact_with_subscription', { user_id: userId });
@@ -112,7 +114,8 @@ export class UserSubscriptionService {
     }
     
     try {
-      const { data, error } = await supabase!
+      const client = supabase || supabaseAdmin;
+      const { data, error } = await client!
         .rpc('increment_daily_interaction_usage', { user_id: userId });
       
       if (error) {
@@ -131,13 +134,18 @@ export class UserSubscriptionService {
   /**
    * Obter assinatura ativa do usuário
    */
-  static async getUserActiveSubscription(userId: string, client?: any): Promise<UserSubscription | null> {
-    client = client || supabase;
-    if (!this.isSupabaseConfigured(client)) {
+  static async getUserActiveSubscription(userId: string): Promise<UserSubscription | null> {
+    // Precisamos apenas do cliente público (supabase) para consultas do usuário.
+    // O supabaseAdmin é necessário apenas para operações de sistema (inserts/updates via webhooks).
+    if (!this.isSupabaseConfigured()) {
+      console.error("[DB] Supabase não configurado, retornando null para assinatura ativa");
       return null;
     }
     
+    console.log(`[DB] Buscando assinatura ativa para usuário ${userId}`);
+    
     try {
+      const client = supabase || supabaseAdmin;
       const { data, error } = await client!
         .from('user_subscriptions')
         .select(`
@@ -151,11 +159,22 @@ export class UserSubscriptionService {
         .limit(1)
         .single();
       
+      console.log(`[DB] Query para buscar assinatura:`, {
+        userId,
+        status: ['active', 'trialing'],
+        currentDate: new Date().toISOString()
+      });
+      
       if (error && error.code !== 'PGRST116') { // PGRST116 = not found
         console.error('Erro ao buscar assinatura:', error);
+        console.error('Detalhes do erro:', {
+          code: error.code,
+          message: error.message,
+          details: error.details
+        });
         return null;
       }
-      
+      console.log(`[DB] Assinatura ativa para usuário ${userId}:`, data);
       return data as UserSubscription;
       
     } catch (error) {
@@ -356,7 +375,7 @@ export class UserSubscriptionService {
    * Obter planos disponíveis
    */
   static async getAvailablePlans(): Promise<SubscriptionPlan[]> {
-    if (!this.isSupabaseConfigured()) {
+    if (!supabase) {
       // Retornar planos padrão se DB não configurado
       return [
         {
@@ -387,7 +406,8 @@ export class UserSubscriptionService {
     }
     
     try {
-      const { data, error } = await supabase!
+      const client = supabase || supabaseAdmin;
+      const { data, error } = await client!
         .from('subscription_plans')
         .select('*')
         .eq('active', true)
@@ -409,13 +429,13 @@ export class UserSubscriptionService {
   /**
    * Obter uso diário atual
    */
-  static async getDailyUsage(userId: string, client?: any): Promise<DailyInteractionUsage | null> {
-    client = client || supabase;
-    if (!this.isSupabaseConfigured(client)) {
+  static async getDailyUsage(userId: string): Promise<DailyInteractionUsage | null> {
+    if (!this.isSupabaseConfigured()) {
       return null;
     }
     
     try {
+      const client = supabase || supabaseAdmin;
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
       
       const { data, error } = await client!
@@ -449,15 +469,164 @@ export class UserSubscriptionService {
   }
   
   /**
+   * Verifica o status da assinatura no Stripe
+   * Método para resolver inconsistências entre banco e Stripe
+   */
+  static async verifySubscriptionWithStripe(
+    userId: string, 
+    stripeCustomerId: string
+  ): Promise<UserSubscription | null> {
+    console.log(`[Service] Verificando assinatura no Stripe para usuário ${userId}, customer ${stripeCustomerId}`);
+    
+    try {
+      if (!stripeCustomerId) {
+        console.warn(`[Service] Customer ID não fornecido para verificação no Stripe`);
+        return null;
+      }
+      
+      // Importar SubscriptionService do stripe.ts
+      const { SubscriptionService } = await import('@/lib/stripe');
+      
+      // Buscar todas as assinaturas ativas do cliente no Stripe
+      const subscriptions = await stripe.subscriptions.list({
+        customer: stripeCustomerId,
+        status: 'active',
+        limit: 1
+      });
+      
+      if (subscriptions.data.length === 0) {
+        console.log(`[Service] Nenhuma assinatura ativa encontrada no Stripe para customer ${stripeCustomerId}`);
+        
+        // Tentar também assinaturas em trial
+        const trialSubscriptions = await stripe.subscriptions.list({
+          customer: stripeCustomerId,
+          status: 'trialing',
+          limit: 1
+        });
+        
+        if (trialSubscriptions.data.length === 0) {
+          console.log(`[Service] Nenhuma assinatura em trial encontrada no Stripe para customer ${stripeCustomerId}`);
+          return null;
+        }
+        
+        // Usar a assinatura em trial encontrada
+        const stripeSubscription = trialSubscriptions.data[0];
+        console.log(`[Service] Assinatura em trial encontrada no Stripe: ${stripeSubscription.id}`);
+        
+        // Identificar o plano da assinatura
+        const priceId = stripeSubscription.items.data[0]?.price.id;
+        if (!priceId) {
+          console.error(`[Service] Assinatura no Stripe não tem price ID`);
+          return null;
+        }
+        
+        // Obter detalhes do plano
+        const plan = await SubscriptionService.getPlanByPriceId(priceId);
+        if (!plan) {
+          console.error(`[Service] Não foi possível encontrar o plano para o price ${priceId}`);
+          return null;
+        }
+        
+        // Sincronizar com o banco
+        return await this.createSubscription(
+          userId,
+          plan.id,
+          stripeCustomerId,
+          stripeSubscription.id,
+          stripeSubscription
+        );
+      }
+      
+      // Encontrou assinatura ativa no Stripe
+      const stripeSubscription = subscriptions.data[0];
+      console.log(`[Service] Assinatura ativa encontrada no Stripe: ${stripeSubscription.id}`);
+      
+      // Identificar o plano da assinatura
+      const priceId = stripeSubscription.items.data[0]?.price.id;
+      if (!priceId) {
+        console.error(`[Service] Assinatura no Stripe não tem price ID`);
+        return null;
+      }
+      
+      // Obter detalhes do plano
+      const plan = await SubscriptionService.getPlanByPriceId(priceId);
+      if (!plan) {
+        console.error(`[Service] Não foi possível encontrar o plano para o price ${priceId}`);
+        return null;
+      }
+      
+      // Sincronizar com o banco
+      return await this.createSubscription(
+        userId,
+        plan.id,
+        stripeCustomerId,
+        stripeSubscription.id,
+        stripeSubscription
+      );
+      
+    } catch (error) {
+      console.error('[Service] Erro ao verificar assinatura no Stripe:', error);
+      return null;
+    }
+  }
+
+  /**
    * Obter estatísticas do usuário
    */
-  static async getUserStats(userId: string, client?: any) {
-    const subscription = await this.getUserActiveSubscription(userId, client);
-    const usage = await this.getDailyUsage(userId, client);
-    const status = await this.canUserInteract(userId, client);
+  static async getUserStats(userId: string) {
+    console.log(`[Service] Obtendo estatísticas para usuário: ${userId}`);
+    let subscription = await this.getUserActiveSubscription(userId);
+    console.log(`[Service] Assinatura ativa obtida do banco:`, subscription);
     
+    // Se não encontrou assinatura no banco, mas temos status de interação com plano ativo,
+    // possivelmente há uma inconsistência entre banco e Stripe
+    const status = await this.canUserInteract(userId);
+    console.log(`[Service] Status de interação:`, status);
+    
+    const usage = await this.getDailyUsage(userId);
+    
+    let hasActiveSubscription = subscription !== null || 
+      (status.subscriptionStatus === 'active' || status.subscriptionStatus === 'trialing');
+    
+    // Verificar inconsistência: se não tem assinatura no banco, mas o status mostra plano ativo
+    if (!subscription && hasActiveSubscription) {
+      console.warn(`[Service] INCONSISTÊNCIA DETECTADA: Usuário ${userId} tem status ativo mas assinatura não encontrada no banco`);
+      
+      try {
+        // Buscar customer ID associado a este usuário para verificar no Stripe
+        const { data: userData, error: userError } = await (supabase || supabaseAdmin)!
+          .from('users')
+          .select('stripe_customer_id')
+          .eq('id', userId)
+          .single();
+        
+        if (userError) {
+          console.error(`[Service] Erro ao buscar customer ID do usuário:`, userError);
+        } else if (userData?.stripe_customer_id) {
+          // Tentar resolver inconsistência verificando diretamente no Stripe
+          console.log(`[Service] Tentando resolver inconsistência verificando no Stripe para customer ${userData.stripe_customer_id}`);
+          
+          // Verificar e sincronizar com o Stripe
+          const stripeSubscription = await this.verifySubscriptionWithStripe(userId, userData.stripe_customer_id);
+          
+          if (stripeSubscription) {
+            console.log(`[Service] ✅ Assinatura recuperada do Stripe e sincronizada com o banco: ${stripeSubscription.id}`);
+            subscription = stripeSubscription;
+            hasActiveSubscription = true;
+          } else {
+            console.warn(`[Service] Assinatura não encontrada no Stripe, possível problema na flag de status ativo`);
+          }
+        } else {
+          console.warn(`[Service] Usuário ${userId} não possui customer ID associado`);
+        }
+      } catch (error) {
+        console.error(`[Service] Erro ao resolver inconsistência de assinatura:`, error);
+      }
+    }
+    
+    console.log(`[Service] Estatísticas obtidas para usuário ${userId}:`, { subscription, usage, status });
     return {
-      hasActiveSubscription: subscription !== null,
+      hasActiveSubscription,
       subscription,
       dailyUsage: usage,
       interactionStatus: status
@@ -468,7 +637,9 @@ export class UserSubscriptionService {
    * Cancelar assinatura do usuário
    */
   static async cancelUserSubscription(userId: string, immediately = false): Promise<boolean> {
+    console.log(`[Service] Iniciando cancelamento de assinatura para usuário: ${userId}, imediatamente: ${immediately}`);
     const subscription = await this.getUserActiveSubscription(userId);
+    console.log(`[Service] Assinatura atual do usuário:`, subscription);
     if (!subscription) {
       throw new Error('Usuário não possui assinatura ativa');
     }

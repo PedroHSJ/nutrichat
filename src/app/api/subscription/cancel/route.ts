@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UserSubscriptionService } from '@/lib/subscription';
 import { authService } from '@/lib/auth';
+import { createClient } from '@supabase/supabase-js';
 
 /**
  * POST /api/subscription/cancel
@@ -8,31 +9,53 @@ import { authService } from '@/lib/auth';
  */
 export async function POST(request: NextRequest) {
   try {
-    // Verificar autenticação
-    const user = await authService.getCurrentSession();
-    if (!user) {
+   // Pega tokens dos headers da requisição
+    const authHeader = request.headers.get('authorization');
+    const refreshToken = request.headers.get('x-refresh-token');
+
+    let accessToken = '';
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      accessToken = authHeader.substring(7);
+    }
+
+    if (!accessToken) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Usuário não autenticado' 
-        },
+        { success: false, error: 'Usuário não autenticado (token ausente)' },
         { status: 401 }
       );
     }
 
-    const body = await request.json();
-    const { immediately = false } = body;
+    // Cria cliente Supabase
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Supabase URL ou Anon Key não definidos nas variáveis de ambiente');
+    }
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    // Seta sessão manualmente
+    const { data: { session }, error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken || '',
+    });
+
+    if (error || !session?.user) {
+      return NextResponse.json(
+        { success: false, error: 'Usuário não autenticado (sessão inválida)' },
+        { status: 401 }
+      );
+    }
 
     // Cancelar assinatura
     const success = await UserSubscriptionService.cancelUserSubscription(
-      user.id, 
-      immediately
+      session.user.id, 
+      true // cancelar imediatamente
     );
 
     if (success) {
       return NextResponse.json({
         success: true,
-        message: immediately 
+        message: true 
           ? 'Assinatura cancelada imediatamente' 
           : 'Assinatura será cancelada no final do período atual'
       });

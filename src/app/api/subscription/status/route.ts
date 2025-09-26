@@ -46,8 +46,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Obter status completo do usuário
-  const stats = await UserSubscriptionService.getUserStats(session.user.id, supabase);
-    
+    const stats = await UserSubscriptionService.getUserStats(session.user.id);
+    console.log(`[API] Status da assinatura para usuário ${session.user.id}:`, stats);
     // Formatar resposta para o frontend
     const subscription = stats.subscription;
     return NextResponse.json({
