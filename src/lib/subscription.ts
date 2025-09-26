@@ -104,10 +104,10 @@ export class UserSubscriptionService {
    */
   static async incrementInteractionUsage(userId: string): Promise<boolean> {
     // BYPASS PARA DESENVOLVIMENTO/TESTE
-    if (SubscriptionService.subscriptionBypass()) {
-      console.log('[BYPASS MODE] Bypassing interaction increment');
-      return true;
-    }
+    // if (SubscriptionService.subscriptionBypass()) {
+    //   console.log('[BYPASS MODE] Bypassing interaction increment');
+    //   return true;
+    // }
     
     if (!this.isSupabaseConfigured()) {
       throw new Error('Banco de dados não configurado');
@@ -135,18 +135,17 @@ export class UserSubscriptionService {
    * Obter assinatura ativa do usuário
    */
   static async getUserActiveSubscription(userId: string): Promise<UserSubscription | null> {
-    // Precisamos apenas do cliente público (supabase) para consultas do usuário.
-    // O supabaseAdmin é necessário apenas para operações de sistema (inserts/updates via webhooks).
-    if (!this.isSupabaseConfigured()) {
-      console.error("[DB] Supabase não configurado, retornando null para assinatura ativa");
+    // Usar sempre o supabaseAdmin para ignorar RLS e garantir acesso
+    if (!supabaseAdmin) {
+      console.error("[DB] supabaseAdmin não configurado, retornando null para assinatura ativa");
       return null;
     }
-    
-    console.log(`[DB] Buscando assinatura ativa para usuário ${userId}`);
-    
+
+    console.log(`[DB] Buscando assinatura ativa para usuário ${userId} (usando supabaseAdmin)`);
+
     try {
-      const client = supabase || supabaseAdmin;
-      const { data, error } = await client!
+      const client = supabaseAdmin;
+      const { data, error } = await client
         .from('user_subscriptions')
         .select(`
           *,
@@ -158,13 +157,13 @@ export class UserSubscriptionService {
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
-      
+
       console.log(`[DB] Query para buscar assinatura:`, {
         userId,
         status: ['active', 'trialing'],
         currentDate: new Date().toISOString()
       });
-      
+      console.log(`[DB] Resultado da query:`, { data, error });
       if (error && error.code !== 'PGRST116') { // PGRST116 = not found
         console.error('Erro ao buscar assinatura:', error);
         console.error('Detalhes do erro:', {
@@ -176,7 +175,7 @@ export class UserSubscriptionService {
       }
       console.log(`[DB] Assinatura ativa para usuário ${userId}:`, data);
       return data as UserSubscription;
-      
+
     } catch (error) {
       console.error('Erro ao obter assinatura ativa:', error);
       return null;
@@ -202,19 +201,6 @@ export class UserSubscriptionService {
       const firstItem = subscriptionData.items?.data?.[0];
       const currentPeriodStart = firstItem?.current_period_start;
       const currentPeriodEnd = firstItem?.current_period_end;
-
-      // Debug: log dos dados recebidos
-      console.log('[DB] Dados da subscription recebidos:', {
-        id: subscriptionData.id,
-        status: subscriptionData.status,
-        subscription_current_period_start: subscriptionData.current_period_start,
-        subscription_current_period_end: subscriptionData.current_period_end,
-        first_item_current_period_start: currentPeriodStart,
-        first_item_current_period_end: currentPeriodEnd,
-        trial_start: subscriptionData.trial_start,
-        trial_end: subscriptionData.trial_end,
-        items_count: subscriptionData.items?.data?.length || 0
-      });
 
       // Validar dados obrigatórios
       if (!currentPeriodStart) {
@@ -375,34 +361,39 @@ export class UserSubscriptionService {
    * Obter planos disponíveis
    */
   static async getAvailablePlans(): Promise<SubscriptionPlan[]> {
-    if (!supabase) {
-      // Retornar planos padrão se DB não configurado
-      return [
-        {
-          id: 'basic',
-          name: 'Plano Básico',
-          stripe_price_id: 'price_basic_placeholder',
-          stripe_product_id: 'prod_basic_placeholder',
-          daily_interactions_limit: 50,
-          price_cents: 1999,
-          interval: 'month',
-          features: ['50 interações por dia', 'Suporte básico'],
-          created_at: new Date(),
-          updated_at: new Date()
-        } as SubscriptionPlan,
-        {
-          id: 'pro',
-          name: 'Plano Pro',
-          stripe_price_id: 'price_pro_placeholder',
-          stripe_product_id: 'prod_pro_placeholder',
-          daily_interactions_limit: 150,
-          price_cents: 4999,
-          interval: 'month',
-          features: ['150 interações por dia', 'Suporte prioritário', 'API access'],
-          created_at: new Date(),
-          updated_at: new Date()
-        } as SubscriptionPlan
-      ];
+    // if (!supabase) {
+    //   // Retornar planos padrão se DB não configurado
+    //   return [
+    //     {
+    //       id: 'basic',
+    //       name: 'Plano Básico',
+    //       stripe_price_id: 'price_basic_placeholder',
+    //       stripe_product_id: 'prod_basic_placeholder',
+    //       daily_interactions_limit: 50,
+    //       price_cents: 1999,
+    //       interval: 'month',
+    //       features: ['50 interações por dia', 'Suporte básico'],
+    //       created_at: new Date(),
+    //       updated_at: new Date()
+    //     } as SubscriptionPlan,
+    //     {
+    //       id: 'pro',
+    //       name: 'Plano Pro',
+    //       stripe_price_id: 'price_pro_placeholder',
+    //       stripe_product_id: 'prod_pro_placeholder',
+    //       daily_interactions_limit: 150,
+    //       price_cents: 4999,
+    //       interval: 'month',
+    //       features: ['150 interações por dia', 'Suporte prioritário', 'API access'],
+    //       created_at: new Date(),
+    //       updated_at: new Date()
+    //     } as SubscriptionPlan
+    //   ];
+    // }
+
+    if( !this.isSupabaseConfigured()) {
+      console.warn('Supabase não configurado - retornando lista vazia de planos');
+      return [];
     }
     
     try {
@@ -574,14 +565,14 @@ export class UserSubscriptionService {
    * Obter estatísticas do usuário
    */
   static async getUserStats(userId: string) {
-    console.log(`[Service] Obtendo estatísticas para usuário: ${userId}`);
+    if( !this.isSupabaseConfigured()) {
+      throw new Error('Banco de dados não configurado');
+    }
     let subscription = await this.getUserActiveSubscription(userId);
     console.log(`[Service] Assinatura ativa obtida do banco:`, subscription);
-    
     // Se não encontrou assinatura no banco, mas temos status de interação com plano ativo,
     // possivelmente há uma inconsistência entre banco e Stripe
     const status = await this.canUserInteract(userId);
-    console.log(`[Service] Status de interação:`, status);
     
     const usage = await this.getDailyUsage(userId);
     
@@ -590,38 +581,41 @@ export class UserSubscriptionService {
     
     // Verificar inconsistência: se não tem assinatura no banco, mas o status mostra plano ativo
     if (!subscription && hasActiveSubscription) {
-      console.warn(`[Service] INCONSISTÊNCIA DETECTADA: Usuário ${userId} tem status ativo mas assinatura não encontrada no banco`);
-      
-      try {
-        // Buscar customer ID associado a este usuário para verificar no Stripe
-        const { data: userData, error: userError } = await (supabase || supabaseAdmin)!
-          .from('users')
-          .select('stripe_customer_id')
-          .eq('id', userId)
-          .single();
-        
-        if (userError) {
-          console.error(`[Service] Erro ao buscar customer ID do usuário:`, userError);
-        } else if (userData?.stripe_customer_id) {
-          // Tentar resolver inconsistência verificando diretamente no Stripe
-          console.log(`[Service] Tentando resolver inconsistência verificando no Stripe para customer ${userData.stripe_customer_id}`);
-          
-          // Verificar e sincronizar com o Stripe
-          const stripeSubscription = await this.verifySubscriptionWithStripe(userId, userData.stripe_customer_id);
-          
-          if (stripeSubscription) {
-            console.log(`[Service] ✅ Assinatura recuperada do Stripe e sincronizada com o banco: ${stripeSubscription.id}`);
-            subscription = stripeSubscription;
-            hasActiveSubscription = true;
-          } else {
-            console.warn(`[Service] Assinatura não encontrada no Stripe, possível problema na flag de status ativo`);
+        console.warn(`[Service] INCONSISTÊNCIA DETECTADA: Usuário ${userId} tem status ativo mas assinatura não encontrada no banco`);
+        try {
+          const client = supabaseAdmin || supabase;
+          if( !client ) {
+            throw new Error('Cliente Supabase não disponível para resolver inconsistência');
           }
-        } else {
-          console.warn(`[Service] Usuário ${userId} não possui customer ID associado`);
+          // Buscar customer ID associado a este usuário para verificar no Stripe (usando auth.users)
+          const { data: userData, error: userError } = await client
+            .from('auth.users')
+            .select('stripe_customer_id')
+            .eq('id', userId)
+            .single();
+
+          if (userError) {
+            console.error(`[Service] Erro ao buscar customer ID do usuário em auth.users:`, userError);
+          } else if (userData?.stripe_customer_id) {
+            // Tentar resolver inconsistência verificando diretamente no Stripe
+            console.log(`[Service] Tentando resolver inconsistência verificando no Stripe para customer ${userData.stripe_customer_id}`);
+
+            // Verificar e sincronizar com o Stripe
+            const stripeSubscription = await this.verifySubscriptionWithStripe(userId, userData.stripe_customer_id);
+
+            if (stripeSubscription) {
+              console.log(`[Service] ✅ Assinatura recuperada do Stripe e sincronizada com o banco: ${stripeSubscription.id}`);
+              subscription = stripeSubscription;
+              hasActiveSubscription = true;
+            } else {
+              console.warn(`[Service] Assinatura não encontrada no Stripe, possível problema na flag de status ativo`);
+            }
+          } else {
+            console.warn(`[Service] Usuário ${userId} não possui customer ID associado em auth.users`);
+          }
+        } catch (error) {
+          console.error(`[Service] Erro ao resolver inconsistência de assinatura:`, error);
         }
-      } catch (error) {
-        console.error(`[Service] Erro ao resolver inconsistência de assinatura:`, error);
-      }
     }
     
     console.log(`[Service] Estatísticas obtidas para usuário ${userId}:`, { subscription, usage, status });

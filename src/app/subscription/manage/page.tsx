@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { CancelSubscriptionModal } from '@/components/CancelSubscriptionModal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,14 +24,20 @@ export default function ManageSubscriptionPage() {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const authHeaders = useAuthHeaders();
-  
-  const handleCancelSubscription = async () => {
+
+  const handleCancelSubscription = () => {
+    setShowCancelModal(true);
+  };
+
+  const handleModalCancel = async (type: 'immediate' | 'period') => {
+    setShowCancelModal(false);
     await fetch('/api/subscription/cancel', {
       method: 'POST',
-      headers: authHeaders
+      headers: authHeaders,
+      body: JSON.stringify({ type })
     });
-    // Recarregar informações da assinatura
     fetchSubscriptionInfo();
   };
 
@@ -132,6 +139,11 @@ export default function ManageSubscriptionPage() {
 
   return (
     <div className="container mx-auto py-12 px-4 max-w-2xl space-y-6">
+      <CancelSubscriptionModal
+        open={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onCancel={handleModalCancel}
+      />
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold mb-2">Gerenciar Assinatura</h1>
         <p className="text-muted-foreground">
