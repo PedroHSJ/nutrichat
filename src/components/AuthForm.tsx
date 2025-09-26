@@ -94,22 +94,21 @@ export function AuthForm({ onLogin, onSignUp, isLoading, error }: AuthFormProps)
   }, [isLoading, isNavigating]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
-      <Card className="w-full">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-green-600">
+    <div className="w-full">
+      <div className="text-center">
+          <div className="text-2xl font-bold text-green-600">
             NutriChat
-          </CardTitle>
-          <CardDescription>
+          </div>
+          <div>
             {mode === 'login' 
               ? 'Faça login para acessar seu assistente nutricional'
               : 'Crie sua conta para começar'
             }
-          </CardDescription>
-        </CardHeader>
+          </div>
+        </div>
         
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <div className="space-y-4">
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
@@ -207,9 +206,9 @@ export function AuthForm({ onLogin, onSignUp, isLoading, error }: AuthFormProps)
                 </ul>
               </div>
             )}
-          </CardContent>
+          </div>
 
-          <CardFooter className="flex flex-col space-y-4">
+          <div className="flex flex-col space-y-4">
             <Button 
               type="submit" 
               className="w-full mt-2"
@@ -234,9 +233,8 @@ export function AuthForm({ onLogin, onSignUp, isLoading, error }: AuthFormProps)
                   : 'Já tem conta? Fazer login'
                 }
               </Button>
-          </CardFooter>
+          </div>
         </form>
-      </Card>
-    </div>
+      </div>
   );
 }
