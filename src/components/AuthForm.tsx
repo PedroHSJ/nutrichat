@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, Loader2, Mail, Lock, User } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useNavigation } from '@/context/NavigationContext';
 
 interface AuthFormProps {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -24,6 +25,7 @@ export function AuthForm({ onLogin, onSignUp, isLoading, error }: AuthFormProps)
     confirmPassword: ''
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const { isNavigating } = useNavigation();
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -86,9 +88,14 @@ export function AuthForm({ onLogin, onSignUp, isLoading, error }: AuthFormProps)
     }
   };
 
+  useEffect(() => {
+    console.log("isloading changed:", isLoading);
+    console.log("isNavigating changed:", isNavigating);
+  }, [isLoading, isNavigating]);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-green-600">
             NutriChat
@@ -206,29 +213,27 @@ export function AuthForm({ onLogin, onSignUp, isLoading, error }: AuthFormProps)
             <Button 
               type="submit" 
               className="w-full mt-2"
-              disabled={isLoading}
+              disabled={isLoading || isNavigating}
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {(isLoading || isNavigating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {mode === 'login' ? 'Entrar' : 'Criar conta'}
             </Button>
 
-            <div className="text-center">
-              <button
-                type="button"
+              <Button 
+              type="button" 
+              className="w-full mt-2"
+              disabled={isLoading || isNavigating}
                 onClick={() => {
                   setMode(mode === 'login' ? 'signup' : 'login');
                   setFormErrors({});
                   setFormData({ name: '', email: '', password: '', confirmPassword: '' });
                 }}
-                className="text-sm text-green-600 hover:text-green-700 hover:underline"
-                disabled={isLoading}
               >
                 {mode === 'login' 
                   ? 'Não tem conta? Criar conta'
                   : 'Já tem conta? Fazer login'
                 }
-              </button>
-            </div>
+              </Button>
           </CardFooter>
         </form>
       </Card>

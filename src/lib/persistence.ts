@@ -127,34 +127,24 @@ export class ChatPersistenceService {
       if (error) {
         console.error('Erro ao carregar chats:', error);
         return [];
-      }
-
-      console.log('Chats carregados do banco:', chatsData?.length || 0);
-      
-      // Log detalhado do que foi retornado
-      if (chatsData && chatsData.length > 0) {
-        console.log('Primeiro chat retornado:', JSON.stringify(chatsData[0], null, 2));
-      }
+      }    
 
       const chats: Chat[] = [];
 
       for (const chatData of chatsData || []) {
         const messages: Message[] = [];
-        console.log(`Processando chat ${chatData.id} com ${(chatData as any).messages?.length || 0} mensagens raw`);
         
         // Descriptografar mensagens
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         for (const msgData of (chatData as any).messages || []) {
           try {
-            console.log('Descriptografando mensagem:', msgData.id);
-            const decryptedContent = await decryptSensitiveData(msgData.content_encrypted);
+            const decryptedContent = decryptSensitiveData(msgData.content_encrypted);
             messages.push({
               id: msgData.id,
               content: decryptedContent,
               role: msgData.role,
               timestamp: new Date(msgData.created_at), // Usar created_at em vez de timestamp
             });
-            console.log('Mensagem descriptografada com sucesso:', msgData.id);
           } catch (error) {
             console.error('Erro ao descriptografar mensagem:', msgData.id, error);
           }

@@ -26,13 +26,7 @@ export class AuthService {
 
   // Verificar se Supabase está configurado
   private isSupabaseConfigured(): boolean {
-    const configured = supabase !== null;
-    console.log('Supabase configured:', configured);
-    if (!configured) {
-      console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-      console.log('Supabase Anon Key:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
-    }
-    return configured;
+    return supabase !== null;
   }
 
   // Fazer login
@@ -246,7 +240,7 @@ export class AuthService {
       .select('consent_given')
       .eq('id', this.currentUser.id)
       .single();
-
+    console.log('Checking user consent:', { data, error });
     if (error) {
       console.error('Erro ao verificar consentimento:', error);
       return false;
