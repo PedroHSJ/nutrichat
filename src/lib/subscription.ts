@@ -17,8 +17,8 @@ export class UserSubscriptionService {
   /**
    * Verificar se Supabase está configurado
    */
-  private static isSupabaseConfigured(): boolean {
-    return supabase !== null;
+  private static isSupabaseConfigured(client?: any): boolean {
+    return !!client;
   }
   
   /**
@@ -36,7 +36,7 @@ export class UserSubscriptionService {
   /**
    * Verificar se usuário pode interagir (com bypass opcional)
    */
-  static async canUserInteract(userId: string): Promise<UserInteractionStatus> {
+  static async canUserInteract(userId: string, client?: any): Promise<UserInteractionStatus> {
     // BYPASS PARA DESENVOLVIMENTO/TESTE
     if (SubscriptionService.subscriptionBypass()) {
       return {
@@ -50,14 +50,14 @@ export class UserSubscriptionService {
         resetTime: new Date(Date.now() + 24 * 60 * 60 * 1000) // amanhã
       };
     }
-    
-    if (!this.isSupabaseConfigured()) {
+    client = client || supabase;
+    if (!this.isSupabaseConfigured(client)) {
       throw new Error('Banco de dados não configurado');
     }
     
     try {
       // Usar função SQL que verifica tudo
-      const { data, error } = await supabase!
+      const { data, error } = await client!
         .rpc('can_user_interact_with_subscription', { user_id: userId });
       
       if (error) {
@@ -131,13 +131,14 @@ export class UserSubscriptionService {
   /**
    * Obter assinatura ativa do usuário
    */
-  static async getUserActiveSubscription(userId: string): Promise<UserSubscription | null> {
-    if (!this.isSupabaseConfigured()) {
+  static async getUserActiveSubscription(userId: string, client?: any): Promise<UserSubscription | null> {
+    client = client || supabase;
+    if (!this.isSupabaseConfigured(client)) {
       return null;
     }
     
     try {
-      const { data, error } = await supabase!
+      const { data, error } = await client!
         .from('user_subscriptions')
         .select(`
           *,
@@ -408,15 +409,16 @@ export class UserSubscriptionService {
   /**
    * Obter uso diário atual
    */
-  static async getDailyUsage(userId: string): Promise<DailyInteractionUsage | null> {
-    if (!this.isSupabaseConfigured()) {
+  static async getDailyUsage(userId: string, client?: any): Promise<DailyInteractionUsage | null> {
+    client = client || supabase;
+    if (!this.isSupabaseConfigured(client)) {
       return null;
     }
     
     try {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
       
-      const { data, error } = await supabase!
+      const { data, error } = await client!
         .from('daily_interaction_usage')
         .select('*')
         .eq('user_id', userId)
@@ -449,10 +451,10 @@ export class UserSubscriptionService {
   /**
    * Obter estatísticas do usuário
    */
-  static async getUserStats(userId: string) {
-    const subscription = await this.getUserActiveSubscription(userId);
-    const usage = await this.getDailyUsage(userId);
-    const status = await this.canUserInteract(userId);
+  static async getUserStats(userId: string, client?: any) {
+    const subscription = await this.getUserActiveSubscription(userId, client);
+    const usage = await this.getDailyUsage(userId, client);
+    const status = await this.canUserInteract(userId, client);
     
     return {
       hasActiveSubscription: subscription !== null,

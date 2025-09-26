@@ -29,7 +29,27 @@ export default function ManageSubscriptionPage() {
 
   const fetchSubscriptionInfo = async () => {
     try {
-      const response = await fetch('/api/subscription/status');
+      // Obter tokens do localStorage
+      const sessionData = localStorage.getItem('sb-cyjjxtlnvkbdwefgwmtd-auth-token');
+      let accessToken = '';
+      let refreshToken = '';
+
+      if (sessionData) {
+        try {
+          const session = JSON.parse(sessionData);
+          accessToken = session.access_token;
+          refreshToken = session.refresh_token;
+        } catch (e) {
+          console.error('Erro ao parsear sessão:', e);
+        }
+      }
+
+      const response = await fetch('/api/subscription/status', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'X-Refresh-Token': refreshToken,
+        },
+      });
       const data = await response.json();
 
       if (response.ok) {

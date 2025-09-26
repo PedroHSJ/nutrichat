@@ -54,7 +54,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       try {
         // Verificar sessão existente
         const currentUser = await authService.getCurrentSession();
-        
+        console.log('Sessão atual:', currentUser);
         if (currentUser) {
           setUser(currentUser);
           setIsAuthenticated(true);

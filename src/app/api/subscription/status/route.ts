@@ -1,51 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UserSubscriptionService } from '@/lib/subscription';
-import { authService } from '@/lib/auth';
+import { createClient } from '@supabase/supabase-js';
 
 /**
  * GET /api/subscription/status
  * Retorna o status da assinatura do usuário autenticado
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Verificar autenticação
-    const user = await authService.getCurrentSession();
-    if (!user) {
+    // Pega tokens dos headers da requisição
+    const authHeader = request.headers.get('authorization');
+    const refreshToken = request.headers.get('x-refresh-token');
+
+    let accessToken = '';
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      accessToken = authHeader.substring(7);
+    }
+
+    if (!accessToken) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Usuário não autenticado' 
-        },
+        { success: false, error: 'Usuário não autenticado (token ausente)' },
+        { status: 401 }
+      );
+    }
+
+    // Cria cliente Supabase
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Supabase URL ou Anon Key não definidos nas variáveis de ambiente');
+    }
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    // Seta sessão manualmente
+    const { data: { session }, error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken || '',
+    });
+
+    if (error || !session?.user) {
+      return NextResponse.json(
+        { success: false, error: 'Usuário não autenticado (sessão inválida)' },
         { status: 401 }
       );
     }
 
     // Obter status completo do usuário
-    const stats = await UserSubscriptionService.getUserStats(user.id);
+  const stats = await UserSubscriptionService.getUserStats(session.user.id, supabase);
     
+    // Formatar resposta para o frontend
+    const subscription = stats.subscription;
     return NextResponse.json({
-      success: true,
-      data: {
-        hasActiveSubscription: stats.hasActiveSubscription,
-        subscription: stats.subscription ? {
-          id: stats.subscription.id,
-          planId: stats.subscription.plan_id,
-          status: stats.subscription.status,
-          currentPeriodEnd: stats.subscription.current_period_end,
-          isTrialing: stats.subscription.status === 'trialing',
-          trialEnd: stats.subscription.trial_end,
-          canceledAt: stats.subscription.canceled_at,
-          cancelAt: stats.subscription.cancel_at,
-          plan: stats.subscription.plan
-        } : null,
-        dailyUsage: stats.dailyUsage ? {
-          date: stats.dailyUsage.date,
-          used: stats.dailyUsage.interactions_used,
-          limit: stats.dailyUsage.daily_limit,
-          remaining: stats.dailyUsage.daily_limit - stats.dailyUsage.interactions_used
-        } : null,
-        interactionStatus: stats.interactionStatus
-      }
+      hasSubscription: stats.hasActiveSubscription,
+      planName: subscription?.plan?.name || 'Sem plano',
+      planType: subscription?.plan?.id || 'free',
+      status: subscription?.status,
+      currentPeriodEnd: subscription?.current_period_end,
+      dailyLimit: stats.dailyUsage?.daily_limit,
+      remainingInteractions: stats.dailyUsage?.daily_limit && stats.dailyUsage?.interactions_used !== undefined
+        ? stats.dailyUsage.daily_limit - stats.dailyUsage.interactions_used
+        : undefined,
+      cancelAtPeriodEnd: !!subscription?.cancel_at,
     });
 
   } catch (error) {
