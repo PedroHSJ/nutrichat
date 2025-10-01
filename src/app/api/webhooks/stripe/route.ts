@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { SubscriptionService, stripe } from '@/lib/stripe';
 import { UserSubscriptionService } from '@/lib/subscription';
 import Stripe from 'stripe';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 /**
  * POST /api/webhooks/stripe
@@ -54,11 +55,10 @@ export async function POST(request: NextRequest) {
         await handlePaymentFailed(event.data.object as Stripe.Invoice);
         break;
 
-      case 'invoice.payment_succeeded':
-        // 🎯 LOCAL PRINCIPAL DE CRIAÇÃO DE SUBSCRIPTIONS
-        // Este é o webhook mais confiável para confirmar pagamentos
-        await handlePaymentSucceeded(event.data.object as Stripe.Invoice);
-        break;
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as Stripe.Invoice;
+        await handleInvoicePaymentSucceeded(event, invoice);
+        break; }
 
       default:
         console.log(`[Webhook] Evento não tratado: ${event.type}`);
@@ -74,6 +74,11 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Observabilidade:
+// - Eventos inseridos com status 'pending' e não processados em X minutos indicam falha/transiente.
+// - Eventos com status 'failed' armazenam a mensagem de erro (coluna error) para troubleshooting.
+// - Estratégia de dashboard: COUNT(*) por status e idade do evento.
 
 /**
  * Processar atualização de assinatura
@@ -142,97 +147,76 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 /**
  * Processar pagamento bem-sucedido
  */
-async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
-  try {
-    console.log(`[Webhook] Pagamento bem-sucedido para invoice: ${invoice.id}`);
-
-    const subscriptionId = 'subscription' in invoice ? invoice.subscription : null;
-    if (!subscriptionId || typeof subscriptionId !== 'string') {
-      console.log(`[Webhook] Invoice ${invoice.id} não está associada a uma subscription`);
-      return;
-    }
-
-    // Buscar subscription completa no Stripe
-    const subscription = await SubscriptionService.getSubscription(subscriptionId);
-    
-    // Verificar se a subscription já existe no banco
-    const { supabaseAdmin } = await import('@/lib/supabase-admin');
-    if (!supabaseAdmin) {
-      console.error('[Webhook] Supabase admin não configurado');
-      return;
-    }
-
-    const { data: existingSubscription } = await supabaseAdmin
-      .from('user_subscriptions')
-      .select('id')
-      .eq('stripe_subscription_id', subscription.id)
-      .single();
-
-    if (existingSubscription) {
-      // Subscription já existe, apenas atualizar
-      await UserSubscriptionService.updateSubscription(
-        subscription.id,
-        subscription
-      );
-      console.log(`[Webhook] ✅ Subscription existente atualizada: ${subscription.id}`);
-    } else {
-      // 🎯 CRIAR NOVA SUBSCRIPTION - Este é agora o local principal
-      console.log(`[Webhook] 🎯 CRIANDO SUBSCRIPTION PRINCIPAL - invoice.payment_succeeded`);
-      console.log(`[Webhook] Subscription não existe no banco, criando nova: ${subscription.id}`);
-      
-      // Buscar customer no Stripe
-      const customer = await stripe.customers.retrieve(
-        subscription.customer as string
-      ) as Stripe.Customer;
-
-      if (!customer.email) {
-        console.error('[Webhook] Customer sem email para subscription:', subscription.id);
-        return;
-      }
-
-      // Buscar usuário pelo email
-      const userId = await getUserIdByEmail(customer.email);
-      if (!userId) {
-        console.error(`[Webhook] Usuário não encontrado para email: ${customer.email}`);
-        return;
-      }
-
-      // Buscar plano baseado no price_id
-      const priceId = subscription.items.data[0]?.price?.id;
-      if (!priceId) {
-        console.error('[Webhook] Price ID não encontrado na subscription:', subscription.id);
-        return;
-      }
-
-      const planId = await getPlanIdByStripePrice(priceId);
-      if (!planId) {
-        console.error(`[Webhook] Plano não encontrado para price_id: ${priceId}`);
-        return;
-      }
-
-      // Criar nova subscription no banco
-      console.log('[Webhook] Parâmetros da criação:', {
-        userId,
-        planId,
-        customerId: customer.id,
-        subscriptionId: subscription.id
-      });
-      
-      const createdSubscription = await UserSubscriptionService.createSubscription(
-        userId,
-        planId,
-        customer.id,
-        subscription.id,
-        subscription
-      );
-
-      console.log('[Webhook] ✅ SUBSCRIPTION CRIADA COM SUCESSO!');
-      console.log('[Webhook] Dados da subscription criada:', createdSubscription);
-    }
-
-  } catch (error) {
-    console.error('[Webhook] Erro ao processar pagamento bem-sucedido:', error);
+async function handleInvoicePaymentSucceeded(event: Stripe.Event, invoice: Stripe.Invoice) {
+  console.log(`[Webhook] Pagamento bem-sucedido (invoice.payment_succeeded) invoice: ${invoice.id}`);
+  if (!supabaseAdmin) {
+    throw new Error('Supabase admin não configurado');
   }
+
+  const subscriptionId = (invoice as any).subscription as string | undefined;
+  if (!subscriptionId || typeof subscriptionId !== 'string') {
+    console.log(`[Webhook] Invoice ${invoice.id} sem subscription vinculada`);
+    return;
+  }
+
+  // Buscar subscription completa no Stripe para capturar dados precisos
+  const subscription = await SubscriptionService.getSubscription(subscriptionId);
+
+  // Buscar customer (para email -> user)
+  const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
+  if (!customer.email) {
+    throw new Error(`Customer ${customer.id} sem email`);
+  }
+
+  // Resolver userId via RPC existente get_user_id_by_email
+  const { data: userIdData, error: userIdError } = await supabaseAdmin.rpc('get_user_id_by_email', { user_email: customer.email });
+  if (userIdError || !userIdData) {
+    throw new Error(`Usuário não encontrado para email ${customer.email}`);
+  }
+  const userId: string = userIdData;
+
+  // Price / plano
+  const priceId = subscription.items.data[0]?.price?.id;
+  if (!priceId) {
+    throw new Error(`Price ID não encontrado na subscription ${subscription.id}`);
+  }
+  const planId = await getPlanIdByStripePrice(priceId);
+  if (!planId) {
+    throw new Error(`Plano não encontrado para price ${priceId}`);
+  }
+
+  // Extrair períodos
+  const firstItem = subscription.items.data[0];
+  const periodStart = firstItem?.current_period_start ? new Date(firstItem.current_period_start * 1000) : null;
+  const periodEnd = firstItem?.current_period_end ? new Date(firstItem.current_period_end * 1000) : null;
+  if (!periodStart || !periodEnd) {
+    throw new Error('Períodos da assinatura ausentes');
+  }
+
+  // Chamando a função RPC (tudo dentro de transação e idempotente)
+  const { error: rpcError } = await supabaseAdmin.rpc('process_invoice_payment_succeeded', {
+    p_event_id: event.id,
+    p_event_type: event.type,
+    p_stripe_created_at: new Date(event.created * 1000).toISOString(),
+    p_invoice: invoice as any,
+    p_subscription: subscription as any,
+    p_user_id: userId,
+    p_plan_id: planId,
+    p_stripe_customer_id: customer.id,
+    p_stripe_subscription_id: subscription.id,
+    p_status: SubscriptionService.mapStripeStatus(subscription.status),
+    p_current_period_start: periodStart.toISOString(),
+    p_current_period_end: periodEnd.toISOString(),
+    p_trial_start: subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null,
+    p_trial_end: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null
+  });
+
+  if (rpcError) {
+    console.error('[Webhook] Erro RPC process_invoice_payment_succeeded:', rpcError);
+    throw new Error(rpcError.message);
+  }
+
+  console.log(`[Webhook] ✅ Evento ${event.id} processado via RPC (subscription ${subscription.id})`);
 }
 
 /**
