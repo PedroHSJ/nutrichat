@@ -17,7 +17,7 @@ const https = require("https");
 // Carregar variáveis de ambiente do arquivo .env
 function loadEnvFile() {
   try {
-    const envPath = path.join(process.cwd(), ".env");
+    const envPath = path.join(process.cwd(), ".env.local");
     if (fs.existsSync(envPath)) {
       const envContent = fs.readFileSync(envPath, "utf8");
       envContent.split("\n").forEach((line) => {
@@ -541,7 +541,7 @@ function createReleaseWithApi(version, title, body, isPrerelease = false) {
 
   const data = JSON.stringify({
     tag_name: tagName,
-    target_commitish: "master",
+    target_commitish: "main",
     name: title,
     body: body,
     draft: false,
