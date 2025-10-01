@@ -537,7 +537,7 @@ function createReleaseWithApi(version, title, body, isPrerelease = false) {
 
   const tagName = `v${version}`;
   const repoOwner = "PedroHSJ";
-  const repoName = "escalas-ministeriais";
+  const repoName = "nutrichat";
 
   const data = JSON.stringify({
     tag_name: tagName,
@@ -555,7 +555,7 @@ function createReleaseWithApi(version, title, body, isPrerelease = false) {
     method: "POST",
     headers: {
       Authorization: `token ${token}`,
-      "User-Agent": "escalas-ministeriais-release-script",
+      "User-Agent": "nutrichat-release-script",
       Accept: "application/vnd.github.v3+json",
       "Content-Type": "application/json",
       "Content-Length": Buffer.byteLength(data),
@@ -701,10 +701,10 @@ function main() {
 
         console.log("\n📋 Links úteis:");
         console.log(
-          `� GitHub Release: https://github.com/PedroHSJ/escalas-ministeriais/releases/tag/v${nextVersion}`
+          `� GitHub Release: https://github.com/PedroHSJ/nutrichat/releases/tag/v${nextVersion}`
         );
         console.log(
-          "� Todas as Releases: https://github.com/PedroHSJ/escalas-ministeriais/releases"
+          "� Todas as Releases: https://github.com/PedroHSJ/nutrichat/releases"
         );
         console.log("🌐 Vercel Dashboard: https://vercel.com/dashboard");
       } else {
