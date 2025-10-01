@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UserSubscriptionService } from '@/lib/subscription';
-import { authService } from '@/lib/auth';
 import { createClient } from '@supabase/supabase-js';
 
 /**

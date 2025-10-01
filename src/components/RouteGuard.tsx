@@ -19,8 +19,8 @@ export function RouteGuard({
   redirectToPlans = true,
   redirectToLogin = true 
 }: RouteGuardProps) {
-  const { user, isAuthenticated, authLoading } = useChat();
-  const { subscriptionStatus, loading: subscriptionLoading, hasActivePlan } = useSubscription();
+  const { isAuthenticated, authLoading } = useChat();
+  const { loading: subscriptionLoading, hasActivePlan } = useSubscription();
   const router = useRouter();
 
   useEffect(() => {

@@ -49,17 +49,11 @@ export async function POST(request: NextRequest) {
 
     // Obter informações do plano
     // Buscar subscription completa se necessário para o fallback
-    let fullSubscription: any = null;
+    let fullSubscription: Stripe.Subscription | null = null;
     if (session.subscription && typeof session.subscription === 'string') {
       try {
         const { SubscriptionService } = await import('@/lib/stripe');
         fullSubscription = await SubscriptionService.getSubscription(session.subscription);
-        console.log('[STRIPE] Subscription completa obtida:', {
-          id: fullSubscription.id,
-          status: fullSubscription.status,
-          current_period_start: fullSubscription.current_period_start,
-          current_period_end: fullSubscription.current_period_end
-        });
       } catch (error) {
         console.error('[STRIPE] Erro ao buscar subscription completa:', error);
       }
@@ -133,16 +127,8 @@ export async function POST(request: NextRequest) {
 /**
  * Helper para garantir que a subscription existe no banco (fallback)
  */
-async function ensureSubscriptionInDatabase(subscription: any, session: Stripe.Checkout.Session) {
+async function ensureSubscriptionInDatabase(subscription: Stripe.Subscription, session: Stripe.Checkout.Session) {
   try {
-    console.log('[STRIPE] Iniciando fallback de criação de subscription');
-    console.log('[STRIPE] Dados da subscription:', {
-      id: subscription.id,
-      status: subscription.status,
-      current_period_start: subscription.current_period_start,
-      current_period_end: subscription.current_period_end,
-      customer: subscription.customer
-    });
     // Verificar se já existe no banco
     const { supabase } = await import('@/lib/supabase');
     
@@ -265,7 +251,7 @@ async function getPlanIdByStripePrice(stripePriceId: string): Promise<string | n
     
     if (!supabase) return null;
     
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('subscription_plans')
       .select('id')
       .eq('stripe_price_id', stripePriceId)

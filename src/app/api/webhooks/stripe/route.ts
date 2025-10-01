@@ -121,7 +121,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   try {
     console.log(`[Webhook] Pagamento falhou para invoice: ${invoice.id}`);
 
-    const subscriptionId = (invoice as any).subscription;
+    const subscriptionId = 'subscription' in invoice ? invoice.subscription : null;
     if (subscriptionId && typeof subscriptionId === 'string') {
       // Buscar subscription e atualizar status
       const subscription = await SubscriptionService.getSubscription(subscriptionId);
@@ -146,7 +146,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   try {
     console.log(`[Webhook] Pagamento bem-sucedido para invoice: ${invoice.id}`);
 
-    const subscriptionId = (invoice as any).subscription;
+    const subscriptionId = 'subscription' in invoice ? invoice.subscription : null;
     if (!subscriptionId || typeof subscriptionId !== 'string') {
       console.log(`[Webhook] Invoice ${invoice.id} não está associada a uma subscription`);
       return;

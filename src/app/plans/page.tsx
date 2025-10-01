@@ -26,8 +26,8 @@ export default function PlansPage() {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { user, isAuthenticated } = useChat();
-  const { subscriptionStatus, hasActivePlan, refreshSubscription } = useSubscription();
+  const { user } = useChat();
+  const { hasActivePlan } = useSubscription();
   const router = useRouter();
 
   useEffect(() => {

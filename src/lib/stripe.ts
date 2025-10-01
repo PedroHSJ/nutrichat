@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { SubscriptionConfig, SUBSCRIPTION_PLANS } from '@/types/subscription';
+import { SubscriptionConfig } from '@/types/subscription';
 
 // =====================================================
 // CONFIGURAÇÃO DO STRIPE

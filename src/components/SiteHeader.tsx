@@ -10,8 +10,7 @@ import { SubscriptionStatus } from './SubscriptionStatus';
 
 export function SiteHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isAuthenticated, user, logout } = useChat();
-  const router = useRouter();
+  const { isAuthenticated, logout } = useChat();
 
   const handleLogout = async () => {
     await logout();

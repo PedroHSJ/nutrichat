@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import { AuthUser } from './auth';
 
 export interface UserInteractionStatus {
   canInteract: boolean;

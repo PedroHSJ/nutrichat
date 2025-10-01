@@ -8,6 +8,27 @@ import {
   DailyInteractionUsage,
   SubscriptionStatus
 } from '@/types/subscription';
+import Stripe from 'stripe';
+
+// =====================================================
+// INTERFACES PARA DADOS DO STRIPE
+// =====================================================
+
+/**
+ * Interface para resultado da função SQL de verificação de interações
+ */
+interface InteractionCheckResult {
+  canInteract: boolean;
+  remainingInteractions: number;
+  dailyLimit: number;
+  planName: string;
+  planType: string;
+  subscriptionStatus: string;
+  currentPeriodEnd: string;
+  resetTime: string;
+  isTrialing?: boolean;
+  trialEnd?: string;
+}
 
 // =====================================================
 // SERVIÇO DE GERENCIAMENTO DE ASSINATURAS
@@ -68,7 +89,7 @@ export class UserSubscriptionService {
       }
       
       // Converter resposta da função SQL
-      const result = data as any;
+      const result = data as InteractionCheckResult;
       
       return {
         canInteract: result.canInteract,
@@ -190,7 +211,7 @@ export class UserSubscriptionService {
     planId: string,
     stripeCustomerId: string,
     stripeSubscriptionId: string,
-    subscriptionData: any
+    subscriptionData: Stripe.Subscription
   ): Promise<UserSubscription> {
     if (!this.isSupabaseConfigured()) {
       throw new Error('Banco de dados não configurado');
@@ -230,7 +251,7 @@ export class UserSubscriptionService {
       console.log('[DB] Dados do registro:', subscriptionRecord);
       
       // Primeiro, verificar se já existe uma subscription com esse stripe_subscription_id
-      const { data: existingSubscription, error: checkError } = await client!
+      const { data: existingSubscription } = await client!
         .from('user_subscriptions')
         .select('id, status')
         .eq('stripe_subscription_id', stripeSubscriptionId)
@@ -310,7 +331,7 @@ export class UserSubscriptionService {
    */
   static async updateSubscription(
     subscriptionId: string,
-    subscriptionData: any
+    subscriptionData: Stripe.Subscription
   ): Promise<UserSubscription> {
     if (!this.isSupabaseConfigured()) {
       throw new Error('Banco de dados não configurado');

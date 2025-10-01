@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, Loader2, Mail, Lock, User } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useNavigation } from '@/context/NavigationContext';
@@ -58,14 +57,12 @@ export function AuthForm({ onLogin, onSignUp, isLoading, error }: AuthFormProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Form submitted:', { mode, formData });
     
     if (!validateForm()) {
       console.log('Form validation failed');
       return;
     }
 
-    console.log('Form validation passed, calling auth function...');
 
     try {
       if (mode === 'login') {
@@ -88,11 +85,6 @@ export function AuthForm({ onLogin, onSignUp, isLoading, error }: AuthFormProps)
     }
   };
 
-  useEffect(() => {
-    console.log("isloading changed:", isLoading);
-    console.log("isNavigating changed:", isNavigating);
-  }, [isLoading, isNavigating]);
-
   return (
     <div className="w-full">
       <div className="text-center">
@@ -105,8 +97,8 @@ export function AuthForm({ onLogin, onSignUp, isLoading, error }: AuthFormProps)
               : 'Crie sua conta para começar'
             }
           </div>
-        </div>
-        
+      </div>
+      <div>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             {error && (
@@ -235,6 +227,7 @@ export function AuthForm({ onLogin, onSignUp, isLoading, error }: AuthFormProps)
               </Button>
           </div>
         </form>
+      </div>
       </div>
   );
 }

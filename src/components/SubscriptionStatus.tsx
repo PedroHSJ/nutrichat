@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Crown, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Crown, AlertTriangle } from 'lucide-react';
 import { useSubscription } from '@/hooks/use-subscription';
 import { useRouter } from 'next/navigation';
 

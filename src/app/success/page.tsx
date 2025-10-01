@@ -1,16 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Loader2, AlertCircle, ArrowRight } from 'lucide-react';
 
-export default function SuccessPage() {
+interface SubscriptionData {
+  success: boolean;
+  planName?: string;
+  dailyLimit?: number;
+  nextBilling?: string;
+  subscription?: {
+    planName: string;
+    status: string;
+    currentPeriodEnd: string;
+  };
+  message?: string;
+}
+
+
+function SuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [subscriptionData, setSubscriptionData] = useState<any>(null);
+  const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const sessionId = searchParams.get('session_id');
@@ -22,6 +36,7 @@ export default function SuccessPage() {
       setError('Sessão de pagamento não encontrada');
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
   const verifyPayment = async () => {
@@ -198,5 +213,25 @@ export default function SuccessPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto py-12">
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4" />
+            <p className="text-lg">Verificando seu pagamento...</p>
+            <p className="text-sm text-muted-foreground">
+              Aguarde enquanto confirmamos sua assinatura
+            </p>
+          </div>
+        </div>
+      </div>
+    }>
+      <SuccessContent />
+    </Suspense>
   );
 }

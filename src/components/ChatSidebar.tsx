@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Plus, MessageCircle, LogOut, Trash2 } from 'lucide-react';
+import { Plus, MessageCircle, LogOut } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -20,6 +20,7 @@ import { useChat } from '@/context/ChatContext';
 import { APIStatusIndicator } from '@/components/APIStatusIndicator';
 import { LGPDManager } from '@/components/LGPDManager';
 import { InteractionStatusDisplay } from '@/components/InteractionStatusDisplay';
+import { useVersion } from '@/hooks/use-version';
 import { cn } from '@/lib/utils';
 
 export function ChatSidebar() {
@@ -32,6 +33,8 @@ export function ChatSidebar() {
     deleteChat, 
     interactionStatus 
   } = useChat();
+
+  const { version, environment } = useVersion();
 
   const handleNewChat = () => {
     // Remover seleção atual para permitir começar novo chat
@@ -162,12 +165,18 @@ export function ChatSidebar() {
           className="mb-2" 
         />
         <Separator />
-        <APIStatusIndicator />
+        {process.env.NODE_ENV === 'development' && <APIStatusIndicator />}
         <LGPDManager />
         <div className="text-xs text-muted-foreground text-center">
           Especializado em Nutrição
           <br />
           Powered by AI
+        </div>
+        <div className="text-xs text-muted-foreground text-center">
+          © {new Date().getFullYear()} NutriChat
+        </div>
+        <div className="text-xs text-muted-foreground text-center">
+          v{version} {environment !== 'production' && `(${environment})`}
         </div>
       </SidebarFooter>
     </Sidebar>

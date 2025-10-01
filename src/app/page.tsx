@@ -12,7 +12,7 @@ import { useSubscription } from '@/hooks/use-subscription';
 import Link from 'next/link';
 
 export default function LandingPage() {
-  const { isAuthenticated, user } = useChat();
+  const { isAuthenticated } = useChat();
   const { hasActivePlan, loading: subscriptionLoading } = useSubscription();
   const router = useRouter();
 
@@ -259,7 +259,7 @@ export default function LandingPage() {
                 </Button>
               </Link>
               <Link href="/plans">
-                <Button size="lg" variant="outline" className="px-8 py-3 text-lg border-white text-white hover:bg-white hover:text-green-600">
+                <Button size="lg" variant="outline" className="px-8 py-3 text-lg border-white text-primary hover:bg-white hover:text-green-600">
                   Escolher Plano
                   <Users className="ml-2 h-5 w-5" />
                 </Button>

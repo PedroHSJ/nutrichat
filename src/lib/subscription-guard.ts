@@ -3,8 +3,22 @@ import { UserSubscriptionService } from '@/lib/subscription';
 import { authService } from '@/lib/auth';
 
 // =====================================================
-// MIDDLEWARE DE VALIDAÇÃO DE ASSINATURA
+// INTERFACES E TIPOS
 // =====================================================
+
+/**
+ * Interface para status de interação do usuário
+ */
+interface InteractionStatus {
+  canInteract: boolean;
+  remainingInteractions: number;
+  dailyLimit: number;
+  subscriptionStatus: 'active' | 'inactive' | 'canceled' | 'past_due' | 'unpaid' | 'trialing' | string;
+  planName?: string;
+  planType?: string;
+  currentPeriodEnd?: Date;
+  resetTime?: Date;
+}
 
 /**
  * Interface para configuração do middleware
@@ -15,6 +29,10 @@ interface SubscriptionGuardConfig {
   bypassInDevelopment?: boolean;
   customErrorMessage?: string;
 }
+
+// =====================================================
+// MIDDLEWARE DE VALIDAÇÃO DE ASSINATURA  
+// =====================================================
 
 /**
  * Classe principal do middleware de validação
@@ -168,7 +186,7 @@ export class SubscriptionGuard {
   /**
    * Obter mensagem de erro baseada no status
    */
-  private static getErrorMessage(status: any, customMessage?: string): string {
+  private static getErrorMessage(status: InteractionStatus, customMessage?: string): string {
     if (customMessage) return customMessage;
     
     switch (status.subscriptionStatus) {

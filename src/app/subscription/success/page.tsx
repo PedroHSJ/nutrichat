@@ -1,18 +1,43 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
-export default function SubscriptionSuccessPage() {
+const Loading = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 p-4">
+    <Card className="w-full max-w-md">
+      <CardContent className="pt-6">
+        <div className="flex flex-col items-center text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
+          <h3 className="text-lg font-semibold mb-2">
+            Verificando pagamento...
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Aguarde enquanto confirmamos sua assinatura.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+);
+
+interface SubscriptionDetails {
+  planName: string;
+  dailyLimit: number;
+  nextBilling?: string;
+}
+
+
+function SubscriptionSuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const [loading, setLoading] = useState(true);
   const [paymentStatus, setPaymentStatus] = useState<'success' | 'error' | 'processing'>('processing');
-  const [subscriptionDetails, setSubscriptionDetails] = useState<any>(null);
+  const [subscriptionDetails, setSubscriptionDetails] = useState<SubscriptionDetails | null>(null);
 
   useEffect(() => {
     if (sessionId) {
@@ -21,6 +46,7 @@ export default function SubscriptionSuccessPage() {
       setPaymentStatus('error');
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
   const verifyPayment = async () => {
@@ -50,23 +76,7 @@ export default function SubscriptionSuccessPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center text-center">
-              <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
-                Verificando pagamento...
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Aguarde enquanto confirmamos sua assinatura.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <Loading />;
   }
 
   if (paymentStatus === 'error') {
@@ -158,5 +168,13 @@ export default function SubscriptionSuccessPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SubscriptionSuccessPage() {
+  return (
+    <Suspense fallback={<Loading />}> 
+      <SubscriptionSuccessContent />
+    </Suspense>
   );
 }
