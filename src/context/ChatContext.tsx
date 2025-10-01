@@ -6,7 +6,6 @@ import { Chat, Message, ChatContextType } from '@/types/chat';
 import { generateId } from '@/lib/utils';
 import { chatPersistence } from '@/lib/persistence';
 import { authService, AuthUser } from '@/lib/auth';
-import { UserSubscriptionService } from '@/lib/subscription';
 import { UserInteractionStatus } from '@/types/subscription';
 import { useAuthHeaders } from '@/hooks/use-auth-headers';
 
@@ -133,7 +132,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
 
       // Verificar se o usuário tem um plano ativo
-      const interactionStatus = await UserSubscriptionService.canUserInteract(authUser.id);
+      const statusResponse = await fetch('/api/subscription/status', {
+        headers: authHeaders
+      });
+      const interactionStatus = statusResponse.ok ? await statusResponse.json() : null;
       setInteractionStatus(interactionStatus);
       
       // Aguardar um pouco antes do redirecionamento para garantir que os estados foram atualizados
@@ -181,7 +183,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       setHasConsent(false);
       
       // Verificar status de assinatura (novos usuários normalmente não terão plano)
-      const interactionStatus = await UserSubscriptionService.canUserInteract(authUser.id);
+      const statusResponse = await fetch('/api/subscription/status', {
+        headers: authHeaders
+      });
+      const interactionStatus = statusResponse.ok ? await statusResponse.json() : null;
       setInteractionStatus(interactionStatus);
       
       console.log('SignUp process completed successfully');
@@ -345,12 +350,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const status = await UserSubscriptionService.canUserInteract(user.id);
+      const response = await fetch('/api/subscription/status', {
+        headers: authHeaders
+      });
+      const status = response.ok ? await response.json() : null;
       setInteractionStatus(status);
     } catch (error) {
       console.error('Erro ao buscar status de interações:', error);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, authHeaders]);
 
   // Atualizar status de interações quando usuário fizer login
   useEffect(() => {
@@ -417,8 +425,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       // Verificar limite de interações antes de enviar
       if (isAuthenticated && user) {
-        const { canInteract } = await UserSubscriptionService.canUserInteract(user.id);
-        if (!canInteract) {
+        const statusResponse = await fetch('/api/subscription/status', {
+          headers: authHeaders
+        });
+        const status = statusResponse.ok ? await statusResponse.json() : null;
+        if (!status?.canInteract) {
           throw new Error('Você atingiu o limite diário de interações. Tente novamente amanhã ou upgrade seu plano.');
         }
       }
@@ -437,13 +448,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       await addMessage(targetChatId, userMessage);
 
-      // Incrementar contador de interações ANTES de chamar a API
-      if (isAuthenticated && user) {
-        await UserSubscriptionService.incrementInteractionUsage(user.id);
-        // Atualizar status local
-        await refreshInteractionStatus();
-      }
-
+      // A API de chat já incrementa o contador de interações automaticamente
+      // Apenas atualizar status local após sucesso
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 
@@ -474,6 +480,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       };
 
       await addMessage(targetChatId, assistantMessage);
+
+      // Atualizar status de interação após sucesso
+      if (isAuthenticated && user) {
+        await refreshInteractionStatus();
+      }
 
       return targetChatId;
     } catch (error) {

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserSubscriptionService } from '@/lib/subscription';
 import { UserInteractionStatus } from '@/types/subscription';
 import { useChat } from '@/context/ChatContext';
+import { useAuthHeaders } from '@/hooks/use-auth-headers';
 
 export function useSubscription() {
   const { user, isAuthenticated } = useChat();
+  const authHeaders = useAuthHeaders();
   const [subscriptionStatus, setSubscriptionStatus] = useState<UserInteractionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +24,15 @@ export function useSubscription() {
         setLoading(true);
         setError(null);
         
-        const status = await UserSubscriptionService.canUserInteract(user.id);
+        const response = await fetch('/api/subscription/status', {
+          headers: authHeaders
+        });
+        
+        if (!response.ok) {
+          throw new Error('Erro ao verificar status da assinatura');
+        }
+        
+        const status = await response.json();
         setSubscriptionStatus(status);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Erro ao verificar assinatura';
@@ -44,7 +53,15 @@ export function useSubscription() {
       setLoading(true);
       setError(null);
       
-      const status = await UserSubscriptionService.canUserInteract(user.id);
+      const response = await fetch('/api/subscription/status', {
+        headers: authHeaders
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erro ao verificar status da assinatura');
+      }
+      
+      const status = await response.json();
       setSubscriptionStatus(status);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar assinatura';

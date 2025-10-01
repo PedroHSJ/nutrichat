@@ -46,22 +46,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Obter status completo do usuário
-    const stats = await UserSubscriptionService.getUserStats(session.user.id);
-    console.log(`[API] Status da assinatura para usuário ${session.user.id}:`, stats);
-    // Formatar resposta para o frontend
-    const subscription = stats.subscription;
-    return NextResponse.json({
-      hasSubscription: stats.hasActiveSubscription,
-      planName: subscription?.plan?.name || 'Sem plano',
-      planType: subscription?.plan?.id || 'free',
-      status: subscription?.status,
-      currentPeriodEnd: subscription?.current_period_end,
-      dailyLimit: stats.dailyUsage?.daily_limit,
-      remainingInteractions: stats.dailyUsage?.daily_limit && stats.dailyUsage?.interactions_used !== undefined
-        ? stats.dailyUsage.daily_limit - stats.dailyUsage.interactions_used
-        : undefined,
-      cancelAtPeriodEnd: !!subscription?.cancel_at,
-    });
+    const interactionStatus = await UserSubscriptionService.canUserInteract(session.user.id);
+    console.log(`[API] Status da assinatura para usuário ${session.user.id}:`, interactionStatus);
+    
+    // Retornar status no formato UserInteractionStatus
+    return NextResponse.json(interactionStatus);
 
   } catch (error) {
     console.error('[API] Erro ao buscar status da assinatura:', error);
