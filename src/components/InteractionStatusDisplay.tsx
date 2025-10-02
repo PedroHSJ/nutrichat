@@ -1,6 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
+import { format, formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, Clock, Crown, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -47,17 +49,23 @@ export function InteractionStatusDisplay({
   const shouldShowAlert = !canInteract || remainingInteractions <= 5;
   const isLimitReached = !canInteract;
 
-  const formatResetTime = (date: Date) => {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    if (date?.toDateString() === tomorrow?.toDateString()) {
-      return 'amanhã';
+  const formattedResetExact = useMemo(() => {
+    if (!resetTime) return '';
+    try {
+      return format(resetTime, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    } catch {
+      return resetTime.toLocaleString('pt-BR');
     }
+  }, [resetTime]);
 
-    return date?.toLocaleDateString('pt-BR');
-  };
+  const formattedResetRelative = useMemo(() => {
+    if (!resetTime) return '';
+    try {
+      return formatDistanceToNow(resetTime, { addSuffix: true, locale: ptBR });
+    } catch {
+      return '';
+    }
+  }, [resetTime]);
 
   // Cores da barra de progresso
   const getProgressColor = () => {
@@ -101,8 +109,9 @@ export function InteractionStatusDisplay({
             <span>
               {remainingInteractions} restantes
             </span>
-            <span>
-              Reset: {formatResetTime(resetTime)}
+            <span className="text-right">
+              <span className="block">Reset em: {formattedResetRelative || '—'}</span>
+              <span className="block text-[10px] opacity-70">({formattedResetExact})</span>
             </span>
           </div>
         </div>
@@ -123,8 +132,8 @@ export function InteractionStatusDisplay({
               <div className="space-y-1">
                 <p className="font-medium">Limite diário atingido!</p>
                 <p className="text-xs">
-                  Você usou todas as {dailyLimit} interações disponíveis hoje.
-                  Suas interações serão resetadas {formatResetTime(resetTime)}.
+                  Você usou todas as {dailyLimit} interações disponíveis hoje. Nova cota {formattedResetRelative ? `em ${formattedResetRelative}` : ''}.
+                  <br /> <span className="opacity-70">({formattedResetExact})</span>
                 </p>
                 {planType === 'free' && (
                   <p className="text-xs">
