@@ -133,10 +133,11 @@ export class ChatPersistenceService {
 
       for (const chatData of chatsData || []) {
         const messages: Message[] = [];
-        
-        // Descriptografar mensagens
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        for (const msgData of (chatData as any).messages || []) {
+
+        // Tipar a relação messages (join) vinda do select composto
+        type RawMessageRow = { id: string; content_encrypted: string; role: Message['role']; created_at: string };
+        const rawMessages: RawMessageRow[] = (chatData as unknown as { messages?: RawMessageRow[] }).messages || [];
+        for (const msgData of rawMessages) {
           try {
             const decryptedContent = decryptSensitiveData(msgData.content_encrypted);
             messages.push({

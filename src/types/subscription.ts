@@ -1,19 +1,31 @@
 // Tipos para sistema de assinaturas e planos
+export interface SubscriptionPlanPriceVersion {
+  id: string;
+  plan_id: string;
+  stripe_price_id: string;
+  amount_cents: number;
+  currency: string;
+  billing_interval: string; // 'month' | 'year'
+  is_current: boolean;
+  created_at: string | Date;
+  deprecated_at?: string | Date | null;
+}
+
 export interface SubscriptionPlan {
   id: string;
   name: string;
   slug: string;
   description?: string;
-  stripe_price_id: string;
   stripe_product_id: string;
   daily_interactions_limit: number;
-  price_cents: number; // preço em centavos
-  currency?: string;
-  interval: 'month' | 'year';
   features: string[];
   active?: boolean;
   created_at: Date;
   updated_at: Date;
+  // Nova referência
+  current_price_version_id?: string;
+  current_version?: SubscriptionPlanPriceVersion; // carregada via join manual
+  price_versions?: SubscriptionPlanPriceVersion[]; // opcional para admin
 }
 
 // Status da assinatura baseado nos status do Stripe
@@ -98,6 +110,7 @@ export interface AvailablePlan {
   productId: string;
   priceCents: number;
   currency?: string;
+  interval?: string;
 }
 
 // Planos disponíveis (constantes)

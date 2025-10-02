@@ -10,7 +10,19 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
  *  - Atualizar períodos e status se divergirem
  *  - Registrar eventos de correção
  */
-async function logAudit(action: string, data: Record<string, any>) {
+interface AuditDataBase {
+  stripe_subscription_id?: string;
+  stripe_customer_id?: string;
+  user_id?: string;
+  plan_id?: string;
+  status_stripe?: string;
+  status_db?: string;
+  reason?: string;
+  period_end_stripe?: string;
+  period_end_db?: string;
+  error?: string;
+}
+async function logAudit(action: string, data: AuditDataBase) {
   try {
     if (!supabaseAdmin) return;
     const record = { action, ...data };
@@ -27,10 +39,15 @@ export async function GET() {
     return NextResponse.json({ error: 'supabaseAdmin não configurado' }, { status: 500 });
   }
 
-  const repaired: any[] = [];
-  const skipped: any[] = [];
-  const errors: any[] = [];
-  const divergences: any[] = [];
+  interface RepairedEntry { subId: string; action: 'created' | 'updated' }
+  interface SkippedEntry { subId: string; reason: string }
+  interface ErrorEntry { subId: string; error: string }
+  interface DivergenceEntry { subId: string; reason: string; periodDiff?: boolean; statusDiff?: boolean; statusStripe?: string }
+
+  const repaired: RepairedEntry[] = [];
+  const skipped: SkippedEntry[] = [];
+  const errors: ErrorEntry[] = [];
+  const divergences: DivergenceEntry[] = [];
 
   try {
     // Paginação Stripe: até 100 por chamada
@@ -84,7 +101,7 @@ export async function GET() {
             // Obter user via customer -> email -> userId (fallback se não temos user)
             const customerId = s.customer as string;
             const customer = await stripe.customers.retrieve(customerId);
-            const email = (customer as any).email as string | undefined;
+            const email = (customer as Stripe.Customer).email || undefined;
             if (!email) {
               skipped.push({ subId, reason: 'Customer sem email' });
               continue;
@@ -212,8 +229,9 @@ export async function GET() {
                 reason: 'uptodate'
               });
             }
-          } catch (innerError: any) {
-            errors.push({ subId: (innerError && innerError.subId) || 'unknown', error: innerError.message || String(innerError) });
+          } catch (innerError) {
+            const errObj = innerError as { subId?: string; message?: string };
+            errors.push({ subId: errObj.subId || 'unknown', error: errObj.message || String(innerError) });
           }
         }
 
@@ -235,7 +253,7 @@ export async function GET() {
       skipped: skipped.slice(0, 30),
       errors: errors.slice(0, 30)
     });
-  } catch (error: any) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ ok: false, error: (error as Error).message }, { status: 500 });
   }
 }

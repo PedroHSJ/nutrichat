@@ -303,7 +303,7 @@ export class SubscriptionService {
     const { UserSubscriptionService } = await import('@/lib/subscription');
     const plans = await UserSubscriptionService.getAvailablePlans();
     
-    return plans.find(plan => plan.stripe_price_id === priceId) || null;
+  return plans.find(plan => plan.current_version?.stripe_price_id === priceId) || null;
   }
   
   /**
@@ -325,29 +325,42 @@ export class SubscriptionService {
           type: plan.slug,
           name: plan.name,
           dailyLimit: plan.daily_interactions_limit,
-          priceId: plan.stripe_price_id,
+          priceId: plan.current_version?.stripe_price_id,
           productId: plan.stripe_product_id,
-          priceCents: plan.price_cents, // preço do banco
-          currency: plan.currency || 'brl',
+          priceCents: plan.current_version?.amount_cents || 0,
+          currency: plan.current_version?.currency || 'brl',
           features: plan.features || []
-        }));
+        })).filter(p => p.priceId); // remove planos sem versão atual
       }
       
       // Buscar preços reais da Stripe para cada plano
       const plansWithStripeData = await Promise.all(
         dbPlans.map(async (plan) => {
+          const priceId = plan.current_version?.stripe_price_id;
+          if(!priceId) {
+            return {
+              type: plan.slug,
+              name: plan.name,
+              dailyLimit: plan.daily_interactions_limit,
+              priceId: undefined,
+              productId: plan.stripe_product_id,
+              priceCents: 0,
+              currency: 'brl',
+              features: plan.features || []
+            };
+          }
           try {
-            console.log(`[Stripe] Buscando preço: ${plan.stripe_price_id}`);
-            const stripePrice = await stripe.prices.retrieve(plan.stripe_price_id);
+            console.log(`[Stripe] Buscando preço: ${priceId}`);
+            const stripePrice = await stripe.prices.retrieve(priceId);
             
             return {
               type: plan.slug,
               name: plan.name,
               dailyLimit: plan.daily_interactions_limit,
-              priceId: plan.stripe_price_id,
+              priceId: priceId,
               productId: plan.stripe_product_id,
-              priceCents: stripePrice.unit_amount || plan.price_cents, // Stripe como prioridade
-              currency: stripePrice.currency || plan.currency || 'brl',
+              priceCents: stripePrice.unit_amount || plan.current_version?.amount_cents || 0, // Stripe como prioridade
+              currency: stripePrice.currency || plan.current_version?.currency || 'brl',
               features: plan.features || [],
               // Dados adicionais do Stripe
               stripeData: {
@@ -357,23 +370,23 @@ export class SubscriptionService {
               }
             };
           } catch (error) {
-            console.warn(`[Stripe] Erro ao buscar preço ${plan.stripe_price_id}, usando dados do banco:`, error);
+            console.warn(`[Stripe] Erro ao buscar preço ${priceId}, usando dados do banco:`, error);
             // Fallback para dados do banco em caso de erro
             return {
               type: plan.slug,
               name: plan.name,
               dailyLimit: plan.daily_interactions_limit,
-              priceId: plan.stripe_price_id,
+              priceId: priceId,
               productId: plan.stripe_product_id,
-              priceCents: plan.price_cents, // fallback do banco
-              currency: plan.currency || 'brl',
+              priceCents: plan.current_version?.amount_cents || 0, // fallback
+              currency: plan.current_version?.currency || 'brl',
               features: plan.features || []
             };
           }
         })
       );
       
-      return plansWithStripeData;
+  return plansWithStripeData.filter(p => p.priceId); // filtra planos incompletos
       
     } catch (error) {
       console.error('Erro ao buscar planos:', error);

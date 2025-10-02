@@ -419,19 +419,66 @@ export class UserSubscriptionService {
     
     try {
       const client = supabase || supabaseAdmin;
-      const { data, error } = await client!
+      // Buscar planos ativos
+      const { data: plans, error: plansErr } = await client!
         .from('subscription_plans')
         .select('*')
-        .eq('active', true)
-        .order('price_cents', { ascending: true });
-      
-      if (error) {
-        console.error('Erro ao buscar planos:', error);
+        .eq('active', true);
+      if (plansErr) {
+        console.error('Erro ao buscar planos:', plansErr);
         return [];
       }
-      
-      return data as SubscriptionPlan[];
-      
+
+      if(!plans || plans.length === 0) return [];
+
+      const planIds = plans.map(p => p.id);
+      const { data: versions, error: verErr } = await client!
+        .from('subscription_plan_prices')
+        .select('*')
+        .in('plan_id', planIds)
+        .eq('is_current', true);
+      if (verErr) {
+        console.error('Erro ao buscar versões de preço:', verErr);
+      }
+
+      interface PriceVersionRow {
+        id: string;
+        plan_id: string;
+        stripe_price_id: string | null;
+        amount_cents: number;
+        currency: string;
+        billing_interval: string;
+        is_current: boolean;
+        created_at: string;
+        deprecated_at: string | null;
+      }
+      const byId: Record<string, PriceVersionRow> = {};
+      (versions || []).forEach(v => { byId[v.plan_id] = v as PriceVersionRow; });
+
+      // Montar retorno com current_version
+      const enriched = plans.map(p => ({
+        ...p,
+        current_version: byId[p.id] ? {
+          id: byId[p.id].id,
+            plan_id: byId[p.id].plan_id,
+            stripe_price_id: byId[p.id].stripe_price_id,
+            amount_cents: byId[p.id].amount_cents,
+            currency: byId[p.id].currency,
+            billing_interval: byId[p.id].billing_interval,
+            is_current: byId[p.id].is_current,
+            created_at: byId[p.id].created_at,
+            deprecated_at: byId[p.id].deprecated_at
+        } : undefined
+      }));
+
+      // Ordenar por preço atual
+      enriched.sort((a,b) => {
+        const ap = a.current_version?.amount_cents ?? 0;
+        const bp = b.current_version?.amount_cents ?? 0;
+        return ap - bp;
+      });
+
+      return enriched as SubscriptionPlan[];
     } catch (error) {
       console.error('Erro ao obter planos:', error);
       return [];

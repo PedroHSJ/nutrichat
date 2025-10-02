@@ -153,7 +153,8 @@ async function handleInvoicePaymentSucceeded(event: Stripe.Event, invoice: Strip
     throw new Error('Supabase admin não configurado');
   }
 
-  const subscriptionId = (invoice as any).subscription as string | undefined;
+  const rawSub = (invoice as Stripe.Invoice & { subscription?: string | Stripe.Subscription | null }).subscription;
+  const subscriptionId = typeof rawSub === 'string' ? rawSub : (typeof (rawSub as Stripe.Subscription | undefined)?.id === 'string' ? (rawSub as Stripe.Subscription).id : undefined);
   if (!subscriptionId || typeof subscriptionId !== 'string') {
     console.log(`[Webhook] Invoice ${invoice.id} sem subscription vinculada`);
     return;
@@ -194,12 +195,29 @@ async function handleInvoicePaymentSucceeded(event: Stripe.Event, invoice: Strip
   }
 
   // Chamando a função RPC (tudo dentro de transação e idempotente)
-  const { error: rpcError } = await supabaseAdmin.rpc('process_invoice_payment_succeeded', {
+  interface InvoiceRPCPayload {
+    p_event_id: string;
+    p_event_type: string | null;
+    p_stripe_created_at: string;
+    p_invoice: Stripe.Invoice;
+    p_subscription: Stripe.Subscription;
+    p_user_id: string;
+    p_plan_id: string;
+    p_stripe_customer_id: string;
+    p_stripe_subscription_id: string;
+    p_status: string;
+    p_current_period_start: string;
+    p_current_period_end: string;
+    p_trial_start: string | null;
+    p_trial_end: string | null;
+  }
+
+  const rpcPayload: InvoiceRPCPayload = {
     p_event_id: event.id,
     p_event_type: event.type,
     p_stripe_created_at: new Date(event.created * 1000).toISOString(),
-    p_invoice: invoice as any,
-    p_subscription: subscription as any,
+    p_invoice: invoice,
+    p_subscription: subscription,
     p_user_id: userId,
     p_plan_id: planId,
     p_stripe_customer_id: customer.id,
@@ -209,7 +227,9 @@ async function handleInvoicePaymentSucceeded(event: Stripe.Event, invoice: Strip
     p_current_period_end: periodEnd.toISOString(),
     p_trial_start: subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null,
     p_trial_end: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null
-  });
+  };
+
+  const { error: rpcError } = await supabaseAdmin.rpc('process_invoice_payment_succeeded', rpcPayload);
 
   if (rpcError) {
     console.error('[Webhook] Erro RPC process_invoice_payment_succeeded:', rpcError);
@@ -224,30 +244,27 @@ async function handleInvoicePaymentSucceeded(event: Stripe.Event, invoice: Strip
  */
 async function getPlanIdByStripePrice(stripePriceId: string): Promise<string | null> {
   try {
-    console.log(`[Webhook] Buscando plano por stripe_price_id: ${stripePriceId}`);
-    
+    console.log(`[Webhook] Buscando plano por stripe_price_id (version table): ${stripePriceId}`);
     const { supabaseAdmin } = await import('@/lib/supabase-admin');
-    
     if (!supabaseAdmin) {
       console.error('[Webhook] Supabase admin não configurado');
       return null;
     }
-    
+
     const { data, error } = await supabaseAdmin
-      .from('subscription_plans')
-      .select('id')
+      .from('subscription_plan_prices')
+      .select('plan_id')
       .eq('stripe_price_id', stripePriceId)
-      .eq('active', true)
+      .eq('is_current', true)
       .single();
-    
+
     if (error) {
-      console.error('[Webhook] Erro ao buscar plano por stripe_price_id:', error);
+      console.error('[Webhook] Erro ao buscar price version atual:', error);
       return null;
     }
-    
-    return data?.id || null;
+    return data?.plan_id || null;
   } catch (error) {
-    console.error('[Webhook] Erro ao buscar plano:', error);
+    console.error('[Webhook] Erro ao buscar plano via price version:', error);
     return null;
   }
 }

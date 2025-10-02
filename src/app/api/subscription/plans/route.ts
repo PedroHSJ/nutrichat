@@ -9,7 +9,9 @@ export async function GET() {
   try {
     const plans = await StripeService.getAvailablePlans();
     
-    const formattedPlans = plans.map((plan) => ({
+    const formattedPlans = plans
+      .filter(p => p.priceId) // garante apenas planos com versão atual
+      .map((plan) => ({
       type: plan.type,
       name: plan.name,
       dailyLimit: plan.dailyLimit,

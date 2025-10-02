@@ -6,10 +6,18 @@ const TOKEN_BYTES = 32;
 const MAX_AGE_SECONDS = 60 * 60 * 8; // 8h
 const HASH_ALGO = 'sha256';
 
+interface CookieReadResult { name: string; value: string }
+interface CookieSetOptions {
+  httpOnly?: boolean;
+  sameSite?: 'lax' | 'strict' | 'none';
+  secure?: boolean;
+  path?: string;
+  maxAge?: number;
+}
 interface CookieStoreLike {
-  get(name: string): { name: string; value: string } | undefined;
-  set(name: string, value: string, opts: any): void;
-  delete(name: string): void;
+  get(name: string): CookieReadResult | undefined;
+  set?(name: string, value: string, opts: CookieSetOptions): void; // set/delete apenas em contextos mutáveis
+  delete?(name: string): void;
 }
 
 import { supabaseAdmin } from './supabase-admin';
@@ -19,10 +27,13 @@ interface SessionRecord { token_hash: string; expires_at: string; }
 function randomToken() { return crypto.randomBytes(TOKEN_BYTES).toString('hex'); }
 function hashToken(token: string) { return crypto.createHash(HASH_ALGO).update(token).digest('hex'); }
 
-function getStore(): CookieStoreLike { return cookies() as unknown as CookieStoreLike; }
+async function getCookieStore(): Promise<CookieStoreLike> {
+  return await cookies();
+}
 
-export async function isAdminSession(_ua: string | undefined, store: CookieStoreLike = getStore()): Promise<boolean> {
-  const c = store.get(COOKIE_NAME);
+export async function isAdminSession(_ua: string | undefined, store?: CookieStoreLike): Promise<boolean> {
+  const cstore = store || await getCookieStore();
+  const c = cstore.get(COOKIE_NAME);
   if (!c) return false;
   if (!supabaseAdmin) return false;
   const token = c.value;
@@ -38,7 +49,7 @@ export async function isAdminSession(_ua: string | undefined, store: CookieStore
   return true;
 }
 
-export async function createAdminSession(_ua: string | undefined, store: CookieStoreLike = getStore(), meta?: { ip?: string; userAgent?: string }) {
+export async function createAdminSession(_ua: string | undefined, store?: CookieStoreLike, meta?: { ip?: string; userAgent?: string }): Promise<boolean> {
   const token = randomToken();
   const tokenHash = hashToken(token);
   const expiresAt = new Date(Date.now() + MAX_AGE_SECONDS * 1000).toISOString();
@@ -56,18 +67,22 @@ export async function createAdminSession(_ua: string | undefined, store: CookieS
       return false;
     }
   }
-  store.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: MAX_AGE_SECONDS
-  });
+  const cstore = store || await getCookieStore();
+  if (typeof cstore.set === 'function') {
+    cstore.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: MAX_AGE_SECONDS
+    });
+  }
   return true;
 }
 
-export async function destroyAdminSession(store: CookieStoreLike = getStore()) {
-  const c = store.get(COOKIE_NAME);
+export async function destroyAdminSession(store?: CookieStoreLike) {
+  const cstore = store || await getCookieStore();
+  const c = cstore.get(COOKIE_NAME);
   if (c && supabaseAdmin) {
     const tokenHash = hashToken(c.value);
     await supabaseAdmin
@@ -75,7 +90,9 @@ export async function destroyAdminSession(store: CookieStoreLike = getStore()) {
       .update({ revoked_at: new Date().toISOString() })
       .eq('token_hash', tokenHash);
   }
-  store.delete(COOKIE_NAME);
+  if (typeof (cstore as CookieStoreLike).delete === 'function') {
+    (cstore as CookieStoreLike).delete!(COOKIE_NAME);
+  }
 }
 
 export function adminPasswordIsSet(): boolean { return !!process.env.ADMIN_PASSWORD; }

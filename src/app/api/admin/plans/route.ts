@@ -14,20 +14,38 @@ export async function GET(request: Request) {
   const { data: plans, error } = await supabaseAdmin
     .from('subscription_plans')
     .select('*')
-    .order('price_cents', { ascending: true });
+    .eq('active', true)
+    .order('name', { ascending: true });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Buscar preços versionados
-  const { data: prices, error: priceErr } = await supabaseAdmin
+  // Nova tabela versionada usa colunas amount_cents e billing_interval
+  const { data: pricesRaw, error: priceErr } = await supabaseAdmin
     .from('subscription_plan_prices')
     .select('*')
     .order('created_at', { ascending: false });
   if (priceErr) return NextResponse.json({ error: priceErr.message }, { status: 500 });
 
-  const byPlan = (plans||[]).map(p => ({
-    ...p,
-    price_versions: (prices||[]).filter(pr => pr.plan_id === p.id)
-  }));
+  // Mapear para o formato esperado pelo frontend (price_cents / interval)
+  const byPlan = (plans||[]).map(p => {
+    const versions = (pricesRaw||[])
+      .filter(pr => pr.plan_id === p.id)
+      .map(pr => ({
+        id: pr.id,
+        price_cents: pr.amount_cents,
+        interval: pr.billing_interval,
+        is_current: pr.is_current,
+        created_at: pr.created_at
+      }));
+    const current = versions.find(v => v.is_current);
+    return {
+      ...p,
+      // Campos sintéticos para manter UI existente funcionando
+      price_cents: current?.price_cents || 0,
+      interval: current?.interval || 'month',
+      price_versions: versions
+    };
+  });
 
   return NextResponse.json({ plans: byPlan });
 }
@@ -39,15 +57,17 @@ export async function PUT(request: Request) {
   if(!supabaseAdmin) return NextResponse.json({ error: 'Supabase não configurado' }, { status: 500 });
   if(!stripe) return NextResponse.json({ error: 'Stripe não configurado' }, { status: 500 });
 
-  let body: any;
-  try { body = await request.json(); } catch { return NextResponse.json({ error: 'JSON inválido' }, { status: 400 }); }
+  type BillingInterval = 'day' | 'week' | 'month' | 'year';
+  interface PutBody { plan_id?: string; new_price_cents?: number; interval?: BillingInterval; features?: string[]; name?: string }
+  let body: PutBody;
+  try { body = await request.json() as PutBody; } catch { return NextResponse.json({ error: 'JSON inválido' }, { status: 400 }); }
 
   const { plan_id, new_price_cents, interval, features, name } = body;
   if (!plan_id || !new_price_cents || !interval) {
     return NextResponse.json({ error: 'Campos obrigatórios: plan_id, new_price_cents, interval' }, { status: 400 });
   }
 
-  // Carregar plano atual
+  // Carregar plano base
   const { data: plan, error: planErr } = await supabaseAdmin
     .from('subscription_plans')
     .select('*')
@@ -55,12 +75,20 @@ export async function PUT(request: Request) {
     .single();
   if (planErr || !plan) return NextResponse.json({ error: 'Plano não encontrado' }, { status: 404 });
 
+  // Recuperar versão atual para desativar price antigo no Stripe
+  const { data: currentVersion } = await supabaseAdmin
+    .from('subscription_plan_prices')
+    .select('*')
+    .eq('plan_id', plan_id)
+    .eq('is_current', true)
+    .maybeSingle();
+
   // Criar novo price no Stripe
   const amount = Number(new_price_cents);
   try {
     // desativar price anterior no Stripe (se existir)
-    if (plan.stripe_price_id) {
-      try { await stripe.prices.update(plan.stripe_price_id, { active: false }); } catch (e) { console.warn('Falha ao desativar price antigo', e); }
+    if (currentVersion?.stripe_price_id) {
+      try { await stripe.prices.update(currentVersion.stripe_price_id, { active: false }); } catch (e) { console.warn('Falha ao desativar price antigo', e); }
     }
 
     const newPrice = await stripe.prices.create({
@@ -74,40 +102,36 @@ export async function PUT(request: Request) {
     // Iniciar transação simulada (Supabase PostgREST não suporta multi statements direto).
     // Estratégia: marcar antigas versões como is_current=false, inserir nova, atualizar plano.
 
-    const { error: unsetErr } = await supabaseAdmin
-      .from('subscription_plan_prices')
-      .update({ is_current: false })
-      .eq('plan_id', plan_id)
-      .eq('is_current', true);
-    if (unsetErr) return NextResponse.json({ error: 'Falha ao limpar versões atuais' }, { status: 500 });
-
-    const { error: insertErr } = await supabaseAdmin
+    const { data: newVersion, error: insertErr } = await supabaseAdmin
       .from('subscription_plan_prices')
       .insert({
         plan_id,
         stripe_price_id: newPrice.id,
-        price_cents: amount,
-        interval,
+        amount_cents: amount,
+        currency: plan.currency || 'brl',
+        billing_interval: interval,
         is_current: true
-      });
-    if (insertErr) return NextResponse.json({ error: 'Falha ao inserir nova versão de preço' }, { status: 500 });
-
-    const { error: updErr } = await supabaseAdmin
-      .from('subscription_plans')
-      .update({
-        stripe_price_id: newPrice.id,
-        price_cents: amount,
-        interval,
-        features: features || plan.features,
-        name: name || plan.name,
-        updated_at: new Date().toISOString()
       })
-      .eq('id', plan_id);
-    if (updErr) return NextResponse.json({ error: 'Falha ao atualizar plano base' }, { status: 500 });
+      .select()
+      .single();
+    if (insertErr) return NextResponse.json({ error: 'Falha ao inserir nova versão de preço' }, { status: 500 });
+    // Atualizar apenas campos de descrição / features do plano base
+    if (features || name) {
+      const { error: updErr } = await supabaseAdmin
+        .from('subscription_plans')
+        .update({
+          features: features || plan.features,
+          name: name || plan.name,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', plan_id);
+      if (updErr) return NextResponse.json({ error: 'Falha ao atualizar plano base' }, { status: 500 });
+    }
 
-    return NextResponse.json({ success: true, new_price_id: newPrice.id });
-  } catch (err:any) {
+    return NextResponse.json({ success: true, new_price_id: newPrice.id, version_id: newVersion.id });
+  } catch (err) {
     console.error('[Admin Plans PUT] erro', err);
-    return NextResponse.json({ error: 'Erro ao criar novo preço' }, { status: 500 });
+    const message = (err as Error).message || 'Erro ao criar novo preço';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

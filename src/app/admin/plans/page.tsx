@@ -12,7 +12,10 @@ async function getPlans() {
 }
 
 export default async function AdminPlansPage() {
-  const ok = await isAdminSession(undefined, cookies() as any);
+  const cookieStore = await cookies();
+  const ok = await isAdminSession(undefined, {
+    get: (name: string) => cookieStore.get(name) || undefined
+  });
   if (!ok) {
     return <div className="p-8 text-center"><p className="text-gray-600">Não autorizado. <a href="/admin/login" className="text-green-600 underline">Login</a></p></div>;
   }

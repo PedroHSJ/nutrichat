@@ -132,20 +132,34 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
 
       // Verificar se o usuário tem um plano ativo
-      const statusResponse = await fetch('/api/subscription/status', {
-        headers: authHeaders
-      });
-      const interactionStatus = statusResponse.ok ? await statusResponse.json() : null;
+      const statusResponse = await fetch('/api/subscription/status', { headers: authHeaders });
+      let interactionStatus: UserInteractionStatus | null = null;
+      if (statusResponse.ok) {
+        try { interactionStatus = await statusResponse.json(); } catch { interactionStatus = null; }
+      }
+      if (!interactionStatus) {
+        // Fallback default para evitar quebrar lógica de redirecionamento
+        interactionStatus = {
+          canInteract: false,
+          remainingInteractions: 0,
+          dailyLimit: 0,
+          planName: 'Free',
+          planType: 'free',
+          subscriptionStatus: 'incomplete',
+          currentPeriodEnd: new Date(),
+          resetTime: new Date()
+        } as UserInteractionStatus;
+      }
       setInteractionStatus(interactionStatus);
       
       // Aguardar um pouco antes do redirecionamento para garantir que os estados foram atualizados
       await new Promise(resolve => setTimeout(resolve, 100));
       
       // Redirecionar para planos se não tiver plano ativo
-      if (!interactionStatus.canInteract && interactionStatus.planType === 'free') {
+      if (interactionStatus && !interactionStatus.canInteract && interactionStatus.planType === 'free') {
         // Usuário não tem plano, redirecionar para página de planos
         router.push('/plans');
-      } else if (consent && interactionStatus.canInteract) {
+      } else if (consent && interactionStatus && interactionStatus.canInteract) {
         // Se tem plano ativo, redirecionar para chat
         router.push('/chat');
       }
@@ -183,10 +197,23 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       setHasConsent(false);
       
       // Verificar status de assinatura (novos usuários normalmente não terão plano)
-      const statusResponse = await fetch('/api/subscription/status', {
-        headers: authHeaders
-      });
-      const interactionStatus = statusResponse.ok ? await statusResponse.json() : null;
+      const statusResponse = await fetch('/api/subscription/status', { headers: authHeaders });
+      let interactionStatus: UserInteractionStatus | null = null;
+      if (statusResponse.ok) {
+        try { interactionStatus = await statusResponse.json(); } catch { interactionStatus = null; }
+      }
+      if (!interactionStatus) {
+        interactionStatus = {
+          canInteract: false,
+          remainingInteractions: 0,
+          dailyLimit: 0,
+          planName: 'Free',
+          planType: 'free',
+          subscriptionStatus: 'incomplete',
+          currentPeriodEnd: new Date(),
+          resetTime: new Date()
+        } as UserInteractionStatus;
+      }
       setInteractionStatus(interactionStatus);
       
       console.log('SignUp process completed successfully');

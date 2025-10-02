@@ -10,7 +10,7 @@ export async function GET() {
   const retentionDays = 90;
   const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString();
 
-  const results: any = {};
+  const results: Record<string, unknown> = {};
   try {
     // stripe_webhook_events
     const { error: delWebhookErr, count: webhookCount } = await supabaseAdmin
@@ -28,7 +28,7 @@ export async function GET() {
     if (delReconErr) results.reconError = delReconErr.message; else results.reconDeleted = reconCount;
 
     return NextResponse.json({ ok: true, cutoff, ...results });
-  } catch (error: any) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ ok: false, error: (error as Error).message }, { status: 500 });
   }
 }

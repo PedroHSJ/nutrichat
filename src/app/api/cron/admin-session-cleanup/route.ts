@@ -17,7 +17,7 @@ export async function GET() {
       return NextResponse.json({ ok: true, removed: count, fallback: true });
     }
     return NextResponse.json({ ok: true, function: true });
-  } catch (e:any) {
-    return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
+  } catch (e) {
+    return NextResponse.json({ ok: false, error: (e as Error).message }, { status: 500 });
   }
 }

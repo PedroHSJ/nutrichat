@@ -51,9 +51,10 @@ export default function PlansEditor({ initialPlans }: { initialPlans: Plan[] }) 
       setPlans(updated.plans || []);
       setEditing(null);
       setToast({ type: 'success', msg: 'Plano atualizado com sucesso.' });
-    } catch(e:any) {
-      setError(e.message);
-      setToast({ type: 'error', msg: e.message || 'Erro ao atualizar' });
+    } catch(e) {
+      const msg = (e as Error).message || 'Erro ao atualizar';
+      setError(msg);
+      setToast({ type: 'error', msg });
     } finally {
       setLoading(false);
     }

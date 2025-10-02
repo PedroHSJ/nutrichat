@@ -159,11 +159,11 @@ function SubscriptionSuccessContent() {
               </div>
             </div>
 
-            <div className="mt-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            {/* <div className="mt-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
               <p className="text-xs text-blue-600 text-center">
                 📧 Um email de confirmação foi enviado para você com todos os detalhes da assinatura.
               </p>
-            </div>
+            </div> */}
           </div>
         </CardContent>
       </Card>

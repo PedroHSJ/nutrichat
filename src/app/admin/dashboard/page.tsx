@@ -1,15 +1,27 @@
-import { cookies } from 'next/headers';
-import { isAdminSession } from '@/lib/admin-auth';
+import { headers } from 'next/headers';
+import { isAdminSession, destroyAdminSession } from '@/lib/admin-auth';
+import { redirect } from 'next/navigation';
 
-async function getMetrics() {
-  const base = process.env.NEXT_PUBLIC_BASE_URL || '';
-  const res = await fetch(`${base}/api/admin/metrics`, { cache: 'no-cache' });
+interface MetricsResponse {
+  subscriptions: { total: number; statuses: Record<string, number> };
+  plans: { active: number };
+  reconciliation: { actionsLast24h: number };
+  events?: { recent: Array<{ event_type: string; created_at: string }>; counts: Record<string, number> };
+  debug?: unknown;
+}
+
+async function getMetrics(): Promise<MetricsResponse | null> {
+  const hdrs = await headers();
+  const host = hdrs.get('x-forwarded-host') || hdrs.get('host');
+  const proto = hdrs.get('x-forwarded-proto') || 'https';
+  const abs = host ? `${proto}://${host}/api/admin/metrics` : '/api/admin/metrics';
+  const res = await fetch(abs, { cache: 'no-store' });
   if (!res.ok) return null;
-  return res.json();
+  return res.json() as Promise<MetricsResponse>;
 }
 
 export default async function AdminDashboardPage() {
-  const ok = await isAdminSession(undefined, cookies() as any);
+  const ok = await isAdminSession(undefined);
   if (!ok) {
     return (
       <div className="p-8 text-center">
@@ -22,7 +34,8 @@ export default async function AdminDashboardPage() {
 
   async function logoutAction() {
     'use server';
-    await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/admin/logout`, { method: 'POST' });
+    await destroyAdminSession();
+    redirect('/admin/login');
   }
 
   return (
@@ -54,7 +67,7 @@ export default async function AdminDashboardPage() {
         <div>
           <h2 className="text-lg font-semibold mb-2">Eventos Recentes</h2>
           <div className="space-y-1 text-sm max-h-64 overflow-auto border rounded p-3 bg-white">
-            {metrics.events.recent.map((e:any, idx:number) => (
+            {metrics.events.recent.map((e, idx:number) => (
               <div key={idx} className="flex justify-between gap-4">
                 <span className="font-mono text-xs">{e.event_type}</span>
                 <span className="text-gray-500 text-xs">{new Date(e.created_at).toLocaleString()}</span>
