@@ -10,13 +10,6 @@ import { UserInteractionStatus } from '@/types/subscription';
 import { useAuthHeaders } from '@/hooks/use-auth-headers';
 
 interface AuthContextType extends ChatContextType {
-  user: AuthUser | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signUp: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  authLoading: boolean;
-  authError: string | null;
   hasConsent: boolean;
   requestConsent: () => Promise<boolean>;
   exportUserData: () => Promise<void>;
@@ -107,153 +100,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     return unsubscribe;
   }, []);
-
-  // Função de login
-  const login = useCallback(async (email: string, password: string) => {
-    try {
-      setAuthLoading(true);
-      setAuthError(null);
-      
-      const authUser = await authService.signIn(email, password);
-      setUser(authUser);
-      setIsAuthenticated(true);
-      
-      // Inicializar persistência
-      await chatPersistence.initialize(authUser);
-      
-      // Verificar consentimento
-      const consent = await authService.hasConsent();
-      setHasConsent(consent);
-      
-      if (consent) {
-        // Carregar chats salvos
-        const savedChats = await chatPersistence.loadChats();
-        setChats(savedChats);
-      }
-
-      // Verificar se o usuário tem um plano ativo
-      const statusResponse = await fetch('/api/subscription/status', { headers: authHeaders });
-      let interactionStatus: UserInteractionStatus | null = null;
-      if (statusResponse.ok) {
-        try { interactionStatus = await statusResponse.json(); } catch { interactionStatus = null; }
-      }
-      if (!interactionStatus) {
-        // Fallback default para evitar quebrar lógica de redirecionamento
-        interactionStatus = {
-          canInteract: false,
-          remainingInteractions: 0,
-          dailyLimit: 0,
-          planName: 'Free',
-          planType: 'free',
-          subscriptionStatus: 'incomplete',
-          currentPeriodEnd: new Date(),
-          resetTime: new Date()
-        } as UserInteractionStatus;
-      }
-      setInteractionStatus(interactionStatus);
-      
-      // Aguardar um pouco antes do redirecionamento para garantir que os estados foram atualizados
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Redirecionar para planos se não tiver plano ativo
-      if (interactionStatus && !interactionStatus.canInteract && interactionStatus.planType === 'free') {
-        // Usuário não tem plano, redirecionar para página de planos
-        router.push('/plans');
-      } else if (consent && interactionStatus && interactionStatus.canInteract) {
-        // Se tem plano ativo, redirecionar para chat
-        router.push('/chat');
-      }
-      
-      // Só desabilitar o loading após o redirecionamento ter sido iniciado
-      setAuthLoading(false);
-      
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro no login';
-      setAuthError(errorMessage);
-      setAuthLoading(false); // Desabilitar loading em caso de erro
-      throw error;
-    }
-  }, [router]);
-
-  // Função de cadastro
-  const signUp = useCallback(async (name: string, email: string, password: string) => {
-    console.log('SignUp function called with:', { name, email, password: '***' });
-    
-    try {
-      setAuthLoading(true);
-      setAuthError(null);
-      
-      console.log('Calling authService.signUp...');
-      const authUser = await authService.signUp(name, email, password);
-      console.log('AuthService signUp completed:', authUser);
-      
-      setUser(authUser);
-      setIsAuthenticated(true);
-      
-      // Inicializar persistência
-      await chatPersistence.initialize(authUser);
-      
-      // Novo usuário ainda não deu consentimento
-      setHasConsent(false);
-      
-      // Verificar status de assinatura (novos usuários normalmente não terão plano)
-      const statusResponse = await fetch('/api/subscription/status', { headers: authHeaders });
-      let interactionStatus: UserInteractionStatus | null = null;
-      if (statusResponse.ok) {
-        try { interactionStatus = await statusResponse.json(); } catch { interactionStatus = null; }
-      }
-      if (!interactionStatus) {
-        interactionStatus = {
-          canInteract: false,
-          remainingInteractions: 0,
-          dailyLimit: 0,
-          planName: 'Free',
-          planType: 'free',
-          subscriptionStatus: 'incomplete',
-          currentPeriodEnd: new Date(),
-          resetTime: new Date()
-        } as UserInteractionStatus;
-      }
-      setInteractionStatus(interactionStatus);
-      
-      console.log('SignUp process completed successfully');
-      
-      // Novos usuários sempre são redirecionados para planos
-      router.push('/plans');
-      
-    } catch (error) {
-      console.error('Error in signUp function:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro no cadastro';
-      setAuthError(errorMessage);
-      throw error;
-    } finally {
-      setAuthLoading(false);
-    }
-  }, [router]);
-
-  // Função de logout
-  const logout = useCallback(async () => {
-    try {
-      setAuthLoading(true);
-      await authService.signOut();
-      
-      // Limpar estados
-      setUser(null);
-      setIsAuthenticated(false);
-      setChats([]);
-      setCurrentChatId(null);
-      setHasConsent(false);
-      setAuthError(null);
-      setInteractionStatus(null);
-      
-      // Redirecionar para a página de login após logout
-      router.push('/login');
-    } catch (error) {
-      console.error('Erro no logout:', error);
-    } finally {
-      setAuthLoading(false);
-    }
-  }, [router]);
 
   // Solicitar consentimento LGPD
   const requestConsent = useCallback(async () => {
@@ -530,10 +376,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     isLoading,
     
     // Estados de autenticação
-    user,
-    isAuthenticated,
-    authLoading,
-    authError,
     hasConsent,
 
     // Controle de interações diárias
@@ -541,9 +383,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     refreshInteractionStatus,
 
     // Funções de autenticação
-    login,
-    signUp,
-    logout,
     requestConsent,
     exportUserData,
     deleteUserAccount,

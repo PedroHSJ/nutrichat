@@ -1,12 +1,22 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AuthForm } from '@/components/AuthForm';
-import { useChat } from '@/context/ChatContext';
+import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
-  const { login, signUp, authError, authLoading } = useChat();
+  const { login, signUp, authError, authLoading, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  // Redirecionar se já está autenticado
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      // Deixar o middleware decidir para onde ir baseado no estado completo
+      router.replace('/');
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   // Unsplash/Source image (free to use) themed for nutrition / healthy food
   const unsplashUrl = 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80';

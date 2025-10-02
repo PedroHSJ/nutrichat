@@ -47,6 +47,21 @@ export async function GET(request: NextRequest) {
 
     // Obter status completo do usuário
     const interactionStatus = await UserSubscriptionService.canUserInteract(session.user.id);
+
+    // Adicionar elegibilidade de trial se não tiver assinatura ativa ou trial em andamento
+    try {
+      const hasTrialOrActive = interactionStatus.subscriptionStatus === 'active' || interactionStatus.isTrialing;
+      if (!hasTrialOrActive) {
+        const isNew = await UserSubscriptionService.isBrandNewCustomer(session.user.id);
+        interactionStatus.trialEligible = isNew;
+        interactionStatus.trialAlreadyUsed = !isNew;
+      } else {
+        interactionStatus.trialEligible = false;
+        interactionStatus.trialAlreadyUsed = interactionStatus.isTrialing ? false : undefined;
+      }
+    } catch (e) {
+      console.warn('[STATUS] Falha ao determinar elegibilidade de trial:', e);
+    }
     console.log(`[API] Status da assinatura para usuário ${session.user.id}:`, interactionStatus);
     
     // Retornar status no formato UserInteractionStatus

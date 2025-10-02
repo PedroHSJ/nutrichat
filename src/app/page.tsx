@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, MessageCircle, Clock, Shield, Zap, Users, Crown, ArrowRight } from 'lucide-react';
-import { useChat } from '@/context/ChatContext';
-import { useSubscription } from '@/hooks/use-subscription';
 import Link from 'next/link';
+import { useSubscription } from '@/context/SubscriptionContext';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LandingPage() {
-  const { isAuthenticated } = useChat();
+  const { isAuthenticated } = useAuth();
   const { hasActivePlan, loading: subscriptionLoading } = useSubscription();
   const router = useRouter();
 

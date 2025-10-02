@@ -3,8 +3,9 @@
 import { useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useChat } from '@/context/ChatContext';
-import { useSubscription } from '@/hooks/use-subscription';
 import { Loader2 } from 'lucide-react';
+import { useSubscription } from '@/context/SubscriptionContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface RouteGuardProps {
   children: ReactNode;
@@ -19,8 +20,9 @@ export function RouteGuard({
   redirectToPlans = true,
   redirectToLogin = true 
 }: RouteGuardProps) {
-  const { isAuthenticated, authLoading } = useChat();
-  const { loading: subscriptionLoading, hasActivePlan } = useSubscription();
+  const { hasConsent } = useChat();
+  const { isAuthenticated, authLoading } = useAuth();
+  const { loading: subscriptionLoading, hasActivePlan, isTrialing } = useSubscription();
   const router = useRouter();
 
   useEffect(() => {
@@ -33,19 +35,27 @@ export function RouteGuard({
       return;
     }
 
+    // Se autenticado mas sem consentimento
+    if (isAuthenticated && !hasConsent) {
+      router.push('/consent');
+      return;
+    }
+
     // Se requer plano e ainda está carregando
     if (requiresPlan && subscriptionLoading) return;
 
     // Se requer plano e não tem plano ativo
-    if (requiresPlan && !hasActivePlan && redirectToPlans) {
+    if (!subscriptionLoading && requiresPlan && !hasActivePlan && !isTrialing && redirectToPlans) {
       router.push('/plans');
       return;
     }
   }, [
     authLoading, 
     isAuthenticated, 
+    hasConsent,
     subscriptionLoading, 
     hasActivePlan, 
+    isTrialing,
     requiresPlan, 
     redirectToPlans, 
     redirectToLogin,
@@ -69,7 +79,11 @@ export function RouteGuard({
     return null;
   }
 
-  if (requiresPlan && !hasActivePlan && redirectToPlans) {
+  if (isAuthenticated && !hasConsent) {
+    return null;
+  }
+
+  if (requiresPlan && !hasActivePlan && !isTrialing && redirectToPlans) {
     return null;
   }
 

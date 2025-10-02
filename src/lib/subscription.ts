@@ -41,6 +41,33 @@ export class UserSubscriptionService {
   private static isSupabaseConfigured(): boolean {
     return !!(supabaseAdmin || supabase);
   }
+
+  /**
+   * Verificar se usuário é realmente novo (nunca teve qualquer assinatura registrada)
+   */
+  static async isBrandNewCustomer(userId: string): Promise<boolean> {
+    if (!supabaseAdmin) {
+      console.warn('[DB] supabaseAdmin indisponível em isBrandNewCustomer - retornando false para evitar abuso');
+      return false; // Conservador: não concede trial se não puder verificar
+    }
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('user_subscriptions')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1);
+      if (error) {
+        console.error('[DB] Erro ao verificar histórico de assinaturas para trial:', error);
+        return false; // Falha = não elegível
+      }
+      const isNew = !data || data.length === 0;
+      console.log(`[TRIAL] Usuário ${userId} ${isNew ? 'é novo (trial elegível)' : 'já possui histórico (trial negado)'}`);
+      return isNew;
+    } catch (err) {
+      console.error('[DB] Exceção em isBrandNewCustomer:', err);
+      return false;
+    }
+  }
   
   /**
    * Mapear nome do plano para tipo compatível com sistema antigo
@@ -101,7 +128,8 @@ export class UserSubscriptionService {
         currentPeriodEnd: new Date(result.currentPeriodEnd),
         resetTime: this.getNextResetTime(),
         isTrialing: result.isTrialing,
-        trialEndsAt: result.trialEnd ? new Date(result.trialEnd) : undefined
+        trialEndsAt: result.trialEnd ? new Date(result.trialEnd) : undefined,
+        trialEndsAtFormatted: result.trialEnd ? new Date(result.trialEnd).toISOString() : undefined
       };
       
     } catch (error) {
@@ -115,7 +143,8 @@ export class UserSubscriptionService {
         planType: 'free',
         subscriptionStatus: 'unpaid' as SubscriptionStatus,
         currentPeriodEnd: new Date(),
-        resetTime: this.getNextResetTime()
+        resetTime: this.getNextResetTime(),
+        trialEndsAtFormatted: undefined
       };
     }
   }

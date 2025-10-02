@@ -1,10 +1,10 @@
 'use client';
 
-import { useChat } from '@/context/ChatContext';
+import { useAuth } from '@/context/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 export function GlobalLoader({ children }: { children: React.ReactNode }) {
-  const { authLoading } = useChat();
+  const { authLoading } = useAuth();
 
   // Mostrar loading global enquanto verifica autenticação
   if (authLoading) {

@@ -1,13 +1,17 @@
 'use client';
 
-import React from 'react';
-import { Shield, Check, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Shield, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useChat } from '@/context/ChatContext';
+import { Checkbox } from './ui/checkbox';
+import { useAuth } from '@/context/AuthContext';
 
 export function ConsentOverlay() {
-  const { hasConsent, requestConsent, isAuthenticated } = useChat();
+  const { hasConsent, requestConsent } = useChat();
+  const { isAuthenticated } = useAuth();
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   // Só mostrar se estiver autenticado e não tiver consentimento
   if (!isAuthenticated || hasConsent) return null;
@@ -55,12 +59,12 @@ export function ConsentOverlay() {
               </div>
             </div>
             
-            <div className="flex items-start gap-2">
+            {/* <div className="flex items-start gap-2">
               <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
               <div>
                 <strong>Controle total:</strong> Você pode exportar ou deletar seus dados a qualquer momento.
               </div>
-            </div>
+            </div> */}
             
             <div className="flex items-start gap-2">
               <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
@@ -76,31 +80,26 @@ export function ConsentOverlay() {
               </div>
             </div>
           </div>
+          
 
-          <div className="bg-blue-50 p-3 rounded-lg border text-sm">
-            <p className="font-medium text-blue-900 mb-1">Escolha sua preferência:</p>
-            <p className="text-blue-800">
-              <strong>Aceitar:</strong> Suas conversas serão salvas de forma segura para acesso futuro.<br/>
-              <strong>Recusar:</strong> Use o chat normalmente, mas as conversas não serão salvas.
-            </p>
-          </div>
 
-          <div className="flex gap-3">
-            <Button 
-              variant="outline" 
-              className="flex-1 gap-2"
-              onClick={handleRejectConsent}
-            >
-              <X className="h-4 w-4" />
-              Não salvar
-            </Button>
-            <Button 
-              className="flex-1 gap-2" 
-              onClick={handleAcceptConsent}
-            >
-              <Check className="h-4 w-4" />
-              Aceitar e salvar
-            </Button>
+          <div className="space-y-4">
+            <label className="flex items-start gap-2 cursor-pointer select-none">
+              <Checkbox id="terms-2" onClick={() => setAcceptedTerms(!acceptedTerms)} />
+               <p className="text-muted-foreground text-sm">
+                Eu li e aceito os termos de <a href="/privacy" target="_blank" className="underline hover:text-primary">Política de Privacidade</a> e <a href="/terms" target="_blank" className="underline hover:text-primary">Termos de Serviço</a>.
+              </p>
+            </label>
+            <div className="flex gap-3">
+              <Button 
+                className="flex-1 gap-2" 
+                onClick={handleAcceptConsent}
+                disabled={!acceptedTerms}
+              >
+                <Check className="h-4 w-4" />
+                Aceitar e salvar
+              </Button>
+            </div>
           </div>
 
           <p className="text-xs text-muted-foreground text-center">

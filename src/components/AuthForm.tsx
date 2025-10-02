@@ -59,22 +59,24 @@ export function AuthForm({ onLogin, onSignUp, isLoading, error }: AuthFormProps)
     
     
     if (!validateForm()) {
-      console.log('Form validation failed');
+      console.log('[AuthForm] Form validation failed');
       return;
     }
 
-
+    console.log('[AuthForm] Starting auth process...');
     try {
       if (mode === 'login') {
-        console.log('Calling onLogin...');
+        console.log('[AuthForm] Calling onLogin...');
         await onLogin(formData.email, formData.password);
+        console.log('[AuthForm] onLogin completed');
       } else {
-        console.log('Calling onSignUp...', { name: formData.name, email: formData.email });
+        console.log('[AuthForm] Calling onSignUp...', { name: formData.name, email: formData.email });
         await onSignUp(formData.name, formData.email, formData.password);
+        console.log('[AuthForm] onSignUp completed');
       }
-      console.log('Auth function completed successfully');
+      console.log('[AuthForm] Auth function completed successfully');
     } catch (error) {
-      console.error('Erro na autenticação:', error);
+      console.error('[AuthForm] Erro na autenticação:', error);
     }
   };
 

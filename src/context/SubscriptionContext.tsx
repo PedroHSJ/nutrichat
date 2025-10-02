@@ -3,7 +3,7 @@
 import React, { useState, useEffect, createContext, useContext, useRef } from 'react';
 import { UserInteractionStatus } from '@/types/subscription';
 import { useAuthHeaders } from '@/hooks/use-auth-headers';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from './AuthContext';
 
 interface SubscriptionContextType {
   subscriptionStatus: UserInteractionStatus | null;

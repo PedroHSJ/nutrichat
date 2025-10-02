@@ -137,9 +137,12 @@ export class SubscriptionService {
     customerId: string,
     priceId: string,
     successUrl: string,
-    cancelUrl: string
+    cancelUrl: string,
+    options?: { trialDays?: number }
   ): Promise<Stripe.Checkout.Session> {
     try {
+      const trialDays = options?.trialDays;
+      console.log("TRIAL", trialDays);
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ['card'],
@@ -154,6 +157,7 @@ export class SubscriptionService {
         success_url: successUrl,
         cancel_url: cancelUrl,
         subscription_data: {
+          trial_period_days: trialDays,
           metadata: {
             source: 'nutrichat'
           }

@@ -81,6 +81,9 @@ export interface UserInteractionStatus {
   resetTime: Date;
   isTrialing?: boolean;
   trialEndsAt?: Date;
+  trialEndsAtFormatted?: string; // ISO string formatada para exibição rápida
+  trialEligible?: boolean; // usuário totalmente novo e pode iniciar trial
+  trialAlreadyUsed?: boolean; // já usou trial antes
 }
 
 // Dados para criar checkout session do Stripe

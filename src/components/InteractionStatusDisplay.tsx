@@ -17,19 +17,42 @@ export function InteractionStatusDisplay({
   interactionStatus, 
   className = "" 
 }: InteractionStatusDisplayProps) {
+  // Always call hooks in the same order (fixes warning about changed hook order)
   const router = useRouter();
-  
+
+  // We may not have interactionStatus yet, but we still compute memoized values safely
+  const resetTimeRaw = interactionStatus?.resetTime ?? null;
+  const resetTime = typeof resetTimeRaw === 'string' ? new Date(resetTimeRaw) : resetTimeRaw;
+
+  const formattedResetExact = useMemo(() => {
+    if (!resetTime) return '';
+    try {
+      return format(resetTime, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    } catch {
+      return resetTime.toLocaleString('pt-BR');
+    }
+  }, [resetTime]);
+
+  const formattedResetRelative = useMemo(() => {
+    if (!resetTime) return '';
+    try {
+      return formatDistanceToNow(resetTime, { addSuffix: true, locale: ptBR });
+    } catch {
+      return '';
+    }
+  }, [resetTime]);
+
+  // Early return AFTER hooks so hook order stays consistent
   if (!interactionStatus) {
     return null;
   }
 
   const { 
-    canInteract, 
-    remainingInteractions, 
-    dailyLimit, 
+    canInteract = true, 
+    remainingInteractions = 0, 
+    dailyLimit = 0, 
     planType,
-    planName,
-    resetTime 
+    planName
   } = interactionStatus;
 
   // Calcular porcentagem usada
@@ -49,23 +72,7 @@ export function InteractionStatusDisplay({
   const shouldShowAlert = !canInteract || remainingInteractions <= 5;
   const isLimitReached = !canInteract;
 
-  const formattedResetExact = useMemo(() => {
-    if (!resetTime) return '';
-    try {
-      return format(resetTime, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
-    } catch {
-      return resetTime.toLocaleString('pt-BR');
-    }
-  }, [resetTime]);
-
-  const formattedResetRelative = useMemo(() => {
-    if (!resetTime) return '';
-    try {
-      return formatDistanceToNow(resetTime, { addSuffix: true, locale: ptBR });
-    } catch {
-      return '';
-    }
-  }, [resetTime]);
+  // (formattedResetExact / formattedResetRelative already computed above)
 
   // Cores da barra de progresso
   const getProgressColor = () => {

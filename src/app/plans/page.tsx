@@ -6,11 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Loader2, Crown, Zap, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useChat } from '@/context/ChatContext';
-import { useSubscription } from '@/hooks/use-subscription';
-import { NoPlanWarning } from '@/components/NoPlanWarning';
 import { RouteGuard } from '@/components/RouteGuard';
 import { supabase } from '@/lib/supabase';
+import { useSubscription } from '@/context/SubscriptionContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface Plan {
   type: string;
@@ -26,9 +25,13 @@ export default function PlansPage() {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useChat();
-  const { hasActivePlan } = useSubscription();
+  const { user } = useAuth();
+  const { hasActivePlan, subscriptionStatus, trialEligible, isTrialing, trialEndsAt } = useSubscription();
   const router = useRouter();
+
+  useEffect(() => {
+    console.log('[PlansPage] hasActivePlan mudou:', hasActivePlan, 'subscriptionStatus=', subscriptionStatus);
+  }, [hasActivePlan]);
 
   useEffect(() => {
     fetchPlans();
@@ -37,13 +40,12 @@ export default function PlansPage() {
   useEffect(() => {
     // Se o usuário já tem um plano ativo e está na página de planos, 
     // perguntar se quer ir para o chat
+    console.log('[PlansPage] Verificando redirecionamento. hasActivePlan=', hasActivePlan);
     if (hasActivePlan) {
-      const shouldRedirect = confirm(
-        'Você já possui um plano ativo. Deseja ir para o chat ou permanecer aqui para gerenciar sua assinatura?'
-      );
-      if (shouldRedirect) {
+
+
         router.push('/chat');
-      }
+
     }
   }, [hasActivePlan, router]);
 
@@ -188,15 +190,57 @@ export default function PlansPage() {
           </p>
         </div>
 
-        {/* Aviso para usuários sem plano ativo */}
+        {/* Banner explicativo sobre o trial */}
         {!hasActivePlan && (
-          <div className="max-w-2xl mx-auto mb-8">
-            <NoPlanWarning />
+          <div className="max-w-3xl mx-auto mb-10">
+            <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/30 p-5 flex flex-col gap-3">
+              <div className="flex items-start gap-3">
+                <Zap className="h-6 w-6 text-blue-600 mt-0.5" />
+                <div className="text-sm leading-relaxed text-blue-900 dark:text-blue-100">
+                  {isTrialing ? (
+                    <>
+                      <p className="font-semibold mb-1">Você está em período de teste</p>
+                      <p>Termina em <strong>{trialEndsAt ? new Date(trialEndsAt).toLocaleDateString('pt-BR') : '—'}</strong>. Aproveite todos os recursos antes da cobrança.</p>
+                    </>
+                  ) : trialEligible ? (
+                    <>
+                      <p className="font-semibold mb-1">Período de teste de 30 dias</p>
+                      <p>
+                        Você pode usar o plano <strong>Básico</strong> gratuitamente por 30 dias. <strong>Não haverá cobrança agora.</strong>
+                        A primeira cobrança só ocorre após o teste se você não cancelar.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-semibold mb-1">Período de teste já utilizado</p>
+                      <p>
+                        Você já aproveitou seu período de teste gratuito. Para continuar, selecione um plano. Em caso de dúvida entre em contato com o suporte.
+                      </p>
+                    </>
+                  )}
+                  <p className="mt-2 text-xs opacity-80">
+                    {isTrialing || trialEligible
+                      ? 'Cancele a qualquer momento antes do fim do trial, sem multa ou taxas.'
+                      : 'Assine com cobrança imediata mensal recorrente.'}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
+        {/* Aviso para usuários sem plano ativo */}
+        {/* {!hasActivePlan && (
+          <div className="max-w-2xl mx-auto mb-8">
+            <NoPlanWarning />
+          </div>
+        )} */}
+
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-        {plans.map((plan) => (
+        {plans.map((plan) => {
+          const isBasic = plan.type === 'basic';
+          const eligibleForTrial = isBasic && trialEligible && !hasActivePlan && !isTrialing;
+          return (
           <Card 
             key={plan.type}
             className={`relative ${
@@ -212,6 +256,11 @@ export default function PlansPage() {
                 Mais Popular
               </Badge>
             )}
+            {isBasic && eligibleForTrial && (
+              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white">
+                30 dias grátis
+              </Badge>
+            )}
             
             <CardHeader className="text-center pb-6">
               <div className="flex justify-center mb-4">
@@ -219,16 +268,30 @@ export default function PlansPage() {
               </div>
               <CardTitle className="text-2xl">{plan.name}</CardTitle>
               <CardDescription className="text-base">
-                {plan.type === 'pro' 
-                  ? 'Para nutricionistas que precisam de mais interações e recursos avançados'
-                  : 'Perfeito para começar com IA nutricional especializada'
-                }
+                {plan.type === 'pro' && 'Para nutricionistas que precisam de mais interações e recursos avançados'}
+                {plan.type !== 'pro' && eligibleForTrial && 'Inclui 30 dias grátis. Experimente sem compromisso.'}
+                {plan.type !== 'pro' && !eligibleForTrial && !isTrialing && 'Perfeito para começar com IA nutricional especializada'}
+                {plan.type !== 'pro' && isTrialing && 'Seu trial está ativo.'}
               </CardDescription>
               <div className="pt-4">
-                <div className="text-4xl font-bold">
-                  {formatPrice(plan.priceCents)}
-                </div>
-                <div className="text-sm text-muted-foreground">por mês</div>
+                {isBasic && eligibleForTrial ? (
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="text-sm font-medium text-blue-600 dark:text-blue-300 uppercase tracking-wide">Primeiro mês grátis</div>
+                    <div className="text-4xl font-bold">{formatPrice(plan.priceCents)}</div>
+                    <div className="text-sm text-muted-foreground">a partir do 2º mês</div>
+                  </div>
+                ) : isBasic && isTrialing ? (
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="text-sm font-medium text-green-600 dark:text-green-300 uppercase tracking-wide">Trial em andamento</div>
+                    <div className="text-4xl font-bold">{formatPrice(plan.priceCents)}</div>
+                    <div className="text-sm text-muted-foreground">cobrará após o término</div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-4xl font-bold">{formatPrice(plan.priceCents)}</div>
+                    <div className="text-sm text-muted-foreground">por mês</div>
+                  </>
+                )}
               </div>
             </CardHeader>
 
@@ -242,13 +305,15 @@ export default function PlansPage() {
                 ))}
               </ul>
 
-              <Button 
+              <Button
                 onClick={() => handleSelectPlan(plan.priceId)}
                 disabled={checkoutLoading === plan.priceId}
                 className={`w-full ${
-                  plan.type === 'pro' 
-                    ? 'bg-yellow-600 hover:bg-yellow-700' 
-                    : ''
+                  plan.type === 'pro'
+                    ? 'bg-yellow-600 hover:bg-yellow-700'
+                    : eligibleForTrial
+                      ? 'bg-blue-600 hover:bg-blue-700'
+                      : ''
                 }`}
                 size="lg"
               >
@@ -257,17 +322,24 @@ export default function PlansPage() {
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Processando...
                   </>
-                ) : (
-                  'Assinar Agora'
-                )}
+                ) : eligibleForTrial ? 'Iniciar 30 dias grátis' : 'Assinar Agora'}
               </Button>
-
-              <p className="text-xs text-center text-muted-foreground mt-3">
-                Cancele a qualquer momento. Sem compromisso.
-              </p>
+              {isBasic && eligibleForTrial && (
+                <p className="text-xs text-center text-muted-foreground mt-3 leading-relaxed">
+                  Você não será cobrado agora. Após 30 dias, inicia a cobrança recorrente de {formatPrice(plan.priceCents)} se não houver cancelamento.
+                </p>
+              )}
+              {isBasic && isTrialing && (
+                <p className="text-xs text-center text-muted-foreground mt-3 leading-relaxed">
+                  Trial ativo. Cobrança de {formatPrice(plan.priceCents)} programada para após o término do período gratuito.
+                </p>
+              )}
+              {(!isBasic || (!eligibleForTrial && !isTrialing)) && (
+                <p className="text-xs text-center text-muted-foreground mt-3">Cancele a qualquer momento. Sem compromisso.</p>
+              )}
             </CardContent>
           </Card>
-        ))}
+        );})}
       </div>
 
       <div className="text-center mt-12">

@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Crown, Menu, X, LogOut } from 'lucide-react';
 import { useState } from 'react';
-import { useChat } from '@/context/ChatContext';
 import { SubscriptionStatus } from './SubscriptionStatus';
+import { useAuth } from '@/context/AuthContext';
 
 export function SiteHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isAuthenticated, logout } = useChat();
+  const { isAuthenticated, logout } = useAuth();
 
   const handleLogout = async () => {
     await logout();

@@ -4,9 +4,9 @@ import React from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { ChatSidebar } from '@/components/ChatSidebar';
 import { ChatArea } from '@/components/ChatArea';
-import { ConsentOverlay } from '@/components/ConsentOverlay';
+import { TrialBanner } from '@/components/TrialBanner';
 import { RouteGuard } from '@/components/RouteGuard';
-import { useChat } from '@/context/ChatContext';
+import { useAuth } from '@/context/AuthContext';
 
 function AuthenticatedApp() {
   return (
@@ -15,29 +15,17 @@ function AuthenticatedApp() {
         <div className="flex h-screen w-full">
           <ChatSidebar />
           <main className="flex-1 flex flex-col overflow-hidden">
+            <TrialBanner />
             <ChatArea />
           </main>
         </div>
-        <ConsentOverlay />
       </SidebarProvider>
     </RouteGuard>
   );
 }
 
 export default function ChatPage() {
-  const { isAuthenticated, user } = useChat();
-
-  // Mostrar loading durante verificação de autenticação
-  // if (authLoading) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
-  //       <div className="text-center">
-  //         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
-  //         <p className="text-gray-600">Carregando NutriChat...</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  const { isAuthenticated, user } = useAuth();
 
   // Mostrar app autenticado ou formulário de login
   if (isAuthenticated && user) {

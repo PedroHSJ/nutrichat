@@ -22,17 +22,17 @@ import { LGPDManager } from '@/components/LGPDManager';
 import { InteractionStatusDisplay } from '@/components/InteractionStatusDisplay';
 import { useVersion } from '@/hooks/use-version';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 export function ChatSidebar() {
   const { 
     chats, 
     currentChatId, 
     setCurrentChatId, 
-    user, 
-    logout, 
     deleteChat, 
     interactionStatus 
   } = useChat();
+  const { user, logout } = useAuth();
 
   const { version, environment } = useVersion();
 

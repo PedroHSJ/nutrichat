@@ -2,8 +2,8 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useSubscription } from '@/context/SubscriptionContext';
 import { Crown, AlertTriangle } from 'lucide-react';
-import { useSubscription } from '@/hooks/use-subscription';
 import { useRouter } from 'next/navigation';
 
 export function SubscriptionStatus() {

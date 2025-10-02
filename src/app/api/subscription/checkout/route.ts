@@ -116,17 +116,33 @@ export async function POST(request: NextRequest) {
     console.log('- Success URL:', successUrl);
     console.log('- Cancel URL:', cancelUrl);
     
+    // Verificar elegibilidade de trial (30 dias) APENAS para cliente totalmente novo e plano básico
+    let trialDays: number | undefined = undefined;
+    const isBasicPlan = (planInfo as any).slug === 'basic' || (planInfo as any).name?.toLowerCase().includes('básico');
+    if (isBasicPlan) {
+      const brandNew = await UserSubscriptionService.isBrandNewCustomer(user.id);
+      if (brandNew) {
+        trialDays = 30;
+        console.log(`[TRIAL] Concedendo trial de 30 dias ao usuário ${user.id} no plano básico`);
+      } else {
+        console.log(`[TRIAL] Usuário ${user.id} não é novo — trial negado`);
+      }
+    }
+
     const session = await SubscriptionService.createCheckoutSession(
       customerId,
       priceId,
       successUrl,
-      cancelUrl
+      cancelUrl,
+      { trialDays }
     );
 
     return NextResponse.json({
       success: true,
       checkoutUrl: session.url,
-      sessionId: session.id
+      sessionId: session.id,
+      trialApplied: trialDays ? true : false,
+      trialDays
     });
 
   } catch (error) {
