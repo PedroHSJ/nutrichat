@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import StripeService, { stripe } from '@/lib/stripe';
 import { UserSubscriptionService } from '@/lib/subscription';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import Stripe from 'stripe';
 
 // Tipos para objetos do Stripe
@@ -80,7 +81,8 @@ export async function POST(request: NextRequest) {
       currency: session.currency?.toUpperCase(),
       nextBilling: subscription?.current_period_end ? 
         new Date(subscription.current_period_end * 1000) : null,
-      status: subscription?.status || 'active'
+      status: subscription?.status || 'active',
+      persisted: false as boolean
     };
 
     // FALLBACK: Se temos uma subscription válida, verificar se existe no banco
@@ -100,6 +102,24 @@ export async function POST(request: NextRequest) {
         
         // Para outros erros, apenas logar (não bloquear)
         console.warn('[STRIPE] Fallback falhou mas continuando verificação');
+      }
+    }
+
+    // Checar se a subscription realmente está persistida no banco
+    if (subscription?.id) {
+      if (!supabaseAdmin) {
+        console.warn('[STRIPE] supabaseAdmin não configurado para checar persistência');
+      } else {
+        try {
+          const { data: existing } = await supabaseAdmin
+            .from('user_subscriptions')
+            .select('id')
+            .eq('stripe_subscription_id', subscription.id)
+            .maybeSingle();
+          responseData.persisted = !!existing;
+        } catch (err) {
+          console.warn('[STRIPE] Não foi possível confirmar persistência da subscription:', err);
+        }
       }
     }
 
@@ -130,14 +150,12 @@ export async function POST(request: NextRequest) {
 async function ensureSubscriptionInDatabase(subscription: Stripe.Subscription, session: Stripe.Checkout.Session) {
   try {
     // Verificar se já existe no banco
-    const { supabase } = await import('@/lib/supabase');
-    
-    if (!supabase) {
-      console.log('[STRIPE] Supabase não configurado, pulando fallback');
+    if (!supabaseAdmin) {
+      console.log('[STRIPE] supabaseAdmin não configurado, pulando fallback');
       return;
     }
 
-    const { data: existingSubscription } = await supabase
+    const { data: existingSubscription } = await supabaseAdmin
       .from('user_subscriptions')
       .select('id')
       .eq('stripe_subscription_id', subscription.id)
@@ -219,12 +237,8 @@ async function ensureSubscriptionInDatabase(subscription: Stripe.Subscription, s
  */
 async function getUserIdByEmail(email: string): Promise<string | null> {
   try {
-    const { supabase } = await import('@/lib/supabase');
-    
-    if (!supabase) return null;
-    
-    // Buscar em user_profiles
-    const { data, error } = await supabase
+    if (!supabaseAdmin) return null;
+    const { data, error } = await supabaseAdmin
       .from('user_profiles')
       .select('id')
       .eq('email', email)
@@ -247,11 +261,8 @@ async function getUserIdByEmail(email: string): Promise<string | null> {
  */
 async function getPlanIdByStripePrice(stripePriceId: string): Promise<string | null> {
   try {
-    const { supabase } = await import('@/lib/supabase');
-    
-    if (!supabase) return null;
-    
-    const { data } = await supabase
+    if (!supabaseAdmin) return null;
+    const { data } = await supabaseAdmin
       .from('subscription_plans')
       .select('id')
       .eq('stripe_price_id', stripePriceId)

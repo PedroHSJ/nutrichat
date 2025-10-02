@@ -48,12 +48,11 @@ export function InteractionStatusDisplay({
   const isLimitReached = !canInteract;
 
   const formatResetTime = (date: Date) => {
-    console.log(date);
     const now = new Date();
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    if (date?.toDateString() === tomorrow.toDateString()) {
+    if (date?.toDateString() === tomorrow?.toDateString()) {
       return 'amanhã';
     }
 

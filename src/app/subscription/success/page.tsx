@@ -38,6 +38,8 @@ function SubscriptionSuccessContent() {
   const [loading, setLoading] = useState(true);
   const [paymentStatus, setPaymentStatus] = useState<'success' | 'error' | 'processing'>('processing');
   const [subscriptionDetails, setSubscriptionDetails] = useState<SubscriptionDetails | null>(null);
+  const [persisted, setPersisted] = useState<boolean>(false);
+  const [attempts, setAttempts] = useState<number>(0);
 
   useEffect(() => {
     if (sessionId) {
@@ -64,6 +66,13 @@ function SubscriptionSuccessContent() {
       if (data.success) {
         setPaymentStatus('success');
         setSubscriptionDetails(data.subscription);
+        if (data.persisted) {
+          setPersisted(true);
+        } else {
+          // Inicia polling leve para aguardar persistência (até 8 tentativas ~16s)
+          setPersisted(false);
+          setAttempts(1);
+        }
       } else {
         setPaymentStatus('error');
       }
@@ -74,6 +83,39 @@ function SubscriptionSuccessContent() {
       setLoading(false);
     }
   };
+
+  // Polling para confirmar persistência se necessário
+  useEffect(() => {
+    if (paymentStatus !== 'success') return;
+    if (persisted) return; // já persistido
+    if (attempts === 0) return; // ainda não iniciado
+    if (attempts > 8) return; // limite atingido
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/subscription/verify-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (data.subscription) {
+            setSubscriptionDetails(data.subscription);
+          }
+          if (data.persisted) {
+            setPersisted(true);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Polling persistência falhou:', err);
+      }
+      setAttempts(a => a + 1);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [paymentStatus, persisted, attempts, sessionId]);
 
   if (loading) {
     return <Loading />;
@@ -106,6 +148,30 @@ function SubscriptionSuccessContent() {
                 </Button>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Enquanto não persistido, mostrar uma tela intermediária de “finalizando”
+  if (paymentStatus === 'success' && !persisted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-green-600 mx-auto mb-4" />
+            <CardTitle className="text-xl text-green-700">
+              Confirmando sua assinatura...
+            </CardTitle>
+            <CardDescription>
+              Concluímos o pagamento na Stripe, finalizando registro interno ({attempts}/8)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-center text-muted-foreground">
+              Se isso demorar mais que alguns segundos, você já poderá usar o plano normalmente. Atualize a página depois para ver detalhes.
+            </p>
           </CardContent>
         </Card>
       </div>
