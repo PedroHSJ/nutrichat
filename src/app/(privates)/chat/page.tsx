@@ -7,6 +7,7 @@ import { ChatArea } from '@/components/ChatArea';
 import { ConsentOverlay } from '@/components/ConsentOverlay';
 import { RouteGuard } from '@/components/RouteGuard';
 import { useAuth } from '@/context/AuthContext';
+import TrialBanner from '@/components/TrialBanner';
 
 function AuthenticatedApp() {
   return (
@@ -15,6 +16,7 @@ function AuthenticatedApp() {
         <div className="flex h-screen w-full">
           <ChatSidebar />
           <main className="flex-1 flex flex-col overflow-hidden">
+          <TrialBanner />
             <ChatArea />
           </main>
         </div>

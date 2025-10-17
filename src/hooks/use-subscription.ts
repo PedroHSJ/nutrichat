@@ -23,6 +23,10 @@ export function useSubscription() {
       try {
         setLoading(true);
         setError(null);
+
+        if (!authHeaders.Authorization) {
+          return;
+        }
         
         const response = await fetch('/api/subscription/status', {
           headers: authHeaders
@@ -49,13 +53,17 @@ export function useSubscription() {
   const refreshSubscription = async () => {
     if (!isAuthenticated || !user) return;
     
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await fetch('/api/subscription/status', {
-        headers: authHeaders
-      });
+      try {
+        setLoading(true);
+        setError(null);
+
+        if (!authHeaders.Authorization) {
+          return;
+        }
+         
+        const response = await fetch('/api/subscription/status', {
+          headers: authHeaders
+        });
       
       if (!response.ok) {
         throw new Error('Erro ao verificar status da assinatura');

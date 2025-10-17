@@ -12,7 +12,7 @@ import React, {
 import { useRouter } from 'next/navigation';
 import { authService, AuthUser } from '@/lib/auth';
 import { chatPersistence } from '@/lib/persistence';
-import { useAuthHeaders } from '@/hooks/use-auth-headers';
+import { getStoredAuthHeaders, useAuthHeaders } from '@/hooks/use-auth-headers';
 import { UserInteractionStatus } from '@/types/subscription';
 
 interface AuthContextType {
@@ -115,9 +115,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    const headers = authHeaders.Authorization ? authHeaders : getStoredAuthHeaders();
+    if (!headers.Authorization) {
+      return;
+    }
+
     try {
       const response = await fetch('/api/subscription/status', {
-        headers: authHeaders,
+        headers,
       });
       const status = response.ok ? await response.json() : null;
       setInteractionStatus(status);
@@ -148,11 +153,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const consent = await authService.hasConsent();
         setHasConsent(consent);
 
-        const statusResponse = await fetch('/api/subscription/status', {
-          headers: authHeaders,
-        });
-        const status = statusResponse.ok ? await statusResponse.json() : null;
-        setInteractionStatus(status);
+        const headers = getStoredAuthHeaders();
+        if (headers.Authorization) {
+          const statusResponse = await fetch('/api/subscription/status', {
+            headers,
+          });
+          const status = statusResponse.ok ? await statusResponse.json() : null;
+          setInteractionStatus(status);
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Erro no login';
         setAuthError(errorMessage);
@@ -178,11 +186,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setHasConsent(false);
 
-        const statusResponse = await fetch('/api/subscription/status', {
-          headers: authHeaders,
-        });
-        const status = statusResponse.ok ? await statusResponse.json() : null;
-        setInteractionStatus(status);
+        const headers = getStoredAuthHeaders();
+        if (headers.Authorization) {
+          const statusResponse = await fetch('/api/subscription/status', {
+            headers,
+          });
+          const status = statusResponse.ok ? await statusResponse.json() : null;
+          setInteractionStatus(status);
+        }
       } catch (error) {
         console.error('Error in signUp function:', error);
         const errorMessage = error instanceof Error ? error.message : 'Erro no cadastro';
@@ -206,7 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthError(null);
       setInteractionStatus(null);
 
-      router.push('/login');
+      router.replace('/login');
     } catch (error) {
       console.error('Erro no logout:', error);
     } finally {
