@@ -1,7 +1,9 @@
 import type { StartScreenPrompt } from '@openai/chatkit';
 
+export const WORKFLOW_ID = process.env.NEXT_PUBLIC_OPENAI_AGENT_WORKFLOW_ID ?? null;
+
 export const CHATKIT_SESSION_ENDPOINT =
-  process.env.NEXT_PUBLIC_CHATKIT_SESSION_ENDPOINT ?? '/api/chatkit/session';
+  process.env.NEXT_PUBLIC_CHATKIT_SESSION_ENDPOINT ?? '/api/agent-chat';
 
 export const CHATKIT_GREETING = {
   title: 'Bem-vindo ao Agente Inteligente',

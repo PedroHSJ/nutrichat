@@ -1,156 +1,283 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { withChatGuard } from '@/lib/subscription-guard';
+const WORKFLOW_ID = process.env.NEXT_PUBLIC_OPENAI_AGENT_WORKFLOW_ID ?? null;
 
-const DEFAULT_WORKFLOW_ID = 'wf_68f171e696088190b6593a65b43b40c70a73086338745800';
+export const runtime = "edge";
 
-async function getAuthenticatedUser(request: NextRequest) {
-  if (process.env.NODE_ENV === 'development' && process.env.SUBSCRIPTION_BYPASS === 'true') {
-    return {
-      id: 'dev-user',
-      email: 'dev@nutrichat.local',
-      name: 'Dev User',
+interface CreateSessionRequestBody {
+  workflow?: { id?: string | null } | null;
+  scope?: { user_id?: string | null } | null;
+  workflowId?: string | null;
+  chatkit_configuration?: {
+    file_upload?: {
+      enabled?: boolean;
     };
-  }
-
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return null;
-  }
-
-  const token = authHeader.substring(7);
-
-  try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.warn('[agent-chat] Supabase credentials not configured.');
-      return null;
-    }
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
-
-    const { data, error } = await supabase.auth.getUser(token);
-    if (error || !data.user) {
-      return null;
-    }
-
-    return {
-      id: data.user.id,
-      email: data.user.email ?? 'usuario@nutrichat.com',
-      name: data.user.user_metadata?.name ?? data.user.email ?? 'Usuário NutriChat',
-    };
-  } catch (error) {
-    console.error('[agent-chat] Erro ao validar token Supabase:', error);
-    return null;
-  }
+  };
 }
 
-function extractTextFromResponse(data: unknown): string {
-  if (!data || typeof data !== 'object') {
-    return '';
+const DEFAULT_CHATKIT_BASE = "https://api.openai.com";
+const SESSION_COOKIE_NAME = "chatkit_session_id";
+const SESSION_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
+
+export async function POST(request: Request): Promise<Response> {
+  if (request.method !== "POST") {
+    return methodNotAllowedResponse();
   }
-
-  const record = data as Record<string, unknown>;
-
-  if (typeof record.output_text === 'string') {
-    return record.output_text;
-  }
-
-  const output = record.output;
-  if (Array.isArray(output)) {
-    for (const item of output) {
-      if (item && typeof item === 'object') {
-        const content = (item as Record<string, unknown>).content;
-        if (Array.isArray(content)) {
-          for (const block of content) {
-            if (block && typeof block === 'object') {
-              const blockRecord = block as Record<string, unknown>;
-              if (typeof blockRecord.text === 'string') {
-                return blockRecord.text;
-              }
-              if (blockRecord.type === 'output_text' && typeof blockRecord.data === 'string') {
-                return blockRecord.data;
-              }
-            }
-          }
+  let sessionCookie: string | null = null;
+  try {
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+    if (!openaiApiKey) {
+      return new Response(
+        JSON.stringify({
+          error: "Missing OPENAI_API_KEY environment variable",
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
         }
-      }
-    }
-  }
-
-  return '';
-}
-
-async function handler(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const messages = Array.isArray(body?.messages) ? body.messages : null;
-
-    if (!messages || messages.length === 0) {
-      return NextResponse.json({ error: 'Histórico de mensagens ausente.' }, { status: 400 });
-    }
-
-    const user = await getAuthenticatedUser(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Usuário não autenticado.' }, { status: 401 });
-    }
-
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      console.error('[agent-chat] OPENAI_API_KEY não configurada.');
-      return NextResponse.json(
-        { error: 'Configuração da OpenAI ausente no servidor.' },
-        { status: 500 }
       );
     }
 
-    const workflowId = process.env.OPENAI_AGENT_WORKFLOW_ID ?? DEFAULT_WORKFLOW_ID;
+    const parsedBody = await safeParseJson<CreateSessionRequestBody>(request);
+    const { userId, sessionCookie: resolvedSessionCookie } =
+      await resolveUserId(request);
+    sessionCookie = resolvedSessionCookie;
+    const resolvedWorkflowId =
+      parsedBody?.workflow?.id ?? parsedBody?.workflowId ?? WORKFLOW_ID;
 
-    const openAiResponse = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[create-session] handling request", {
+        resolvedWorkflowId,
+        body: JSON.stringify(parsedBody),
+      });
+    }
+
+    if (!resolvedWorkflowId) {
+      return buildJsonResponse(
+        { error: "Missing workflow id" },
+        400,
+        { "Content-Type": "application/json" },
+        sessionCookie
+      );
+    }
+
+    const apiBase = process.env.CHATKIT_API_BASE ?? DEFAULT_CHATKIT_BASE;
+    const url = `${apiBase}/v1/chatkit/sessions`;
+    const upstreamResponse = await fetch(url, {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'workflows=v1',
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${openaiApiKey}`,
+        "OpenAI-Beta": "chatkit_beta=v1",
       },
       body: JSON.stringify({
-        workflow: workflowId,
-        input: {
-          user,
-          messages,
+        workflow: { id: resolvedWorkflowId },
+        user: userId,
+        chatkit_configuration: {
+          file_upload: {
+            enabled:
+              parsedBody?.chatkit_configuration?.file_upload?.enabled ?? false,
+          },
         },
       }),
     });
 
-    if (!openAiResponse.ok) {
-      const errorPayload = await openAiResponse.json().catch(() => ({}));
-      console.error('[agent-chat] Erro da OpenAI:', errorPayload);
-      return NextResponse.json(
-        { error: 'Falha ao consultar o assistente da OpenAI.' },
-        { status: 502 }
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[create-session] upstream response", {
+        status: upstreamResponse.status,
+        statusText: upstreamResponse.statusText,
+      });
+    }
+
+    const upstreamJson = (await upstreamResponse.json().catch(() => ({}))) as
+      | Record<string, unknown>
+      | undefined;
+
+    if (!upstreamResponse.ok) {
+      const upstreamError = extractUpstreamError(upstreamJson);
+      console.error("OpenAI ChatKit session creation failed", {
+        status: upstreamResponse.status,
+        statusText: upstreamResponse.statusText,
+        body: upstreamJson,
+      });
+      return buildJsonResponse(
+        {
+          error:
+            upstreamError ??
+            `Failed to create session: ${upstreamResponse.statusText}`,
+          details: upstreamJson,
+        },
+        upstreamResponse.status,
+        { "Content-Type": "application/json" },
+        sessionCookie
       );
     }
 
-    const payload = await openAiResponse.json();
-    const output = extractTextFromResponse(payload);
+    const clientSecret = upstreamJson?.client_secret ?? null;
+    const expiresAfter = upstreamJson?.expires_after ?? null;
+    const responsePayload = {
+      client_secret: clientSecret,
+      expires_after: expiresAfter,
+    };
 
-    if (!output) {
-      console.warn('[agent-chat] Resposta vazia recebida do workflow.');
-    }
-
-    return NextResponse.json({
-      message: output,
-      raw: payload,
-    });
+    return buildJsonResponse(
+      responsePayload,
+      200,
+      { "Content-Type": "application/json" },
+      sessionCookie
+    );
   } catch (error) {
-    console.error('[agent-chat] Erro inesperado:', error);
-    return NextResponse.json(
-      { error: 'Erro interno ao processar a solicitação.' },
-      { status: 500 }
+    console.error("Create session error", error);
+    return buildJsonResponse(
+      { error: "Unexpected error" },
+      500,
+      { "Content-Type": "application/json" },
+      sessionCookie
     );
   }
 }
 
-export const POST = withChatGuard(handler);
+export async function GET(): Promise<Response> {
+  return methodNotAllowedResponse();
+}
+
+function methodNotAllowedResponse(): Response {
+  return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
+    status: 405,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+async function resolveUserId(request: Request): Promise<{
+  userId: string;
+  sessionCookie: string | null;
+}> {
+  const existing = getCookieValue(
+    request.headers.get("cookie"),
+    SESSION_COOKIE_NAME
+  );
+  if (existing) {
+    return { userId: existing, sessionCookie: null };
+  }
+
+  const generated =
+    typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2);
+
+  return {
+    userId: generated,
+    sessionCookie: serializeSessionCookie(generated),
+  };
+}
+
+function getCookieValue(
+  cookieHeader: string | null,
+  name: string
+): string | null {
+  if (!cookieHeader) {
+    return null;
+  }
+
+  const cookies = cookieHeader.split(";");
+  for (const cookie of cookies) {
+    const [rawName, ...rest] = cookie.split("=");
+    if (!rawName || rest.length === 0) {
+      continue;
+    }
+    if (rawName.trim() === name) {
+      return rest.join("=").trim();
+    }
+  }
+  return null;
+}
+
+function serializeSessionCookie(value: string): string {
+  const attributes = [
+    `${SESSION_COOKIE_NAME}=${encodeURIComponent(value)}`,
+    "Path=/",
+    `Max-Age=${SESSION_COOKIE_MAX_AGE}`,
+    "HttpOnly",
+    "SameSite=Lax",
+  ];
+
+  if (process.env.NODE_ENV === "production") {
+    attributes.push("Secure");
+  }
+  return attributes.join("; ");
+}
+
+function buildJsonResponse(
+  payload: unknown,
+  status: number,
+  headers: Record<string, string>,
+  sessionCookie: string | null
+): Response {
+  const responseHeaders = new Headers(headers);
+
+  if (sessionCookie) {
+    responseHeaders.append("Set-Cookie", sessionCookie);
+  }
+
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: responseHeaders,
+  });
+}
+
+async function safeParseJson<T>(req: Request): Promise<T | null> {
+  try {
+    const text = await req.text();
+    if (!text) {
+      return null;
+    }
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
+function extractUpstreamError(
+  payload: Record<string, unknown> | undefined
+): string | null {
+  if (!payload) {
+    return null;
+  }
+
+  const error = payload.error;
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+
+  const details = payload.details;
+  if (typeof details === "string") {
+    return details;
+  }
+
+  if (details && typeof details === "object" && "error" in details) {
+    const nestedError = (details as { error?: unknown }).error;
+    if (typeof nestedError === "string") {
+      return nestedError;
+    }
+    if (
+      nestedError &&
+      typeof nestedError === "object" &&
+      "message" in nestedError &&
+      typeof (nestedError as { message?: unknown }).message === "string"
+    ) {
+      return (nestedError as { message: string }).message;
+    }
+  }
+
+  if (typeof payload.message === "string") {
+    return payload.message;
+  }
+  return null;
+}
