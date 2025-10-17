@@ -86,7 +86,7 @@ export function ChatSidebar() {
 
       <Separator />
 
-      <SidebarContent>
+      <SidebarContent className='overflow-hidden'>
         <div className="p-4">
           <Button 
             onClick={handleNewChat} 
@@ -104,7 +104,7 @@ export function ChatSidebar() {
           </h3>
         </div>
 
-        <ScrollArea className="flex-1 px-2">
+        <ScrollArea className="flex-1 px-2 overflow-auto">
           <SidebarMenu>
             {chats.length === 0 ? (
               <div className="px-4 py-8 text-center text-sm text-muted-foreground">
