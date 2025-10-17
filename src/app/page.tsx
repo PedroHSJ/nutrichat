@@ -10,7 +10,10 @@ import { CheckCircle, MessageCircle, Clock, Shield, Zap, Users, Crown, ArrowRigh
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/hooks/use-subscription';
 import Link from 'next/link';
-
+<script
+  src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
+  async
+></script>
 export default function LandingPage() {
   const { isAuthenticated } = useAuth();
   const { hasActivePlan, loading: subscriptionLoading } = useSubscription();

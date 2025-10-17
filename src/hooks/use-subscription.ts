@@ -48,7 +48,7 @@ export function useSubscription() {
     };
 
     checkSubscription();
-  }, [authHeaders, isAuthenticated, user]);
+  }, [authHeaders.Authorization, isAuthenticated, user]);
 
   const refreshSubscription = async () => {
     if (!isAuthenticated || !user) return;
