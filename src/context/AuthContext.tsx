@@ -153,14 +153,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         const status = statusResponse.ok ? await statusResponse.json() : null;
         setInteractionStatus(status);
-
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        if (status && !status.canInteract && status.planType === 'free') {
-          router.push('/plans');
-        } else if (consent && status?.canInteract) {
-          router.push('/chat');
-        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Erro no login';
         setAuthError(errorMessage);
@@ -169,36 +161,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthLoading(false);
       }
     },
-    [authHeaders, initializePersistence, router]
+    [authHeaders, initializePersistence]
   );
 
   const signUp = useCallback(
     async (name: string, email: string, password: string) => {
-      console.log('SignUp function called with:', { name, email, password: '***' });
-
       try {
         setAuthLoading(true);
         setAuthError(null);
 
-        console.log('Calling authService.signUp...');
         const authUser = await authService.signUp(name, email, password);
-        console.log('AuthService signUp completed:', authUser);
 
         setUser(authUser);
         setIsAuthenticated(true);
-        // await initializePersistence(authUser);
+        await initializePersistence(authUser);
 
-        // setHasConsent(false);
+        setHasConsent(false);
 
-        // const statusResponse = await fetch('/api/subscription/status', {
-        //   headers: authHeaders,
-        // });
-        // const status = statusResponse.ok ? await statusResponse.json() : null;
-        // setInteractionStatus(status);
-
-        // console.log('SignUp process completed successfully');
-
-        // router.push('/plans');
+        const statusResponse = await fetch('/api/subscription/status', {
+          headers: authHeaders,
+        });
+        const status = statusResponse.ok ? await statusResponse.json() : null;
+        setInteractionStatus(status);
       } catch (error) {
         console.error('Error in signUp function:', error);
         const errorMessage = error instanceof Error ? error.message : 'Erro no cadastro';
@@ -208,7 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthLoading(false);
       }
     },
-    [authHeaders, initializePersistence, router]
+    [authHeaders, initializePersistence]
   );
 
   const logout = useCallback(async () => {

@@ -47,16 +47,31 @@ export function InteractionStatusDisplay({
   const shouldShowAlert = !canInteract || remainingInteractions <= 5;
   const isLimitReached = !canInteract;
 
-  const formatResetTime = (date: Date) => {
+  const formatResetTime = (value: Date | string | null | undefined) => {
+    if (!value) {
+      return 'em breve';
+    }
+
+    const parsed = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return 'em breve';
+    }
+
     const now = new Date();
     const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    if (date.toDateString() === tomorrow.toDateString()) {
-      return 'amanhã';
+    tomorrow.setDate(now.getDate() + 1);
+
+    const time = parsed.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    if (parsed.toDateString() === now.toDateString()) {
+      return `hoje as ${time}`;
     }
-    
-    return date.toLocaleDateString('pt-BR');
+
+    if (parsed.toDateString() === tomorrow.toDateString()) {
+      return `amanha as ${time}`;
+    }
+
+    return `${parsed.toLocaleDateString('pt-BR')} as ${time}`;
   };
 
   // Cores da barra de progresso
