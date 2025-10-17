@@ -30,6 +30,13 @@ export function ChatKitPanel({
 }: ChatKitPanelProps) {
   const processedFacts = useRef(new Set<string>());
 
+  // LOGS DE DIAGNÓSTICO
+  console.log("[ChatKitPanel] Entrou no componente", { theme });
+  console.log("[ChatKitPanel] Variáveis de ambiente", {
+    CHATKIT_API_URL,
+    CHATKIT_API_DOMAIN_KEY,
+  });
+
   const chatkit = useChatKit({
     api: { url: CHATKIT_API_URL, domainKey: CHATKIT_API_DOMAIN_KEY },
     theme: {
@@ -47,17 +54,11 @@ export function ChatKitPanel({
       },
       radius: "round",
     },
-    // startScreen: {
-    //   greeting: GREETING,
-    //   prompts: STARTER_PROMPTS,
-    // },
-    // composer: {
-    //   placeholder: PLACEHOLDER_INPUT,
-    // },
     threadItemActions: {
       feedback: false,
     },
     onClientTool: async (invocation) => {
+      console.log("[ChatKitPanel] onClientTool", invocation);
       if (invocation.name === "switch_theme") {
         const requested = invocation.params.theme;
         if (requested === "light" || requested === "dark") {
@@ -88,16 +89,20 @@ export function ChatKitPanel({
       return { success: false };
     },
     onResponseEnd: () => {
+      console.log("[ChatKitPanel] onResponseEnd");
       onResponseEnd();
     },
     onThreadChange: () => {
+      console.log("[ChatKitPanel] onThreadChange");
       processedFacts.current.clear();
     },
     onError: ({ error }) => {
-      // ChatKit handles displaying the error to the user
-      console.error("ChatKit error", error);
+      console.error("[ChatKitPanel] ChatKit error", error);
+      alert("ChatKit error: " + (error?.message || error));
     },
   });
+
+  console.log("[ChatKitPanel] chatkit.control", chatkit.control);
 
   return (
     <div className="relative h-full w-full overflow-hidden border border-slate-200/60 bg-white shadow-card dark:border-slate-800/70 dark:bg-slate-900">
