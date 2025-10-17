@@ -2,11 +2,11 @@
 
 import React from 'react';
 import { AuthForm } from '@/components/AuthForm';
-import { useChat } from '@/context/ChatContext';
+import { useAuth } from '@/context/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
-  const { login, signUp, authError, authLoading } = useChat();
+  const { login, signUp, authError, authLoading } = useAuth();
 
   // Unsplash/Source image (free to use) themed for nutrition / healthy food
   const unsplashUrl = 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80';

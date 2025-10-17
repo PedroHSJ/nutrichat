@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useChat } from '@/context/ChatContext';
+import { useAuth } from '@/context/AuthContext';
 import { APIStatusIndicator } from '@/components/APIStatusIndicator';
 import { LGPDManager } from '@/components/LGPDManager';
 import { InteractionStatusDisplay } from '@/components/InteractionStatusDisplay';
@@ -24,15 +25,8 @@ import { useVersion } from '@/hooks/use-version';
 import { cn } from '@/lib/utils';
 
 export function ChatSidebar() {
-  const { 
-    chats, 
-    currentChatId, 
-    setCurrentChatId, 
-    user, 
-    logout, 
-    deleteChat, 
-    interactionStatus 
-  } = useChat();
+  const { chats, currentChatId, setCurrentChatId, deleteChat } = useChat();
+  const { user, logout, interactionStatus } = useAuth();
 
   const { version, environment } = useVersion();
 

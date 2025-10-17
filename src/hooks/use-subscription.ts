@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { UserInteractionStatus } from '@/types/subscription';
-import { useChat } from '@/context/ChatContext';
+import { useAuth } from '@/context/AuthContext';
 import { useAuthHeaders } from '@/hooks/use-auth-headers';
 
 export function useSubscription() {
-  const { user, isAuthenticated } = useChat();
+  const { user, isAuthenticated } = useAuth();
   const authHeaders = useAuthHeaders();
   const [subscriptionStatus, setSubscriptionStatus] = useState<UserInteractionStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,7 +44,7 @@ export function useSubscription() {
     };
 
     checkSubscription();
-  }, [user, isAuthenticated]);
+  }, [authHeaders, isAuthenticated, user]);
 
   const refreshSubscription = async () => {
     if (!isAuthenticated || !user) return;

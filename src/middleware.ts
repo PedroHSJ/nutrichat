@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
 // Rotas que precisam de autenticação
-const protectedRoutes = ['/plans', '/subscription'];
+const protectedRoutes = ['/plans', '/subscription', '/chat', '/consent'];
 
 // Rotas de API que precisam de autenticação
 const protectedApiRoutes = ['/api/subscription/checkout', '/api/subscription/status'];

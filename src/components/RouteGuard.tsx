@@ -2,7 +2,7 @@
 
 import { useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { useChat } from '@/context/ChatContext';
+import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/hooks/use-subscription';
 import { Loader2 } from 'lucide-react';
 
@@ -19,7 +19,7 @@ export function RouteGuard({
   redirectToPlans = true,
   redirectToLogin = true 
 }: RouteGuardProps) {
-  const { isAuthenticated, authLoading } = useChat();
+  const { isAuthenticated, authLoading } = useAuth();
   const { loading: subscriptionLoading, hasActivePlan } = useSubscription();
   const router = useRouter();
 

@@ -6,7 +6,7 @@ import { ChatSidebar } from '@/components/ChatSidebar';
 import { ChatArea } from '@/components/ChatArea';
 import { ConsentOverlay } from '@/components/ConsentOverlay';
 import { RouteGuard } from '@/components/RouteGuard';
-import { useChat } from '@/context/ChatContext';
+import { useAuth } from '@/context/AuthContext';
 
 function AuthenticatedApp() {
   return (
@@ -25,7 +25,7 @@ function AuthenticatedApp() {
 }
 
 export default function ChatPage() {
-  const { isAuthenticated, user } = useChat();
+  const { isAuthenticated, user } = useAuth();
 
   // Mostrar loading durante verificação de autenticação
   // if (authLoading) {

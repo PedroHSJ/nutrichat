@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Loader2, Crown, Zap, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useChat } from '@/context/ChatContext';
+import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/hooks/use-subscription';
 import { NoPlanWarning } from '@/components/NoPlanWarning';
 import { RouteGuard } from '@/components/RouteGuard';
@@ -26,7 +26,7 @@ export default function PlansPage() {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useChat();
+  const { user } = useAuth();
   const { hasActivePlan } = useSubscription();
   const router = useRouter();
 

@@ -14,9 +14,11 @@ import {
 } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { useChat } from '@/context/ChatContext';
+import { useAuth } from '@/context/AuthContext';
 
 export function LGPDManager() {
-  const { hasConsent, requestConsent, deleteUserAccount, chats, exportUserData } = useChat();
+  const { chats } = useChat();
+  const { hasConsent, requestConsent, deleteUserAccount, exportUserData } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleRequestConsent = async () => {
