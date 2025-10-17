@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ChatProvider } from "@/context/ChatContext";
 import TrialBanner from "@/components/TrialBanner";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,6 +28,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
+      <head>
+        <Script
+          src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
+          strategy="beforeInteractive"
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
