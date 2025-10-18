@@ -438,6 +438,7 @@ export default function AgentChatPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-12 px-4">
         <div className="mx-auto flex max-w-5xl flex-col gap-6">
           <Card className="border-slate-800 bg-slate-900/70 backdrop-blur">
+          {process.env.NODE_ENV !== 'production' && (
             <CardHeader className="flex flex-col gap-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -460,6 +461,7 @@ export default function AgentChatPage() {
                 </p>
               )}
             </CardHeader>
+          )}
             <CardContent>
               <div className="relative h-full w-full overflow-hidden border border-slate-200/60 bg-white shadow-card dark:border-slate-800/70 dark:bg-slate-900">
                 <ChatKitPanel

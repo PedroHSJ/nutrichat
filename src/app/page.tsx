@@ -10,10 +10,7 @@ import { CheckCircle, MessageCircle, Clock, Shield, Zap, Users, Crown, ArrowRigh
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/hooks/use-subscription';
 import Link from 'next/link';
-<script
-  src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
-  async
-></script>
+
 export default function LandingPage() {
   const { isAuthenticated } = useAuth();
   const { hasActivePlan, loading: subscriptionLoading } = useSubscription();
@@ -26,7 +23,7 @@ export default function LandingPage() {
     }
     // Se o usuário está autenticado e tem plano ativo, redirecionar para chat
     if (isAuthenticated && !subscriptionLoading && hasActivePlan) {
-      router.push('/chat');
+      router.push('/select-page');
     }
   }, [isAuthenticated, hasActivePlan, subscriptionLoading, router]);
   return (
