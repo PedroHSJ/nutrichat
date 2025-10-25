@@ -1,15 +1,26 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SiteHeader } from '@/components/SiteHeader';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, MessageCircle, Clock, Shield, Zap, Users, Crown, ArrowRight } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/hooks/use-subscription';
-import Link from 'next/link';
+import {
+  Activity,
+  ArrowRight,
+  CheckCircle,
+  Clock,
+  Crown,
+  MessageCircle,
+  Shield,
+  Sparkles,
+  Users,
+  Zap,
+} from 'lucide-react';
 
 export default function LandingPage() {
   const { isAuthenticated } = useAuth();
@@ -17,283 +28,276 @@ export default function LandingPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Se o usuário está autenticado e não tem plano ativo, redirecionar para planos
     if (isAuthenticated && !subscriptionLoading && !hasActivePlan) {
       router.push('/plans');
     }
-    // Se o usuário está autenticado e tem plano ativo, redirecionar para chat
     if (isAuthenticated && !subscriptionLoading && hasActivePlan) {
       router.push('/select-page');
     }
   }, [isAuthenticated, hasActivePlan, subscriptionLoading, router]);
+
   return (
     <>
       <SiteHeader />
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50">
-        {/* Hero Section */}
-        <section className="container mx-auto px-4 pt-20 pb-16">
-          <div className="text-center max-w-4xl mx-auto">
-            <Badge variant="secondary" className="mb-4">
-              ✨ Inteligência Artificial para Nutricionistas
-            </Badge>
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              Revolucione sua
-              <span className="text-green-600"> Consultoria Nutricional</span>
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              O NutriChat é o assistente de IA especializado que ajuda nutricionistas a otimizar consultas, 
-              criar planos alimentares personalizados e oferecer orientações precisas aos seus pacientes.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/chat">
-                <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg">
-                  Começar Gratuitamente
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href="/plans">
-                <Button variant="outline" size="lg" className="px-8 py-3 text-lg">
-                  Ver Planos
-                  <Crown className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section className="container mx-auto px-4 py-16">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Por que escolher o NutriChat?
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Ferramentas poderosas de IA para elevar sua prática profissional a um novo patamar
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="text-center pb-4">
-                <MessageCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                <CardTitle className="text-xl">Consultas Inteligentes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-center text-base">
-                  Obtenha insights instantâneos sobre nutrição, interações medicamentosas e 
-                  recomendações personalizadas para cada paciente.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="text-center pb-4">
-                <Clock className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                <CardTitle className="text-xl">Economize Tempo</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-center text-base">
-                  Automatize cálculos nutricionais, crie cardápios rapidamente e 
-                  tenha acesso instantâneo a informações científicas atualizadas.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="text-center pb-4">
-                <Shield className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-                <CardTitle className="text-xl">Seguro e Confiável</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-center text-base">
-                  Todas as informações são baseadas em evidências científicas, 
-                  com proteção total da privacidade dos seus dados e pacientes.
-                </CardDescription>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        {/* Stats Section */}
-        <section className="bg-white/80 backdrop-blur py-16">
-          <div className="container mx-auto px-4">
-            <div className="grid md:grid-cols-4 gap-8 text-center">
-              <div>
-                <div className="text-4xl font-bold text-green-600 mb-2">500+</div>
-                <div className="text-gray-600">Nutricionistas Ativos</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-blue-600 mb-2">50k+</div>
-                <div className="text-gray-600">Consultas Realizadas</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-purple-600 mb-2">98%</div>
-                <div className="text-gray-600">Taxa de Satisfação</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-orange-600 mb-2">24/7</div>
-                <div className="text-gray-600">Disponibilidade</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Pricing Preview */}
-        <section className="container mx-auto px-4 py-16">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Planos para todos os perfis
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Desde profissionais iniciantes até grandes clínicas, temos o plano ideal para você
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Plano Básico */}
-            <Card className="border-2 hover:border-green-300 transition-colors">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Básico</CardTitle>
-                <CardDescription>Para nutricionistas iniciantes</CardDescription>
-                <div className="text-3xl font-bold mt-4">Grátis</div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span>5 consultas por dia</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span>Acesso às principais funcionalidades</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span>Suporte por email</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Plano Pro */}
-            <Card className="border-2 border-green-500 shadow-lg scale-105">
-              <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-600">
-                Mais Popular
+      <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+        <div className="mx-auto flex max-w-6xl flex-col gap-16 px-4 pb-24 pt-20">
+          <section className="grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+            <div className="flex flex-col gap-6">
+              <Badge className="w-fit border-emerald-400 bg-emerald-500/10 text-emerald-300">
+                IA especializada para nutricionistas
               </Badge>
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Professional</CardTitle>
-                <CardDescription>Para nutricionistas ativos</CardDescription>
-                <div className="text-3xl font-bold mt-4">R$ 49/mês</div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span>50 consultas por dia</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span>Todas as funcionalidades</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span>Suporte prioritário</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span>Relatórios avançados</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Plano Enterprise */}
-            <Card className="border-2 hover:border-purple-300 transition-colors">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Enterprise</CardTitle>
-                <CardDescription>Para clínicas e hospitais</CardDescription>
-                <div className="text-3xl font-bold mt-4">R$ 199/mês</div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span>Consultas ilimitadas</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span>API personalizada</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span>Suporte 24/7</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span>Treinamento da equipe</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="text-center mt-12">
-            <Link href="/plans">
-              <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white">
-                Ver Todos os Planos
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-          </div>
-        </section>
-
-        {/* CTA Final */}
-        <section className="bg-gradient-to-r from-green-600 to-blue-600 text-white py-16">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              Comece hoje mesmo sua transformação digital
-            </h2>
-            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-              Junte-se a centenas de nutricionistas que já estão revolucionando 
-              seus atendimentos com o poder da inteligência artificial.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/chat">
-                <Button size="lg" variant="secondary" className="px-8 py-3 text-lg">
-                  Experimentar Grátis
-                  <Zap className="ml-2 h-5 w-5" />
+              <h1 className="text-3xl font-semibold text-white sm:text-4xl lg:text-5xl">
+                Uma central inteligente para transformar o cuidado nutricional.
+              </h1>
+              <p className="text-base text-slate-300 sm:text-lg">
+                O NutriChat combina fluxos guiados, automacoes e seguranca para que cada consulta
+                entregue acompanhamento com a mesma qualidade do painel do agente.
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                <Button
+                  asChild
+                  className="flex items-center justify-center gap-2 bg-emerald-500/90 text-slate-900 shadow-sm shadow-emerald-500/30 transition hover:bg-emerald-400 hover:text-slate-900"
+                  size="lg"
+                >
+                  <Link href="/register">
+                    Comecar agora
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
                 </Button>
-              </Link>
-              <Link href="/plans">
-                <Button size="lg" variant="outline" className="px-8 py-3 text-lg border-white text-primary hover:bg-white hover:text-green-600">
-                  Escolher Plano
-                  <Users className="ml-2 h-5 w-5" />
+                <Button
+                  asChild
+                  variant="outline"
+                  size="lg"
+                  className="border-slate-700 bg-slate-900/50 text-slate-200 transition hover:border-emerald-400/50 hover:text-emerald-200"
+                >
+                  <Link href="/plans">
+                    Ver planos
+                    <Crown className="h-4 w-4" />
+                  </Link>
                 </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="bg-gray-900 text-white py-8">
-          <div className="container mx-auto px-4 text-center">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <div className="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center">
-                <span className="text-white font-bold text-sm">NC</span>
               </div>
-              <span className="font-bold text-xl">NutriChat</span>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-xl border border-slate-800/80 bg-slate-900/70 p-4 shadow-sm shadow-emerald-500/10">
+                  <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Tempo</p>
+                  <p className="mt-2 text-lg font-semibold text-white">Ate 5x mais rapido</p>
+                  <p className="text-xs text-slate-400">para montar protocolos e cardapios.</p>
+                </div>
+                <div className="rounded-xl border border-slate-800/80 bg-slate-900/70 p-4 shadow-sm shadow-emerald-500/10">
+                  <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Precisao</p>
+                  <p className="mt-2 text-lg font-semibold text-white">Protocolos assistidos</p>
+                  <p className="text-xs text-slate-400">combinando IA e conhecimento clinico.</p>
+                </div>
+                <div className="rounded-xl border border-slate-800/80 bg-slate-900/70 p-4 shadow-sm shadow-emerald-500/10">
+                  <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Seguranca</p>
+                  <p className="mt-2 text-lg font-semibold text-white">LGPD e criptografia</p>
+                  <p className="text-xs text-slate-400">para proteger dados sensiveis.</p>
+                </div>
+              </div>
             </div>
-            <p className="text-gray-400 mb-4">
-              Transformando a nutrição através da inteligência artificial
-            </p>
-            <div className="flex justify-center space-x-6 text-sm text-gray-400">
-              <Link href="/terms" className="hover:text-white transition-colors">
-                Termos de Uso
-              </Link>
-              <Link href="/privacy" className="hover:text-white transition-colors">
-                Privacidade
-              </Link>
-              <Link href="/support" className="hover:text-white transition-colors">
-                Suporte
-              </Link>
+
+            <Card className="border border-slate-800/80 bg-slate-900/70 shadow-lg shadow-emerald-500/10 backdrop-blur">
+              <CardHeader className="space-y-3">
+                <CardTitle className="flex items-center gap-2 text-xl text-white">
+                  <Sparkles className="h-5 w-5 text-emerald-300" />
+                  Experiencia digna do agent-chat
+                </CardTitle>
+                <CardDescription className="text-sm text-slate-300">
+                  O mesmo visual do painel do agente aplicado ao onboarding, com cards translucidos
+                  e tipografia consistente para orientar sua equipe.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm text-slate-300">
+                <div className="flex items-start gap-3 rounded-lg border border-slate-800/60 bg-slate-900/60 p-3">
+                  <MessageCircle className="mt-0.5 h-4 w-4 text-emerald-300" />
+                  <div>
+                    <p className="font-medium text-slate-200">Fluxos guiados</p>
+                    <p>Scripts adaptativos verificam rotina, historico e objetivos em minutos.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 rounded-lg border border-slate-800/60 bg-slate-900/60 p-3">
+                  <Shield className="mt-0.5 h-4 w-4 text-emerald-300" />
+                  <div>
+                    <p className="font-medium text-slate-200">Controle de dados</p>
+                    <p>Registre consentimento, exporte informacoes e mantenha auditoria de acessos.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 rounded-lg border border-slate-800/60 bg-slate-900/60 p-3">
+                  <Clock className="mt-0.5 h-4 w-4 text-emerald-300" />
+                  <div>
+                    <p className="font-medium text-slate-200">Entrega imediata</p>
+                    <p>Templates prontos encurtam o tempo entre primeira consulta e plano alimentar.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
+          <section className="space-y-10">
+            <div className="text-center">
+              <Badge className="border-emerald-400 bg-emerald-500/10 text-emerald-300">
+                O que voce leva
+              </Badge>
+              <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
+                Ferramentas prontas para elevar a pratica nutricional
+              </h2>
+              <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-300 sm:text-base">
+                Um ecossistema integrado para consultas, planos e acompanhamento, sem abrir mao da
+                confidencialidade dos dados.
+              </p>
             </div>
-          </div>
-        </footer>
-      </div>
+
+            <div className="grid gap-6 md:grid-cols-3">
+              <Card className="border border-slate-800/70 bg-slate-900/70 shadow-lg shadow-emerald-500/10">
+                <CardHeader className="space-y-2">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
+                    <Activity className="h-6 w-6 text-emerald-300" />
+                  </div>
+                  <CardTitle className="text-xl text-white">Protocolos dinamicos</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-slate-300">
+                  Estruture anamnese e follow-up com checklists automatizados e recomendacoes
+                  adaptadas ao perfil do paciente.
+                </CardContent>
+              </Card>
+
+              <Card className="border border-slate-800/70 bg-slate-900/70 shadow-lg shadow-emerald-500/10">
+                <CardHeader className="space-y-2">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
+                    <Users className="h-6 w-6 text-emerald-300" />
+                  </div>
+                  <CardTitle className="text-xl text-white">Visao 360 da jornada</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-slate-300">
+                  Integre historico alimentar, evolucao de consultas e tarefas pendentes em um
+                  painel unico inspirado no agent-chat.
+                </CardContent>
+              </Card>
+
+              <Card className="border border-slate-800/70 bg-slate-900/70 shadow-lg shadow-emerald-500/10">
+                <CardHeader className="space-y-2">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
+                    <Zap className="h-6 w-6 text-emerald-300" />
+                  </div>
+                  <CardTitle className="text-xl text-white">Automacao segura</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-slate-300">
+                  Centralize templates, exportacoes LGPD e integracoes com suplementos ou exames,
+                  tudo protegido com autenticacao Supabase.
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+
+          <section className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <Card className="border border-slate-800/70 bg-slate-900/70 shadow-lg shadow-emerald-500/10">
+              <CardHeader>
+                <CardTitle className="text-2xl text-white">Resultados em numeros</CardTitle>
+                <CardDescription className="text-slate-300">
+                  Equipes que migraram para o NutriChat com a nova interface relataram:
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm text-slate-300">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-emerald-300" />
+                  <span>80% de reducao em tarefas repetitivas na elaboracao de planos.</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-emerald-300" />
+                  <span>35% mais pacientes ativos com engajamento continuo.</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-emerald-300" />
+                  <span>Tempo medio de onboarding reduzido para 12 minutos.</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="space-y-6">
+              <h2 className="text-3xl font-semibold text-white sm:text-4xl">
+                Planos flexiveis para cada fase da sua clinica
+              </h2>
+              <p className="text-sm text-slate-300 sm:text-base">
+                Startups de consultorio ou grandes redes: escolha um plano, migre quando quiser e
+                mantenha sempre a mesma identidade refinada do agent-chat.
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Card className="border border-emerald-400/40 bg-emerald-500/5 shadow-emerald-500/20">
+                  <CardHeader className="space-y-1">
+                    <CardTitle className="text-lg text-white">Starter</CardTitle>
+                    <CardDescription className="text-slate-200">
+                      Profissionais independentes
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm text-slate-200">
+                    <p className="text-xl font-semibold text-emerald-300">R$ 49/mes</p>
+                    <p>Ate 15 consultas diarias e relatorios automatizados.</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border border-emerald-400/40 bg-emerald-500/5 shadow-emerald-500/20">
+                  <CardHeader className="space-y-1">
+                    <CardTitle className="text-lg text-white">Pro</CardTitle>
+                    <CardDescription className="text-slate-200">
+                      Equipes em crescimento
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm text-slate-200">
+                    <p className="text-xl font-semibold text-emerald-300">R$ 99/mes</p>
+                    <p>Protocolos completos, relatorios avancados e suporte prioritario.</p>
+                  </CardContent>
+                </Card>
+              </div>
+              <Button
+                asChild
+                variant="outline"
+                className="w-fit border-emerald-400/50 bg-slate-900/60 text-emerald-200 transition hover:bg-slate-900/80"
+              >
+                <Link href="/plans">Consultar todos os planos</Link>
+              </Button>
+            </div>
+          </section>
+
+          <section>
+            <Card className="overflow-hidden border border-emerald-400/40 bg-gradient-to-r from-emerald-500/10 via-slate-900/80 to-slate-900/90 shadow-xl shadow-emerald-500/20">
+              <CardContent className="flex flex-col gap-6 px-6 py-10 text-center sm:px-10">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-emerald-400/60 bg-emerald-500/10">
+                  <Sparkles className="h-6 w-6 text-emerald-300" />
+                </div>
+                <h2 className="text-3xl font-semibold text-white sm:text-4xl">
+                  Comece a usar o NutriChat hoje mesmo
+                </h2>
+                <p className="mx-auto max-w-2xl text-sm text-slate-200 sm:text-base">
+                  Em poucos minutos voce cria sua conta, conecta com o Supabase Auth e acessa o
+                  mesmo ambiente do agent-chat para atender seus pacientes com consistencia visual.
+                </p>
+                <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="flex items-center justify-center gap-2 bg-emerald-500/90 text-slate-900 shadow-sm shadow-emerald-500/30 transition hover:bg-emerald-400 hover:text-slate-900"
+                  >
+                    <Link href="/register">
+                      Criar conta gratuita
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="border-slate-700 bg-slate-900/50 text-slate-200 transition hover:border-emerald-400/50 hover:text-emerald-200"
+                  >
+                    <Link href="/login">
+                      Ja tenho conta
+                      <Clock className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+        </div>
+      </main>
     </>
   );
 }
