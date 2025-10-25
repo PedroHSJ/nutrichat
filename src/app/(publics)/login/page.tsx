@@ -30,7 +30,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.replace('/chat');
+    router.replace('/agent-chat');
   }, [authLoading, interactionStatus, isAuthenticated, router]);
 
   // Unsplash/Source image (free to use) themed for nutrition / healthy food

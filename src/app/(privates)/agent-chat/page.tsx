@@ -1,19 +1,14 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatKit, useChatKit } from "@openai/chatkit-react";
-import {
-  CHATKIT_API_URL,
-  CHATKIT_API_DOMAIN_KEY,
-  WORKFLOW_ID,
-  CHATKIT_SESSION_ENDPOINT,
-} from "./config";
+import { WORKFLOW_ID, CHATKIT_SESSION_ENDPOINT } from "./config";
 import { useAuth } from "@/context/AuthContext";
-import { useAuthHeaders } from "@/hooks/use-auth-headers";
 import { RouteGuard } from "@/components/RouteGuard";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Clock, LogOut, Sparkles } from "lucide-react";
 
 import type { ColorScheme } from "./useColorSchema";
 import { useFacts } from "./useFacts";
@@ -421,47 +416,107 @@ function extractErrorDetail(
   return fallback;
 }
 
-
 export default function AgentChatPage() {
-  const { user } = useAuth();
-  const authHeaders = useAuthHeaders();
-  const [theme, setTheme] = useState<ColorScheme>('dark');
+  const { user, logout, interactionStatus } = useAuth();
+  const [theme, setTheme] = useState<ColorScheme>("dark");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const canAuthenticate = Boolean(authHeaders.Authorization);
-    const { facts, refresh, performAction } = useFacts();
-    const handleThemeChange = (scheme: ColorScheme) => {
-      setTheme(scheme);
+  const { facts, refresh, performAction } = useFacts();
+  const handleThemeChange = (scheme: ColorScheme) => {
+    setTheme(scheme);
+  };
+  const workflowLabel = WORKFLOW_ID ?? "workflow nao configurado";
+  const trialRemainingText = useMemo(() => {
+    if (!interactionStatus?.isTrialing) {
+      return null;
     }
-    const WORKFLOW_ID = "wf_68f171e696088190b6593a65b43b40c70a73086338745800";
+    if (!interactionStatus.trialEndsAt) {
+      return "Trial ativo";
+    }
+    const endDate = new Date(interactionStatus.trialEndsAt);
+    const now = new Date();
+    const diffMs = endDate.getTime() - now.getTime();
+    if (diffMs <= 0) {
+      return "Período de teste expira hoje";
+    }
+    const dayMs = 1000 * 60 * 60 * 24;
+    const diffDays = Math.ceil(diffMs / dayMs);
+    if (diffDays <= 1) {
+      return "Último dia de teste";
+    }
+    return `${diffDays} dia${diffDays === 1 ? "" : "s"} de teste restantes`;
+  }, [interactionStatus?.isTrialing, interactionStatus?.trialEndsAt]);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      setIsLoggingOut(true);
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }, [logout]);
+
   return (
     <RouteGuard requiresPlan redirectToPlans>
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-12 px-4">
         <div className="mx-auto flex max-w-5xl flex-col gap-6">
-          <Card className="border-slate-800 bg-slate-900/70 backdrop-blur">
-          {process.env.NODE_ENV !== 'production' && (
-            <CardHeader className="flex flex-col gap-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-2xl font-semibold text-white">
-                    <Sparkles className="h-5 w-5 text-emerald-400" />
-                    Agente Inteligente (ChatKit)
-                  </CardTitle>
-                  <CardDescription className="text-slate-300">
-                    Interface oficial do ChatKit alimentada pelo workflow{' '}
-                    <span className="font-mono text-emerald-300">{WORKFLOW_ID}</span>.
-                  </CardDescription>
-                </div>
-                <Badge variant="outline" className="border-emerald-400 text-emerald-300 bg-emerald-400/10">
-                  Workflow
-                </Badge>
+          <header className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 px-6 py-4 shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3 sm:items-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+                <Sparkles className="h-5 w-5 text-emerald-400" />
               </div>
-              {user?.name && (
-                <p className="text-xs text-slate-400">
-                  Autenticado como <span className="font-medium text-slate-200">{user.name}</span>
+              <div>
+                <h1 className="text-xl font-semibold text-white">
+                  Agente Inteligente
+                </h1>
+                <p className="text-sm text-slate-300">
+                  Interface oficial do ChatKit disponivel para o seu plano.
                 </p>
+                {process.env.NODE_ENV !== "production" && (
+                  <Badge className="mt-2 w-fit border-emerald-400 bg-emerald-500/10 text-emerald-300">
+                    Workflow{" "}
+                    <span className="font-mono text-xs">{workflowLabel}</span>
+                  </Badge>
+                )}
+                {trialRemainingText && (
+                  <Badge className="mt-2 flex w-fit items-center gap-2 border-violet-400 bg-violet-500/10 text-violet-200">
+                    <Clock className="h-3.5 w-3.5" />
+                    {trialRemainingText}
+                  </Badge>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
+              {facts.length > 0 && (
+                <Badge
+                  variant="outline"
+                  className="flex items-center justify-center border-slate-700 bg-slate-800/80 text-slate-200"
+                >
+                  {facts.length} fato{facts.length > 1 ? "s" : ""} salvo
+                  {facts.length > 1 ? "s" : ""}
+                </Badge>
               )}
-            </CardHeader>
-          )}
+              {user?.name && (
+                <div className="flex flex-col text-right text-xs">
+                  <span className="text-slate-400">Autenticado como</span>
+                  <span className="text-sm font-medium text-slate-100">
+                    {user.name}
+                  </span>
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="flex items-center justify-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                {isLoggingOut ? "Saindo..." : "Sair"}
+              </Button>
+            </div>
+          </header>
+          <Card className="border-slate-800 bg-slate-900/70 backdrop-blur">
             <CardContent>
               <div className="relative h-full w-full overflow-hidden border border-slate-200/60 bg-white shadow-card dark:border-slate-800/70 dark:bg-slate-900">
                 <ChatKitPanel
