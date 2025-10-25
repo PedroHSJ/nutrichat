@@ -4,11 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatKit, useChatKit } from "@openai/chatkit-react";
 import { WORKFLOW_ID, CHATKIT_SESSION_ENDPOINT } from "./config";
 import { useAuth } from "@/context/AuthContext";
+import Link from "next/link";
 import { RouteGuard } from "@/components/RouteGuard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, LogOut, Sparkles } from "lucide-react";
+import { Clock, Crown, LogOut, Sparkles } from "lucide-react";
 
 import type { ColorScheme } from "./useColorSchema";
 import { useFacts } from "./useFacts";
@@ -437,12 +438,12 @@ export default function AgentChatPage() {
     const now = new Date();
     const diffMs = endDate.getTime() - now.getTime();
     if (diffMs <= 0) {
-      return "Período de teste expira hoje";
+      return "PerAodo de teste expira hoje";
     }
     const dayMs = 1000 * 60 * 60 * 24;
     const diffDays = Math.ceil(diffMs / dayMs);
     if (diffDays <= 1) {
-      return "Último dia de teste";
+      return "Asltimo dia de teste";
     }
     return `${diffDays} dia${diffDays === 1 ? "" : "s"} de teste restantes`;
   }, [interactionStatus?.isTrialing, interactionStatus?.trialEndsAt]);
@@ -487,6 +488,15 @@ export default function AgentChatPage() {
               </div>
             </div>
             <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <Button
+                asChild
+                className="flex items-center justify-center gap-2 bg-emerald-500/90 text-slate-900 shadow-sm shadow-emerald-500/30 transition hover:bg-emerald-400 hover:text-slate-900"
+              >
+                <Link href="/plans">
+                  <Crown className="h-4 w-4" />
+                  Gerenciar plano
+                </Link>
+              </Button>
               {facts.length > 0 && (
                 <Badge
                   variant="outline"

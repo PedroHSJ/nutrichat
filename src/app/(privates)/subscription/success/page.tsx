@@ -86,10 +86,10 @@ function SubscriptionSuccessContent() {
           <CardHeader className="text-center">
             <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
             <CardTitle className="text-xl text-red-600">
-              Problema na Verificação
+              Problema na VerificaAAo
             </CardTitle>
             <CardDescription>
-              Não foi possível verificar o status do seu pagamento.
+              NAo foi possAvel verificar o status do seu pagamento.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -102,7 +102,7 @@ function SubscriptionSuccessContent() {
                   <Link href="/plans">Ver Planos</Link>
                 </Button>
                 <Button variant="outline" asChild className="flex-1">
-                  <Link href="/">Início</Link>
+                  <Link href="/">InAcio</Link>
                 </Button>
               </div>
             </div>
@@ -118,7 +118,7 @@ function SubscriptionSuccessContent() {
         <CardHeader className="text-center">
           <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
           <CardTitle className="text-2xl text-green-600">
-            Assinatura Ativada! 🎉
+            Assinatura Ativada! YZ
           </CardTitle>
           <CardDescription>
             Seu pagamento foi processado com sucesso
@@ -134,11 +134,11 @@ function SubscriptionSuccessContent() {
                 </h4>
                 <div className="space-y-1 text-sm text-green-700">
                   <p><strong>Plano:</strong> {subscriptionDetails.planName}</p>
-                  <p><strong>Limite diário:</strong> {subscriptionDetails.dailyLimit} interações</p>
-                  <p><strong>Próxima cobrança:</strong> {
+                  <p><strong>Limite diArio:</strong> {subscriptionDetails.dailyLimit} interaAAes</p>
+                  <p><strong>PrA3xima cobranAa:</strong> {
                     subscriptionDetails.nextBilling 
                       ? new Date(subscriptionDetails.nextBilling).toLocaleDateString()
-                      : 'Não disponível'
+                      : 'NAo disponAvel'
                   }</p>
                 </div>
               </div>
@@ -146,22 +146,22 @@ function SubscriptionSuccessContent() {
             
             <div className="text-center space-y-4">
               <p className="text-sm text-muted-foreground">
-                Agora você pode aproveitar todos os recursos premium do NutriChat!
+                Agora vocAa pode aproveitar todos os recursos premium do NutriChat!
               </p>
               
               <div className="space-y-2">
                 <Button asChild className="w-full">
-                  <Link href="/">Começar a Usar</Link>
+                  <Link href="/">ComeAar a Usar</Link>
                 </Button>
                 <Button variant="outline" asChild className="w-full">
-                  <Link href="/subscription/manage">Gerenciar Assinatura</Link>
+                  <Link href="/plans">Gerenciar Assinatura</Link>
                 </Button>
               </div>
             </div>
 
             <div className="mt-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
               <p className="text-xs text-blue-600 text-center">
-                📧 Um email de confirmação foi enviado para você com todos os detalhes da assinatura.
+                Y Um email de confirmaAAo foi enviado para vocAa com todos os detalhes da assinatura.
               </p>
             </div>
           </div>

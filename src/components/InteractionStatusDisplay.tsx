@@ -34,7 +34,7 @@ export function InteractionStatusDisplay({
   const usedInteractions = dailyLimit - remainingInteractions;
   const usagePercentage = dailyLimit > 0 ? (usedInteractions / dailyLimit) * 100 : 0;
 
-  // Definir cores e ícones baseados no plano
+  // Definir cores e Acones baseados no plano
   const getPlanIcon = (plan: string) => {
     switch (plan) {
       case 'premium': return <Crown className="h-4 w-4" />;
@@ -91,7 +91,7 @@ export function InteractionStatusDisplay({
             {planName || `Plano ${planType === 'free' ? 'Gratuito' : 
                     planType === 'premium' ? 'Premium' : 
                     planType === 'enterprise' ? 'Enterprise' :
-                    planType === 'basic' ? 'Básico' :
+                    planType === 'basic' ? 'BAsico' :
                     planType === 'pro' ? 'Pro' : 'Desconhecido'}`}
           </span>
         </div>
@@ -136,22 +136,22 @@ export function InteractionStatusDisplay({
           }`}>
             {isLimitReached ? (
               <div className="space-y-1">
-                <p className="font-medium">Limite diário atingido!</p>
+                <p className="font-medium">Limite diArio atingido!</p>
                 <p className="text-xs">
-                  Você usou todas as {dailyLimit} interações disponíveis hoje.
-                  Suas interações serão resetadas {formatResetTime(resetTime)}.
+                  VocAa usou todas as {dailyLimit} interaAAes disponAveis hoje.
+                  Suas interaAAes serAo resetadas {formatResetTime(resetTime)}.
                 </p>
                 {planType === 'free' && (
                   <p className="text-xs">
-                    Considere fazer upgrade para um plano premium para mais interações diárias.
+                    Considere fazer upgrade para um plano premium para mais interaAAes diArias.
                   </p>
                 )}
               </div>
             ) : (
               <div className="space-y-1">
-                <p className="font-medium">Poucas interações restantes!</p>
+                <p className="font-medium">Poucas interaAAes restantes!</p>
                 <p className="text-xs">
-                  Você tem apenas {remainingInteractions} interações disponíveis hoje.
+                  VocAa tem apenas {remainingInteractions} interaAAes disponAveis hoje.
                 </p>
                 {planType === 'free' && (
                   <p className="text-xs">
@@ -164,7 +164,7 @@ export function InteractionStatusDisplay({
         </div>
       )}
 
-      {/* Botão de upgrade */}
+      {/* BotAo de upgrade */}
       {(planType === 'free' || !planType) && (shouldShowAlert || usagePercentage >= 70) && (
         <Button 
           variant="outline" 
@@ -179,18 +179,18 @@ export function InteractionStatusDisplay({
         </Button>
       )}
 
-      {/* Botão de gerenciar para planos pagos */}
+      {/* BotAo de gerenciar para planos pagos */}
       {(planType === 'basic' || planType === 'pro' || planType === 'premium' || planType === 'enterprise') && (
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="w-full text-xs"
-          onClick={() => {
-            router.push('/subscription/manage');
-          }}
-        >
-          Gerenciar Assinatura
-        </Button>
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="w-full text-xs"
+        onClick={() => {
+            router.push('/plans');
+        }}
+      >
+        Gerenciar Assinatura
+      </Button>
       )}
     </div>
   );
