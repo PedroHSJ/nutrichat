@@ -61,7 +61,7 @@ export function ChatKitPanel({
       ? "ready"
       : "pending"
   );
-  const [widgetInstanceKey, setWidgetInstanceKey] = useState(0);
+  const [widgetInstanceKey] = useState(0);
 
   const setErrorState = useCallback((updates: Partial<ErrorState>) => {
     setErrors((current) => ({ ...current, ...updates }));
@@ -146,17 +146,17 @@ export function ChatKitPanel({
     }
   }, [isWorkflowConfigured, setErrorState]);
 
-  const handleResetChat = useCallback(() => {
-    processedFacts.current.clear();
-    if (isBrowser) {
-      setScriptStatus(
-        window.customElements?.get("openai-chatkit") ? "ready" : "pending"
-      );
-    }
-    setIsInitializingSession(true);
-    setErrors(createInitialErrors());
-    setWidgetInstanceKey((prev) => prev + 1);
-  }, []);
+  // const handleResetChat = useCallback(() => {
+  //   processedFacts.current.clear();
+  //   if (isBrowser) {
+  //     setScriptStatus(
+  //       window.customElements?.get("openai-chatkit") ? "ready" : "pending"
+  //     );
+  //   }
+  //   setIsInitializingSession(true);
+  //   setErrors(createInitialErrors());
+  //   setWidgetInstanceKey((prev) => prev + 1);
+  // }, []);
 
   const getClientSecret = useCallback(
     async (currentSecret: string | null) => {

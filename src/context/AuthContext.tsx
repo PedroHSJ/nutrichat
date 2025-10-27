@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, {
   createContext,
@@ -8,12 +8,12 @@ import React, {
   useMemo,
   useState,
   ReactNode,
-} from 'react';
-import { useRouter } from 'next/navigation';
-import { authService, AuthUser } from '@/lib/auth';
-import { chatPersistence } from '@/lib/persistence';
-import { getStoredAuthHeaders, useAuthHeaders } from '@/hooks/use-auth-headers';
-import { UserInteractionStatus } from '@/types/subscription';
+} from "react";
+import { useRouter } from "next/navigation";
+import { authService, AuthUser } from "@/lib/auth";
+import { chatPersistence } from "@/lib/persistence";
+import { getStoredAuthHeaders, useAuthHeaders } from "@/hooks/use-auth-headers";
+import { UserInteractionStatus } from "@/types/subscription";
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -42,7 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authLoading, setAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [hasConsent, setHasConsent] = useState(false);
-  const [interactionStatus, setInteractionStatus] = useState<UserInteractionStatus | null>(null);
+  const [interactionStatus, setInteractionStatus] =
+    useState<UserInteractionStatus | null>(null);
 
   const initializePersistence = useCallback(
     async (currentUser: AuthUser | null) => {
@@ -53,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await chatPersistence.initialize(currentUser);
       } catch (error) {
-        console.error('Erro ao inicializar persistência do chat:', error);
+        console.error("Erro ao inicializar persistência do chat:", error);
       }
     },
     []
@@ -63,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initializeAuth = async () => {
       try {
         const currentUser = await authService.getCurrentSession();
-        console.log('Sessão atual:', currentUser);
+        console.log("Sessão atual:", currentUser);
 
         if (currentUser) {
           setUser(currentUser);
@@ -79,8 +80,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setInteractionStatus(null);
         }
       } catch (error) {
-        console.error('Erro na inicialização de autenticação:', error);
-        setAuthError('Erro ao verificar sessão');
+        console.error("Erro na inicialização de autenticação:", error);
+        setAuthError("Erro ao verificar sessão");
         setUser(null);
         setIsAuthenticated(false);
         setHasConsent(false);
@@ -115,21 +116,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const headers = authHeaders.Authorization ? authHeaders : getStoredAuthHeaders();
+    const headers = authHeaders.Authorization
+      ? authHeaders
+      : getStoredAuthHeaders();
     if (!headers.Authorization) {
       return;
     }
 
     try {
-      const response = await fetch('/api/subscription/status', {
+      const response = await fetch("/api/subscription/status", {
         headers,
       });
       const status = response.ok ? await response.json() : null;
       setInteractionStatus(status);
     } catch (error) {
-      console.error('Erro ao buscar status de interações:', error);
+      console.error("Erro ao buscar status de interações:", error);
     }
-  }, [authHeaders, isAuthenticated, user]);
+  }, [isAuthenticated, user]);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -155,21 +158,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const headers = getStoredAuthHeaders();
         if (headers.Authorization) {
-          const statusResponse = await fetch('/api/subscription/status', {
+          const statusResponse = await fetch("/api/subscription/status", {
             headers,
           });
           const status = statusResponse.ok ? await statusResponse.json() : null;
           setInteractionStatus(status);
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Erro no login';
+        const errorMessage =
+          error instanceof Error ? error.message : "Erro no login";
         setAuthError(errorMessage);
         throw error;
       } finally {
         setAuthLoading(false);
       }
     },
-    [authHeaders, initializePersistence]
+    [initializePersistence]
   );
 
   const signUp = useCallback(
@@ -188,15 +192,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const headers = getStoredAuthHeaders();
         if (headers.Authorization) {
-          const statusResponse = await fetch('/api/subscription/status', {
+          const statusResponse = await fetch("/api/subscription/status", {
             headers,
           });
           const status = statusResponse.ok ? await statusResponse.json() : null;
           setInteractionStatus(status);
         }
       } catch (error) {
-        console.error('Error in signUp function:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Erro no cadastro';
+        console.error("Error in signUp function:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Erro no cadastro";
         setAuthError(errorMessage);
         throw error;
       } finally {
@@ -216,32 +221,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthError(null);
       setInteractionStatus(null);
 
-      router.replace('/login');
+      router.replace("/login");
     } catch (error) {
-      console.error('Erro no logout:', error);
+      console.error("Erro no logout:", error);
     } finally {
       setAuthLoading(false);
     }
   }, [router]);
 
   const requestConsent = useCallback(async () => {
-    console.log('requestConsent chamado - isAuthenticated:', isAuthenticated);
+    console.log("requestConsent chamado - isAuthenticated:", isAuthenticated);
 
     if (!isAuthenticated) {
-      console.error('Usuário não autenticado, não é possível dar consentimento');
+      console.error(
+        "Usuário não autenticado, não é possível dar consentimento"
+      );
       return false;
     }
 
     try {
-      console.log('Chamando authService.giveConsent()...');
+      console.log("Chamando authService.giveConsent()...");
       await authService.giveConsent();
-      console.log('authService.giveConsent() executado com sucesso');
+      console.log("authService.giveConsent() executado com sucesso");
       setHasConsent(true);
-      console.log('hasConsent definido como true');
+      console.log("hasConsent definido como true");
       return true;
     } catch (error) {
-      console.error('Erro ao dar consentimento:', error);
-      console.error('Detalhes do erro:', error instanceof Error ? error.message : String(error));
+      console.error("Erro ao dar consentimento:", error);
+      console.error(
+        "Detalhes do erro:",
+        error instanceof Error ? error.message : String(error)
+      );
       return false;
     }
   }, [isAuthenticated]);
@@ -252,18 +262,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const data = await chatPersistence.exportUserData();
       if (data) {
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(data, null, 2)], {
+          type: "application/json",
+        });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
-        a.download = `nutrichat-dados-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `nutrichat-dados-${
+          new Date().toISOString().split("T")[0]
+        }.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
     } catch (error) {
-      console.error('Erro ao exportar dados:', error);
+      console.error("Erro ao exportar dados:", error);
       throw error;
     }
   }, [isAuthenticated]);
@@ -280,7 +294,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthError(null);
       setInteractionStatus(null);
     } catch (error) {
-      console.error('Erro ao deletar conta:', error);
+      console.error("Erro ao deletar conta:", error);
       throw error;
     }
   }, [isAuthenticated]);
@@ -325,7 +339,7 @@ export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
 
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
 
   return context;

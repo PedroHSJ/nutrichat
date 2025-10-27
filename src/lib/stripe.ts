@@ -366,10 +366,10 @@ export class SubscriptionService {
               dailyLimit: plan.daily_interactions_limit,
               priceId: price.stripe_price_id,
               productId: plan.stripe_product_id,
-              priceCents: price.amount,
+              priceCents: price.amount_cents,
               currency: price.currency || "brl",
               features: plan.features || [],
-              interval: price.interval,
+              interval: price.billing_interval,
             }))
         );
       }
@@ -393,10 +393,10 @@ export class SubscriptionService {
                   dailyLimit: plan.daily_interactions_limit,
                   priceId: price.stripe_price_id,
                   productId: plan.stripe_product_id,
-                  priceCents: stripePrice.unit_amount || price.amount,
+                  priceCents: stripePrice.unit_amount || price.amount_cents,
                   currency: stripePrice.currency || price.currency || "brl",
                   features: plan.features || [],
-                  interval: price.interval,
+                  interval: price.billing_interval,
                   stripeData: {
                     active: stripePrice.active,
                     recurring: stripePrice.recurring,
@@ -415,10 +415,10 @@ export class SubscriptionService {
                   dailyLimit: plan.daily_interactions_limit,
                   priceId: price.stripe_price_id,
                   productId: plan.stripe_product_id,
-                  priceCents: price.amount,
+                  priceCents: price.amount_cents,
                   currency: price.currency || "brl",
                   features: plan.features || [],
-                  interval: price.interval,
+                  interval: price.billing_interval,
                 };
               }
             })

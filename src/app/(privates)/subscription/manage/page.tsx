@@ -1,13 +1,25 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { CancelSubscriptionModal } from '@/components/CancelSubscriptionModal';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, CreditCard, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
-import Link from 'next/link';
-import { useAuthHeaders } from '@/hooks/use-auth-headers';
+import { useState, useEffect } from "react";
+import { CancelSubscriptionModal } from "@/components/CancelSubscriptionModal";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Loader2,
+  CreditCard,
+  Calendar,
+  AlertTriangle,
+  CheckCircle,
+} from "lucide-react";
+import Link from "next/link";
+import { useAuthHeaders } from "@/hooks/use-auth-headers";
 
 interface SubscriptionInfo {
   hasSubscription: boolean;
@@ -22,7 +34,9 @@ interface SubscriptionInfo {
 
 export default function ManageSubscriptionPage() {
   const [loading, setLoading] = useState(true);
-  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const authHeaders = useAuthHeaders();
@@ -31,12 +45,12 @@ export default function ManageSubscriptionPage() {
     setShowCancelModal(true);
   };
 
-  const handleModalCancel = async (type: 'immediate' | 'period') => {
+  const handleModalCancel = async (type: "immediate" | "period") => {
     setShowCancelModal(false);
-    await fetch('/api/subscription/cancel', {
-      method: 'POST',
+    await fetch("/api/subscription/cancel", {
+      method: "POST",
       headers: authHeaders,
-      body: JSON.stringify({ type })
+      body: JSON.stringify({ type }),
     });
     fetchSubscriptionInfo();
   };
@@ -47,7 +61,7 @@ export default function ManageSubscriptionPage() {
 
   const fetchSubscriptionInfo = async () => {
     try {
-      const response = await fetch('/api/subscription/status', {
+      const response = await fetch("/api/subscription/status", {
         headers: authHeaders,
       });
       const data = await response.json();
@@ -55,10 +69,10 @@ export default function ManageSubscriptionPage() {
       if (response.ok) {
         setSubscription(data);
       } else {
-        setError(data.error || 'Erro ao carregar informações da assinatura');
+        setError(data.error || "Erro ao carregar informações da assinatura");
       }
     } catch (err) {
-      setError('Erro de conexão');
+      setError("Erro de conexão");
     } finally {
       setLoading(false);
     }
@@ -66,12 +80,14 @@ export default function ManageSubscriptionPage() {
 
   const getStatusBadge = (status?: string) => {
     switch (status) {
-      case 'active':
+      case "active":
         return <Badge className="bg-green-100 text-green-800">Ativa</Badge>;
-      case 'canceled':
+      case "canceled":
         return <Badge variant="destructive">Cancelada</Badge>;
-      case 'past_due':
-        return <Badge className="bg-yellow-100 text-yellow-800">Em Atraso</Badge>;
+      case "past_due":
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800">Em Atraso</Badge>
+        );
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -125,7 +141,8 @@ export default function ManageSubscriptionPage() {
           <CardContent>
             <div className="space-y-4">
               <p className="text-muted-foreground">
-                Assine um plano premium para aproveitar todos os recursos do NutriChat.
+                Assine um plano premium para aproveitar todos os recursos do
+                NutriChat.
               </p>
               <Button asChild>
                 <Link href="/plans">Ver Planos Disponíveis</Link>
@@ -165,13 +182,21 @@ export default function ManageSubscriptionPage() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Limite Diário</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Limite Diário
+              </p>
               <p className="text-2xl font-bold">{subscription.dailyLimit}</p>
-              <p className="text-sm text-muted-foreground">interações por dia</p>
+              <p className="text-sm text-muted-foreground">
+                interações por dia
+              </p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Restantes Hoje</p>
-              <p className="text-2xl font-bold">{subscription.remainingInteractions}</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Restantes Hoje
+              </p>
+              <p className="text-2xl font-bold">
+                {subscription.remainingInteractions}
+              </p>
               <p className="text-sm text-muted-foreground">até à meia-noite</p>
             </div>
           </div>
@@ -184,7 +209,9 @@ export default function ManageSubscriptionPage() {
                   Próxima cobrança
                 </p>
                 <p className="text-sm text-blue-700">
-                  {new Date(subscription.currentPeriodEnd).toLocaleDateString('pt-BR')}
+                  {new Date(subscription.currentPeriodEnd).toLocaleDateString(
+                    "pt-BR"
+                  )}
                 </p>
               </div>
             </div>
@@ -219,14 +246,18 @@ export default function ManageSubscriptionPage() {
             <CreditCard className="mr-2 h-4 w-4" />
             Atualizar Método de Pagamento
           </Button>
-          
+
           <Button variant="outline" className="w-full justify-start">
             <Calendar className="mr-2 h-4 w-4" />
             Histórico de Cobranças
           </Button>
-          
+
           {!subscription.cancelAtPeriodEnd ? (
-            <Button variant="destructive" className="w-full" onClick={handleCancelSubscription}>
+            <Button
+              variant="destructive"
+              className="w-full"
+              onClick={handleCancelSubscription}
+            >
               Cancelar Assinatura
             </Button>
           ) : (
@@ -245,7 +276,7 @@ export default function ManageSubscriptionPage() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Se você tiver dúvidas sobre sua assinatura ou precisar de suporte, 
+            Se você tiver dúvidas sobre sua assinatura ou precisar de suporte,
             estamos aqui para ajudar.
           </p>
           <div className="flex gap-2">
