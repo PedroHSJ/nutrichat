@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
-import { AuthForm, type RegisterFormValues } from "@/components/auth/AuthForm";
+import {
+  RegisterForm,
+  type RegisterFormValues,
+} from "@/components/auth/AuthForm";
 import { useAuth } from "@/context/AuthContext";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -32,7 +35,9 @@ export default function RegisterPage() {
   const handleGoogle = async () => {
     const supabase = getSupabaseBrowserClient();
     const redirectTo =
-      typeof window !== "undefined" ? `${window.location.origin}/agent-chat` : undefined;
+      typeof window !== "undefined"
+        ? `${window.location.origin}/agent-chat`
+        : undefined;
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -59,7 +64,8 @@ export default function RegisterPage() {
             Crie sua conta
           </h1>
           <p className="max-w-lg text-sm text-slate-300 sm:text-base">
-            Prepare-se para acompanhar seus pacientes com o agente inteligente da NutriChat.
+            Prepare-se para acompanhar seus pacientes com o agente inteligente
+            da NutriChat.
           </p>
         </div>
 
@@ -69,8 +75,7 @@ export default function RegisterPage() {
           footer={<span>Já tem conta?</span>}
           footerLink={{ href: "/login", label: "Fazer login" }}
         >
-          <AuthForm
-            mode="register"
+          <RegisterForm
             onSubmit={handleRegister}
             onGoogle={handleGoogle}
             serverError={authError}

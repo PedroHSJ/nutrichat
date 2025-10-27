@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
-import { AuthForm, type LoginFormValues } from "@/components/auth/AuthForm";
+import { LoginForm, type LoginFormValues } from "@/components/auth/AuthForm";
 import { useAuth } from "@/context/AuthContext";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -32,7 +32,9 @@ export default function LoginPage() {
   const handleGoogle = async () => {
     const supabase = getSupabaseBrowserClient();
     const redirectTo =
-      typeof window !== "undefined" ? `${window.location.origin}/agent-chat` : undefined;
+      typeof window !== "undefined"
+        ? `${window.location.origin}/agent-chat`
+        : undefined;
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -49,7 +51,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 px-4 py-12">
       <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-8 text-center">
         <div className="flex flex-col items-center gap-3">
           <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-emerald-300">
@@ -59,7 +61,8 @@ export default function LoginPage() {
             Bem-vindo de volta
           </h1>
           <p className="max-w-lg text-sm text-slate-300 sm:text-base">
-            Acesse o painel do agente inteligente e continue a conversa com seus pacientes.
+            Acesse o painel do agente inteligente e continue a conversa com seus
+            pacientes.
           </p>
         </div>
 
@@ -69,8 +72,7 @@ export default function LoginPage() {
           footer={<span>Não tem conta?</span>}
           footerLink={{ href: "/register", label: "Criar conta" }}
         >
-          <AuthForm
-            mode="login"
+          <LoginForm
             onSubmit={handleLogin}
             onGoogle={handleGoogle}
             serverError={authError}
