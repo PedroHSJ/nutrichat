@@ -13,6 +13,7 @@ import { Clock, Crown, LogOut, Sparkles } from "lucide-react";
 
 import type { ColorScheme } from "./useColorSchema";
 import { useFacts } from "./useFacts";
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 
 export type FactAction = {
   type: "save";
@@ -419,7 +420,7 @@ function extractErrorDetail(
 
 export default function AgentChatPage() {
   const { user, logout, interactionStatus } = useAuth();
-  const [theme, setTheme] = useState<ColorScheme>("dark");
+  const [theme, setTheme] = useState<ColorScheme>("light");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const { facts, refresh, performAction } = useFacts();
@@ -458,88 +459,87 @@ export default function AgentChatPage() {
   }, [logout]);
 
   return (
-    <RouteGuard requiresPlan redirectToPlans>
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-12 px-4">
-        <div className="mx-auto flex max-w-5xl flex-col gap-6">
-          <header className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 px-6 py-4 shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-3 sm:items-center">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
-                <Sparkles className="h-5 w-5 text-emerald-400" />
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold text-white">
-                  Agente Inteligente
-                </h1>
-                <p className="text-sm text-slate-300">
-                  Interface oficial do ChatKit disponivel para o seu plano.
-                </p>
-                {process.env.NODE_ENV !== "production" && (
-                  <Badge className="mt-2 w-fit border-emerald-400 bg-emerald-500/10 text-emerald-300">
-                    Workflow{" "}
-                    <span className="font-mono text-xs">{workflowLabel}</span>
-                  </Badge>
-                )}
-                {trialRemainingText && (
-                  <Badge className="mt-2 flex w-fit items-center gap-2 border-violet-400 bg-violet-500/10 text-violet-200">
-                    <Clock className="h-3.5 w-3.5" />
-                    {trialRemainingText}
-                  </Badge>
-                )}
-              </div>
-            </div>
-            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <Button
-                asChild
-                className="flex items-center justify-center gap-2 bg-emerald-500/90 text-slate-900 shadow-sm shadow-emerald-500/30 transition hover:bg-emerald-400 hover:text-slate-900"
-              >
-                <Link href="/plans">
-                  <Crown className="h-4 w-4" />
-                  Gerenciar plano
-                </Link>
-              </Button>
-              {facts.length > 0 && (
-                <Badge
-                  variant="outline"
-                  className="flex items-center justify-center border-slate-700 bg-slate-800/80 text-slate-200"
-                >
-                  {facts.length} fato{facts.length > 1 ? "s" : ""} salvo
-                  {facts.length > 1 ? "s" : ""}
-                </Badge>
-              )}
-              {user?.name && (
-                <div className="flex flex-col text-right text-xs">
-                  <span className="text-slate-400">Autenticado como</span>
-                  <span className="text-sm font-medium text-slate-100">
-                    {user.name}
-                  </span>
-                </div>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                className="flex items-center justify-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                {isLoggingOut ? "Saindo..." : "Sair"}
-              </Button>
-            </div>
-          </header>
-          <Card className="border-slate-800 bg-slate-900/70 backdrop-blur">
-            <CardContent>
-              <div className="relative h-full w-full overflow-hidden border border-slate-200/60 bg-white shadow-card dark:border-slate-800/70 dark:bg-slate-900">
-                <ChatKitPanel
-                  theme={theme}
-                  onWidgetAction={performAction}
-                  onResponseEnd={refresh}
-                  onThemeRequest={handleThemeChange}
-                />
-              </div>
-            </CardContent>
-          </Card>
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950">
+      <header className="flex flex-col mb-4 gap-4 border border-slate-800 bg-slate-900/70 px-6 py-4 shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3 sm:items-center">
+          <SidebarTrigger className="bg-white/10 hover:bg-white/20 focus:ring-2 focus:ring-white/30 text-white hover:text-white" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+            <Sparkles className="h-5 w-5 text-emerald-400" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold text-white">
+              Agente Inteligente
+            </h1>
+            <p className="text-sm text-slate-300">
+              Interface oficial do ChatKit disponivel para o seu plano.
+            </p>
+            {process.env.NODE_ENV !== "production" && (
+              <Badge className="mt-2 w-fit border-emerald-400 bg-emerald-500/10 text-emerald-300">
+                Workflow{" "}
+                <span className="font-mono text-xs">{workflowLabel}</span>
+              </Badge>
+            )}
+            {trialRemainingText && (
+              <Badge className="mt-2 flex w-fit items-center gap-2 border-violet-400 bg-violet-500/10 text-violet-200">
+                <Clock className="h-3.5 w-3.5" />
+                {trialRemainingText}
+              </Badge>
+            )}
+          </div>
         </div>
+        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
+          {/* <Button
+            asChild
+            className="flex items-center justify-center gap-2 bg-emerald-500/90 text-slate-900 shadow-sm shadow-emerald-500/30 transition hover:bg-emerald-400 hover:text-slate-900"
+          >
+            <Link href="/plans">
+              <Crown className="h-4 w-4" />
+              Gerenciar plano
+            </Link>
+          </Button> */}
+          {facts.length > 0 && (
+            <Badge
+              variant="outline"
+              className="flex items-center justify-center border-slate-700 bg-slate-800/80 text-slate-200"
+            >
+              {facts.length} fato{facts.length > 1 ? "s" : ""} salvo
+              {facts.length > 1 ? "s" : ""}
+            </Badge>
+          )}
+          {user?.name && (
+            <div className="flex flex-col text-right text-xs">
+              <span className="text-slate-400">Autenticado como</span>
+              <span className="text-sm font-medium text-slate-100">
+                {user.name}
+              </span>
+            </div>
+          )}
+          {/* <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="flex items-center justify-center gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            {isLoggingOut ? "Saindo..." : "Sair"}
+          </Button> */}
+        </div>
+      </header>
+      <div className="mx-auto flex max-w-5xl flex-col gap-6 py-4">
+        <Card className="border-slate-800 bg-slate-900/70 backdrop-blur">
+          <CardContent>
+            <div className="relative h-full w-full overflow-hidden">
+              <ChatKitPanel
+                theme={theme}
+                onWidgetAction={performAction}
+                onResponseEnd={refresh}
+                onThemeRequest={handleThemeChange}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </RouteGuard>
+    </div>
   );
 }

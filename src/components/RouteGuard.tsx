@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { useSubscription } from '@/hooks/use-subscription';
-import { Loader2 } from 'lucide-react';
+import { useEffect, ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { useSubscription } from "@/hooks/use-subscription";
+import { Loader2 } from "lucide-react";
 
 interface RouteGuardProps {
   children: ReactNode;
@@ -13,11 +13,11 @@ interface RouteGuardProps {
   redirectToLogin?: boolean; // Se true, redireciona para login se não autenticado
 }
 
-export function RouteGuard({ 
-  children, 
-  requiresPlan = false, 
+export function RouteGuard({
+  children,
+  requiresPlan = false,
   redirectToPlans = true,
-  redirectToLogin = true 
+  redirectToLogin = true,
 }: RouteGuardProps) {
   const { isAuthenticated, authLoading } = useAuth();
   const { loading: subscriptionLoading, hasActivePlan } = useSubscription();
@@ -29,27 +29,31 @@ export function RouteGuard({
 
     // Se requer autenticação e não está autenticado
     if (redirectToLogin && !isAuthenticated) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
-
+    console.log("RouteGuard: ", {
+      requiresPlan,
+      hasActivePlan,
+      redirectToPlans,
+    });
     // Se requer plano e ainda está carregando
     if (requiresPlan && subscriptionLoading) return;
 
     // Se requer plano e não tem plano ativo
     if (requiresPlan && !hasActivePlan && redirectToPlans) {
-      router.push('/plans');
+      router.push("/plans");
       return;
     }
   }, [
-    authLoading, 
-    isAuthenticated, 
-    subscriptionLoading, 
-    hasActivePlan, 
-    requiresPlan, 
-    redirectToPlans, 
+    authLoading,
+    isAuthenticated,
+    subscriptionLoading,
+    hasActivePlan,
+    requiresPlan,
+    redirectToPlans,
     redirectToLogin,
-    router
+    router,
   ]);
 
   // Mostrar loading enquanto verifica autenticação

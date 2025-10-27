@@ -798,133 +798,139 @@ export default function PlansManagementPage() {
   const isLoading = statusLoading || subscriptionLoading;
 
   return (
-    <RouteGuard>
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-12 px-4">
-        <CancelSubscriptionModal
-          open={showCancelModal}
-          onClose={() => setShowCancelModal(false)}
-          onCancel={handleCancelSubscription}
-        />
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-12 px-4">
+      <CancelSubscriptionModal
+        open={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onCancel={handleCancelSubscription}
+      />
 
-        <div className="mx-auto flex max-w-6xl flex-col gap-8 lg:flex-row">
-          <aside className="lg:w-72">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-lg shadow-emerald-500/5">
-              <div className="mb-6">
-                <h1 className="text-xl font-semibold text-white">
-                  Central de planos
-                </h1>
-                <p className="mt-1 text-sm text-slate-400">
-                  Gerencie assinatura, cobrancas e upgrade em um so lugar.
-                </p>
-              </div>
-              <nav className="space-y-2">
-                {menuItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = item.id === activeSection;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className={cn(
-                        "w-full rounded-xl border border-transparent bg-slate-900/60 px-4 py-3 text-left transition hover:border-emerald-400/40 hover:bg-slate-900/90",
-                        isActive &&
-                          "border-emerald-400/60 bg-slate-900/90 shadow-md shadow-emerald-500/20"
-                      )}
-                      onClick={() => setActiveSection(item.id)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <span
+      <div className="mx-auto flex max-w-6xl flex-col gap-8 lg:flex-row">
+        <aside className="lg:w-72">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-lg shadow-emerald-500/5">
+            <div className="mb-6">
+              <h1 className="text-xl font-semibold text-white">
+                Central de planos
+              </h1>
+              <p className="mt-1 text-sm text-slate-400">
+                Gerencie assinatura, cobrancas e upgrade em um so lugar.
+              </p>
+            </div>
+            <nav className="space-y-2">
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = item.id === activeSection;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={cn(
+                      "w-full rounded-xl border border-transparent bg-slate-900/60 px-4 py-3 text-left transition hover:border-emerald-400/40 hover:bg-slate-900/90",
+                      isActive &&
+                        "border-emerald-400/60 bg-slate-900/90 shadow-md shadow-emerald-500/20"
+                    )}
+                    onClick={() => setActiveSection(item.id)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span
+                        className={cn(
+                          "flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800/80 text-slate-300",
+                          isActive && "bg-emerald-500/15 text-emerald-300"
+                        )}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <div className="flex-1">
+                        <p
                           className={cn(
-                            "flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800/80 text-slate-300",
-                            isActive && "bg-emerald-500/15 text-emerald-300"
+                            "text-sm font-medium",
+                            isActive ? "text-white" : "text-slate-200"
                           )}
                         >
-                          <Icon className="h-4 w-4" />
-                        </span>
-                        <div className="flex-1">
-                          <p
-                            className={cn(
-                              "text-sm font-medium",
-                              isActive ? "text-white" : "text-slate-200"
-                            )}
-                          >
-                            {item.label}
-                          </p>
-                          <p className="text-xs text-slate-400">
-                            {item.description}
-                          </p>
-                        </div>
+                          {item.label}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {item.description}
+                        </p>
                       </div>
-                    </button>
-                  );
-                })}
-              </nav>
-              <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-xs text-slate-400">
-                <p className="font-semibold text-slate-200">
-                  Precisa de suporte?
-                </p>
-                <p>
-                  Nossa equipe esta disponivel para ajudar com upgrades
-                  customizados e duvidas de faturamento.
-                </p>
-                <Button
-                  asChild
-                  variant="outline"
-                  size="sm"
-                  className="mt-3 w-full"
-                >
-                  <Link href="mailto:financeiro@nutrichat.com.br">
-                    Contatar financeiro
-                  </Link>
-                </Button>
-              </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </nav>
+            <div className="mt-6 mb-2 rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-xs text-slate-400">
+              <p className="font-semibold text-slate-200">
+                Precisa de suporte?
+              </p>
+              <p>
+                Nossa equipe esta disponivel para ajudar com upgrades
+                customizados e duvidas de faturamento.
+              </p>
               <Button
-                type="button"
-                className="w-full rounded-lg bg-rose-600/80 py-2 text-xs font-semibold text-white transition hover:bg-rose-700"
-                onClick={async () => {
-                  // Importa o contexto de autenticação dinamicamente
-                  await logout();
-                  window.location.href = "/login";
-                }}
+                asChild
+                variant="outline"
+                size="sm"
+                className="mt-3 w-full"
               >
-                Sair da conta
+                <Link href="mailto:financeiro@nutrichat.com.br">
+                  Contatar financeiro
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="mt-2 w-full flex items-center justify-center gap-2 text-slate-300 hover:text-emerald-400"
+              >
+                <Link href="/agent-chat">
+                  <ArrowLeftRight className="h-4 w-4 mr-1" /> Voltar para chat
+                </Link>
               </Button>
             </div>
-          </aside>
+            <Button
+              type="button"
+              className="w-full rounded-lg bg-rose-600/80 py-2 text-xs font-semibold text-white transition hover:bg-rose-700"
+              onClick={async () => {
+                // Importa o contexto de autenticação dinamicamente
+                await logout();
+                window.location.href = "/login";
+              }}
+            >
+              Sair da conta
+            </Button>
+          </div>
+        </aside>
 
-          <main className="flex-1 space-y-6">
-            {actionMessage && (
-              <Alert className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-50">
-                <AlertTitle>Processo concluido</AlertTitle>
-                <AlertDescription>{actionMessage}</AlertDescription>
-              </Alert>
-            )}
-            {actionError && (
-              <Alert variant="destructive">
-                <AlertTitle>Ops! Algo nao saiu como esperado</AlertTitle>
-                <AlertDescription>{actionError}</AlertDescription>
-              </Alert>
-            )}
-            {statusError && (
-              <Alert variant="destructive">
-                <AlertTitle>
-                  Nao foi possivel carregar sua assinatura
-                </AlertTitle>
-                <AlertDescription>{statusError}</AlertDescription>
-              </Alert>
-            )}
+        <main className="flex-1 space-y-6">
+          {actionMessage && (
+            <Alert className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-50">
+              <AlertTitle>Processo concluido</AlertTitle>
+              <AlertDescription>{actionMessage}</AlertDescription>
+            </Alert>
+          )}
+          {actionError && (
+            <Alert variant="destructive">
+              <AlertTitle>Ops! Algo nao saiu como esperado</AlertTitle>
+              <AlertDescription>{actionError}</AlertDescription>
+            </Alert>
+          )}
+          {statusError && (
+            <Alert variant="destructive">
+              <AlertTitle>Nao foi possivel carregar sua assinatura</AlertTitle>
+              <AlertDescription>{statusError}</AlertDescription>
+            </Alert>
+          )}
 
-            {isLoading ? (
-              <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 text-slate-300">
-                <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
-                <p className="text-sm">Carregando dados da assinatura...</p>
-              </div>
-            ) : (
-              renderActiveSection()
-            )}
-          </main>
-        </div>
+          {isLoading ? (
+            <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 text-slate-300">
+              <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+              <p className="text-sm">Carregando dados da assinatura...</p>
+            </div>
+          ) : (
+            renderActiveSection()
+          )}
+        </main>
       </div>
-    </RouteGuard>
+    </div>
   );
 }
