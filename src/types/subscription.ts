@@ -4,28 +4,35 @@ export interface SubscriptionPlan {
   name: string;
   slug: string;
   description?: string;
-  stripe_price_id: string;
   stripe_product_id: string;
   daily_interactions_limit: number;
-  price_cents: number; // preço em centavos
-  currency?: string;
-  interval: 'month' | 'year';
   features: string[];
   active?: boolean;
   created_at: Date;
   updated_at: Date;
+  prices: SubscriptionPlanPrice[];
+}
+
+export interface SubscriptionPlanPrice {
+  id: string;
+  plan_id: string;
+  stripe_price_id: string;
+  amount_cents: number;
+  currency: string;
+  billing_interval: "month" | "year";
+  is_current: boolean;
 }
 
 // Status da assinatura baseado nos status do Stripe
-export type SubscriptionStatus = 
-  | 'active'          // Assinatura ativa
-  | 'canceled'        // Cancelada pelo usuário
-  | 'incomplete'      // Pagamento inicial falhou
-  | 'incomplete_expired' // Pagamento expirou
-  | 'past_due'        // Pagamento em atraso
-  | 'trialing'        // Em período de teste
-  | 'unpaid'          // Não paga
-  | 'paused';         // Pausada
+export type SubscriptionStatus =
+  | "active" // Assinatura ativa
+  | "canceled" // Cancelada pelo usuário
+  | "incomplete" // Pagamento inicial falhou
+  | "incomplete_expired" // Pagamento expirou
+  | "past_due" // Pagamento em atraso
+  | "trialing" // Em período de teste
+  | "unpaid" // Não paga
+  | "paused"; // Pausada
 
 export interface UserSubscription {
   id: string;
@@ -41,7 +48,7 @@ export interface UserSubscription {
   cancel_at?: Date; // Agendado para cancelar
   created_at: Date;
   updated_at: Date;
-  
+
   // Relacionamentos
   plan?: SubscriptionPlan;
 }
@@ -63,7 +70,7 @@ export interface UserInteractionStatus {
   remainingInteractions: number;
   dailyLimit: number;
   planName: string;
-  planType?: 'free' | 'premium' | 'enterprise' | 'basic' | 'pro'; // Compatibilidade com sistema antigo
+  planType?: "free" | "premium" | "enterprise" | "basic" | "pro"; // Compatibilidade com sistema antigo
   subscriptionStatus: SubscriptionStatus;
   currentPeriodEnd: Date;
   resetTime: Date;
@@ -102,11 +109,12 @@ export interface AvailablePlan {
 
 // Planos disponíveis (constantes)
 export const SUBSCRIPTION_PLANS = {
-  BASIC: 'basic',
-  PRO: 'pro'
+  BASIC: "basic",
+  PRO: "pro",
 } as const;
 
-export type PlanType = typeof SUBSCRIPTION_PLANS[keyof typeof SUBSCRIPTION_PLANS];
+export type PlanType =
+  (typeof SUBSCRIPTION_PLANS)[keyof typeof SUBSCRIPTION_PLANS];
 
 // Configuração de ambiente
 export interface SubscriptionConfig {
@@ -123,6 +131,6 @@ export interface SubscriptionConfig {
       priceId: string;
       productId: string;
       priceCents: number;
-    }
+    };
   };
 }
