@@ -14,6 +14,7 @@ import { Clock, Crown, LogOut, Sparkles } from "lucide-react";
 import type { ColorScheme } from "./useColorSchema";
 import { useFacts } from "./useFacts";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { Spinner } from "@/components/ui/spinner";
 
 export type FactAction = {
   type: "save";
@@ -52,6 +53,9 @@ export function ChatKitPanel({
   onThemeRequest,
 }: ChatKitPanelProps) {
   const processedFacts = useRef(new Set<string>());
+  // Flags to prevent multiple logs per message
+  const responseStartedRef = useRef(false);
+  const responseEndedRef = useRef(false);
   const [errors, setErrors] = useState<ErrorState>(() => createInitialErrors());
   const [isInitializingSession, setIsInitializingSession] = useState(true);
   const isMountedRef = useRef(true);
@@ -268,14 +272,8 @@ export function ChatKitPanel({
     theme: {
       colorScheme: theme,
     },
-    // startScreen: {
-    //   greeting: GREETING,
-    //   prompts: STARTER_PROMPTS,
-    // },
     composer: {
-      // placeholder: PLACEHOLDER_INPUT,
       attachments: {
-        // Enable attachments
         enabled: true,
       },
     },
@@ -315,18 +313,28 @@ export function ChatKitPanel({
 
       return { success: false };
     },
-    onResponseEnd: () => {
-      onResponseEnd();
-    },
     onResponseStart: () => {
+      if (!responseStartedRef.current) {
+        console.log(
+          "Mensagem sendo enviada: operação customizada antes do envio"
+        );
+        responseStartedRef.current = true;
+      }
       setErrorState({ integration: null, retryable: false });
+    },
+    onResponseEnd: () => {
+      if (!responseEndedRef.current) {
+        console.log("[ChatKitPanel] onResponseEnd invoked");
+        responseEndedRef.current = true;
+      }
+      onResponseEnd();
     },
     onThreadChange: () => {
       processedFacts.current.clear();
+      responseStartedRef.current = false;
+      responseEndedRef.current = false;
     },
     onError: ({ error }: { error: unknown }) => {
-      // Note that Chatkit UI handles errors for your users.
-      // Thus, your app code doesn't need to display errors on UI.
       console.error("ChatKit error", error);
     },
   });
@@ -334,18 +342,18 @@ export function ChatKitPanel({
   const activeError = errors.session ?? errors.integration;
   const blockingError = errors.script ?? activeError;
 
-  if (isDev) {
-    console.debug("[ChatKitPanel] render state", {
-      isInitializingSession,
-      hasControl: Boolean(chatkit.control),
-      scriptStatus,
-      hasError: Boolean(blockingError),
-      workflowId: WORKFLOW_ID,
-    });
-  }
-
   return (
     <div className="relative pb-8 flex h-[90vh] w-full rounded-2xl flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900">
+      {(blockingError || isInitializingSession) && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-slate-900/80">
+          <div className="flex flex-col items-center gap-2">
+            <Spinner />
+            <span className="text-sm text-slate-600 dark:text-slate-300">
+              Carregando assistente...
+            </span>
+          </div>
+        </div>
+      )}
       <ChatKit
         key={widgetInstanceKey}
         control={chatkit.control}
@@ -355,16 +363,6 @@ export function ChatKitPanel({
             : "block h-full w-full"
         }
       />
-      {/* <ErrorOverlay
-        error={blockingError}
-        fallbackMessage={
-          blockingError || !isInitializingSession
-            ? null
-            : "Loading assistant session..."
-        }
-        onRetry={blockingError && errors.retryable ? handleResetChat : null}
-        retryLabel="Restart chat"
-      /> */}
     </div>
   );
 }
