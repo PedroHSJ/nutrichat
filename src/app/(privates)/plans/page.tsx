@@ -398,16 +398,16 @@ export default function PlansManagementPage() {
       <Card className="border border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-200">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/20 text-foreground">
               <Crown className="h-5 w-5" />
             </span>
             <div>
-              <CardTitle className="text-2xl text-white">{planName}</CardTitle>
-              <CardDescription className="text-emerald-100/80">
+              <CardTitle className="text-2xl ">{planName}</CardTitle>
+              <CardDescription>
                 Plano vinculado a sua conta NutriChat.
               </CardDescription>
               {trialLabel && (
-                <Badge className="mt-3 inline-flex w-fit items-center gap-2 border border-indigo-400/50 bg-indigo-500/15 text-indigo-100">
+                <Badge className="mt-3 inline-flex w-fit items-center gap-2 border border-indigo-400/50 bg-indigo-500/15">
                   <Sparkles className="h-3.5 w-3.5" />
                   {trialLabel}
                 </Badge>
@@ -415,13 +415,10 @@ export default function PlansManagementPage() {
             </div>
           </div>
           <div className="flex flex-col items-start gap-2 sm:items-end">
-            <Badge className="border border-emerald-400 bg-emerald-500/10 text-emerald-200">
+            <Badge className="border border-emerald-400 bg-emerald-500/10 text-foreground">
               {subscriptionState === "active" ? "Ativa" : subscriptionState}
             </Badge>
-            <Badge
-              variant="outline"
-              className="border-slate-600 text-slate-200"
-            >
+            <Badge variant="outline" className="border-slate-600 ">
               Plano {planType === "free" ? "gratuito" : planType}
             </Badge>
             {isCancelScheduled && (
@@ -432,23 +429,23 @@ export default function PlansManagementPage() {
           </div>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-emerald-500/20 bg-slate-900/40 p-4">
-            <p className="text-sm text-slate-300">Status</p>
-            <p className="mt-2 flex items-center gap-2 text-base font-semibold text-white">
+          <div className="rounded-xl border border-emerald-500/20 p-4">
+            <p className="text-sm text-primary">Status</p>
+            <p className="mt-2 flex items-center gap-2 font-semibold ">
               <CheckCircle2 className="h-5 w-5 text-emerald-400" />
               {subscriptionState === "active" ? "Ativo" : subscriptionState}
             </p>
           </div>
-          <div className="rounded-xl border border-emerald-500/20 bg-slate-900/40 p-4">
-            <p className="text-sm text-slate-300">Proxima renovacao</p>
-            <p className="mt-2 flex items-center gap-2 text-base font-semibold text-white">
+          <div className="rounded-xl border border-emerald-500/20 p-4">
+            <p className="text-sm text-primary">Proxima renovacao</p>
+            <p className="mt-2 flex items-center gap-2 text-base font-semibold ">
               <Calendar className="h-5 w-5 text-emerald-400" />
               {formatDate(currentPeriodEnd)}
             </p>
           </div>
-          <div className="rounded-xl border border-emerald-500/20 bg-slate-900/40 p-4">
-            <p className="text-sm text-slate-300">Interacoes diarias</p>
-            <p className="mt-2 flex items-center gap-2 text-base font-semibold text-white">
+          <div className="rounded-xl border border-emerald-500/20 p-4">
+            <p className="text-sm text-primary">Interacoes diarias</p>
+            <p className="mt-2 flex items-center gap-2 text-base font-semibold ">
               <Clock className="h-5 w-5 text-emerald-400" />
               {dailyLimit > 0 ? `${dailyLimit} por dia` : "Sem limite"}
             </p>
@@ -457,9 +454,9 @@ export default function PlansManagementPage() {
       </Card>
 
       {dailyLimit > 0 && (
-        <Card className="border border-slate-800 bg-slate-900/60">
+        <Card className="border ">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base text-white">
+            <CardTitle className="flex items-center gap-2 text-base ">
               <ArrowLeftRight className="h-4 w-4 text-emerald-300" />
               Consumo do dia
             </CardTitle>
@@ -469,13 +466,13 @@ export default function PlansManagementPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <div className="flex items-center justify-between text-sm text-slate-300">
+              <div className="flex items-center justify-between text-sm">
                 <span>Uso diario</span>
                 <span>
                   {dailyLimit - remainingInteractions}/{dailyLimit}
                 </span>
               </div>
-              <div className="mt-2 h-2 rounded-full bg-slate-800">
+              <div className="mt-2 h-2 rounded-full bg-slate-400">
                 <div
                   className={cn(
                     "h-full rounded-full transition-all",
@@ -490,7 +487,7 @@ export default function PlansManagementPage() {
               </div>
               <div className="mt-2 flex justify-between text-xs text-slate-400">
                 <span>{remainingInteractions} restantes hoje</span>
-                <span>Reset {formatResetTime(resetTime)}</span>
+                <span>Reseta {formatResetTime(resetTime)}</span>
               </div>
             </div>
             {planType === "free" && (
@@ -516,56 +513,51 @@ export default function PlansManagementPage() {
       <Card
         key={`${plan.type}-${plan.priceId}`}
         className={cn(
-          "flex flex-col justify-between border border-slate-800 bg-slate-900/70 shadow-sm transition hover:border-emerald-500/40 hover:shadow-emerald-500/10",
+          "flex flex-col justify-between border",
           isCurrentPlan && "border-emerald-500/50 shadow-emerald-500/10"
         )}
       >
         <CardHeader>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <CardTitle className="flex items-center gap-2 text-lg text-white">
+              <CardTitle className="flex items-center gap-2 text-lg ">
                 {plan.name}
-                {isCurrentPlan && (
-                  <Badge className="border border-emerald-400 bg-emerald-500/10 text-emerald-200">
-                    Plano atual
-                  </Badge>
-                )}
+                {isCurrentPlan && <Badge className="border">Plano atual</Badge>}
               </CardTitle>
-              <CardDescription className="text-slate-300">
+              <CardDescription>
                 {plan.dailyLimit > 0
                   ? `${plan.dailyLimit} interacoes/dia`
                   : "Interacoes ilimitadas"}
               </CardDescription>
             </div>
             <div className="text-right">
-              <p className="text-xl font-semibold text-white">
+              <p className="text-xl font-semibold ">
                 {plan.priceFormatted ??
                   formatCurrency(plan.priceCents, plan.currency)}
               </p>
-              <p className="text-xs text-slate-400">por mes</p>
+              <p className="text-xs">por mes</p>
             </div>
           </div>
         </CardHeader>
         <CardContent className="flex flex-1 flex-col justify-between gap-4">
           {plan.features?.length > 0 && (
-            <ul className="space-y-2 text-sm text-slate-300">
+            <ul className="space-y-2 text-sm">
               {plan.features.map((feature) => (
                 <li
                   key={`${plan.type}-${feature}`}
                   className="flex items-start gap-2"
                 >
-                  <CheckCircle2 className="mt-1 h-4 w-4 text-emerald-300" />
+                  <CheckCircle2 className="mt-1 h-4 w-4" />
                   <span>{feature}</span>
                 </li>
               ))}
             </ul>
           )}
           <Button
-            variant={isCurrentPlan ? "secondary" : "default"}
+            variant={"default"}
             className={cn(
               "w-full",
-              (!hasPriceId || isCurrentPlan) &&
-                "cursor-not-allowed bg-slate-800 text-slate-300 hover:bg-slate-800"
+              (!hasPriceId || isCurrentPlan) && "cursor-not-allowed"
             )}
             disabled={isCurrentPlan || !hasPriceId || processingAction}
             onClick={() => handlePlanSelection(plan)}
@@ -584,10 +576,10 @@ export default function PlansManagementPage() {
   };
 
   const renderChange = () => (
-    <div className="space-y-6">
-      <Card className="border border-slate-800 bg-slate-900/60">
+    <div className="py-4 space-y-6">
+      <Card className="border ">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base text-white">
+          <CardTitle className="flex items-center gap-2 text-base ">
             <ArrowLeftRight className="h-4 w-4 text-emerald-300" />
             Alterar plano
           </CardTitle>
@@ -598,7 +590,7 @@ export default function PlansManagementPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {isPaidPlan && subscriptionState === "active" && (
-            <Alert className="border-amber-500/40 bg-amber-500/10 text-amber-50">
+            <Alert className="border-amber-500/40 bg-amber-500/10">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Ja existe uma assinatura ativa</AlertTitle>
               <AlertDescription>
@@ -630,11 +622,9 @@ export default function PlansManagementPage() {
         </CardContent>
       </Card>
 
-      <Card className="border border-slate-800 bg-slate-900/60">
+      <Card className="border ">
         <CardHeader>
-          <CardTitle className="text-base text-white">
-            Precisa de ajuda?
-          </CardTitle>
+          <CardTitle className="text-base ">Precisa de ajuda?</CardTitle>
           <CardDescription>
             Fale com nossa equipe para ajustes customizados de limites ou
             faturamento.
@@ -656,9 +646,9 @@ export default function PlansManagementPage() {
 
   const renderBilling = () => (
     <div className="space-y-6">
-      <Card className="border border-slate-800 bg-slate-900/60">
+      <Card className="border ">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base text-white">
+          <CardTitle className="flex items-center gap-2 text-base ">
             <CreditCard className="h-4 w-4 text-emerald-300" />
             Cobrancas e ciclo
           </CardTitle>
@@ -671,7 +661,7 @@ export default function PlansManagementPage() {
             <p className="text-xs uppercase tracking-wide text-slate-400">
               Proxima cobranca
             </p>
-            <p className="mt-2 text-lg font-semibold text-white">
+            <p className="mt-2 text-lg font-semibold ">
               {formatDate(currentPeriodEnd)}
             </p>
             <p className="mt-1 text-xs text-slate-400">
@@ -682,7 +672,7 @@ export default function PlansManagementPage() {
             <p className="text-xs uppercase tracking-wide text-slate-400">
               Status de pagamento
             </p>
-            <p className="mt-2 text-lg font-semibold text-white capitalize">
+            <p className="mt-2 text-lg font-semibold  capitalize">
               {subscriptionState}
             </p>
             <p className="mt-1 text-xs text-slate-400">
@@ -692,9 +682,9 @@ export default function PlansManagementPage() {
         </CardContent>
       </Card>
 
-      <Card className="border border-slate-800 bg-slate-900/60">
+      <Card className="border ">
         <CardHeader>
-          <CardTitle className="text-base text-white">
+          <CardTitle className="text-base ">
             Acoes relacionadas ao pagamento
           </CardTitle>
           <CardDescription>
@@ -725,7 +715,7 @@ export default function PlansManagementPage() {
     <div className="space-y-6">
       <Card className="border border-rose-500/30 bg-rose-500/10">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base text-white">
+          <CardTitle className="flex items-center gap-2 text-base ">
             <AlertTriangle className="h-4 w-4 text-rose-200" />
             Cancelar assinatura
           </CardTitle>
@@ -766,11 +756,9 @@ export default function PlansManagementPage() {
           </div>
         </CardContent>
       </Card>
-      <Card className="border border-slate-800 bg-slate-900/60">
+      <Card className="border ">
         <CardHeader>
-          <CardTitle className="text-base text-white">
-            Precisa apenas pausar?
-          </CardTitle>
+          <CardTitle className="text-base ">Precisa apenas pausar?</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-slate-300">
           Pausar a assinatura mantem seu espaco reservado. Entre em contato com
@@ -798,20 +786,18 @@ export default function PlansManagementPage() {
   const isLoading = statusLoading || subscriptionLoading;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-12 px-4">
+    <div className="">
       <CancelSubscriptionModal
         open={showCancelModal}
         onClose={() => setShowCancelModal(false)}
         onCancel={handleCancelSubscription}
       />
 
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 lg:flex-row">
+      <div className="h-screen flex max-w-6xl flex-col gap-8 lg:flex-row">
         <aside className="lg:w-72">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-lg shadow-emerald-500/5">
+          <div className="h-full border border-b p-6 shadow-lg shadow-emerald-500/5">
             <div className="mb-6">
-              <h1 className="text-xl font-semibold text-white">
-                Central de planos
-              </h1>
+              <h1 className="text-xl font-semibold ">Central de planos</h1>
               <p className="mt-1 text-sm text-slate-400">
                 Gerencie assinatura, cobrancas e upgrade em um so lugar.
               </p>
@@ -825,13 +811,13 @@ export default function PlansManagementPage() {
                     key={item.id}
                     type="button"
                     className={cn(
-                      "w-full rounded-xl border border-transparent bg-slate-900/60 px-4 py-3 text-left transition hover:border-emerald-400/40 hover:bg-slate-900/90",
+                      "w-full rounded-xl border border-transparent bg-slate-300/60 px-4 py-3 text-left transition hover:border-emerald-400/40 hover:bg-slate-900/90 hover:text-white",
                       isActive &&
                         "border-emerald-400/60 bg-slate-900/90 shadow-md shadow-emerald-500/20"
                     )}
                     onClick={() => setActiveSection(item.id)}
                   >
-                    <div className="flex items-start gap-3">
+                    <div className="flex flex-row items-center gap-3">
                       <span
                         className={cn(
                           "flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800/80 text-slate-300",
@@ -840,11 +826,11 @@ export default function PlansManagementPage() {
                       >
                         <Icon className="h-4 w-4" />
                       </span>
-                      <div className="flex-1">
+                      <div className="flex-1 flex flex-col justify-center">
                         <p
                           className={cn(
                             "text-sm font-medium",
-                            isActive ? "text-white" : "text-slate-200"
+                            isActive && "text-emerald-200"
                           )}
                         >
                           {item.label}
@@ -870,7 +856,7 @@ export default function PlansManagementPage() {
                 asChild
                 variant="outline"
                 size="sm"
-                className="mt-3 w-full"
+                className="mt-3 w-full text-foreground"
               >
                 <Link href="mailto:financeiro@nutrichat.com.br">
                   Contatar financeiro
@@ -878,9 +864,9 @@ export default function PlansManagementPage() {
               </Button>
               <Button
                 asChild
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="mt-2 w-full flex items-center justify-center gap-2 text-slate-300 hover:text-emerald-400"
+                className="mt-2 w-full flex items-center justify-center gap-2 text-foreground"
               >
                 <Link href="/agent-chat">
                   <ArrowLeftRight className="h-4 w-4 mr-1" /> Voltar para chat
@@ -889,7 +875,7 @@ export default function PlansManagementPage() {
             </div>
             <Button
               type="button"
-              className="w-full rounded-lg bg-rose-600/80 py-2 text-xs font-semibold text-white transition hover:bg-rose-700"
+              className="w-full rounded-lg bg-rose-600/80 py-2 text-xs font-semibold  transition hover:bg-rose-700"
               onClick={async () => {
                 // Importa o contexto de autenticação dinamicamente
                 await logout();
@@ -901,7 +887,7 @@ export default function PlansManagementPage() {
           </div>
         </aside>
 
-        <main className="flex-1 space-y-6">
+        <main className="flex-1 py-4">
           {actionMessage && (
             <Alert className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-50">
               <AlertTitle>Processo concluido</AlertTitle>
@@ -922,7 +908,7 @@ export default function PlansManagementPage() {
           )}
 
           {isLoading ? (
-            <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 text-slate-300">
+            <div className="flex min-h-80 flex-col items-center justify-center gap-3 rounded-2xl border">
               <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
               <p className="text-sm">Carregando dados da assinatura...</p>
             </div>
