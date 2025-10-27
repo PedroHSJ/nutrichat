@@ -266,22 +266,29 @@ export class UserSubscriptionService {
       // Usar supabaseAdmin para bypasses RLS em operações do sistema (webhooks, etc)
       const client = supabaseAdmin || supabase;
 
-      console.log("[DB] Executando INSERT na tabela user_subscriptions...");
-      console.log("[DB] Dados do registro:", subscriptionRecord);
-
+      console.log(
+        "[DB][CREATE_SUBSCRIPTION] Executando verificação de existência de assinatura..."
+      );
       // Primeiro, verificar se já existe uma subscription com esse stripe_subscription_id
       const { data: existingSubscription } = await client!
         .from("user_subscriptions")
         .select("id, status")
         .eq("stripe_subscription_id", stripeSubscriptionId)
+        .not("status", "eq", "canceled")
         .single();
 
       if (existingSubscription) {
         console.log(
-          "[DB] ⚠️ Subscription já existe no banco, atualizando ao invés de inserir"
+          "[DB][CREATE_SUBSCRIPTION] ⚠️ Subscription já existe no banco, atualizando ao invés de inserir"
         );
-        console.log("[DB] Subscription existente:", existingSubscription);
-
+        console.log(
+          "[DB][CREATE_SUBSCRIPTION] Subscription existente:",
+          existingSubscription
+        );
+        console.log(
+          "[DB][CREATE_SUBSCRIPTION] status:",
+          subscriptionRecord.status
+        );
         // Atualizar subscription existente ao invés de inserir nova
         const { data: updatedData, error: updateError } = await client!
           .from("user_subscriptions")
@@ -300,64 +307,86 @@ export class UserSubscriptionService {
 
         if (updateError) {
           console.error(
-            "[DB] ❌ FALHA no UPDATE - Erro ao atualizar assinatura no banco:",
+            "[DB][CREATE_SUBSCRIPTION] ❌ FALHA no UPDATE - Erro ao atualizar assinatura no banco:",
             updateError
           );
           throw new Error(
-            `Falha ao atualizar assinatura existente: ${updateError.message}`
+            `[DB][CREATE_SUBSCRIPTION] Falha ao atualizar assinatura existente: ${updateError.message}`
           );
         }
 
         console.log(
-          "[DB] ✅ UPDATE REALIZADO COM SUCESSO na tabela user_subscriptions"
+          "[DB][CREATE_SUBSCRIPTION] ✅ UPDATE REALIZADO COM SUCESSO na tabela user_subscriptions"
         );
-        console.log("[DB] Dados atualizados:", updatedData);
         console.log(
-          `[DB] Assinatura atualizada para usuário: ${userId} com subscription_id: ${stripeSubscriptionId}`
+          "[DB][CREATE_SUBSCRIPTION] Dados atualizados:",
+          updatedData
+        );
+        console.log(
+          `[DB][CREATE_SUBSCRIPTION] Assinatura atualizada para usuário: ${userId} com subscription_id: ${stripeSubscriptionId}`
         );
 
         return updatedData as UserSubscription;
       }
 
       // Se não existe, fazer o INSERT normalmente
+      console.log(
+        "[DB][CREATE_SUBSCRIPTION] Não existe assinatura ativa, realizando INSERT..."
+      );
       const { data, error } = await client!
         .from("user_subscriptions")
         .insert(subscriptionRecord)
         .select()
         .single();
 
-      console.log("[DB] Resultado do INSERT:", { data, error });
+      console.log("[DB][CREATE_SUBSCRIPTION] Resultado do INSERT:", {
+        data,
+        error,
+      });
 
       if (error) {
         console.error(
-          "[DB] ❌ FALHA no INSERT - Erro ao criar assinatura no banco:",
+          "[DB][CREATE_SUBSCRIPTION] ❌ FALHA no INSERT - Erro ao criar assinatura no banco:",
           error
         );
 
         // Melhorar mensagem de erro baseada no código
         if (error.code === "23502") {
-          throw new Error(`Campo obrigatório não informado: ${error.message}`);
+          throw new Error(
+            `[DB][CREATE_SUBSCRIPTION] Campo obrigatório não informado: ${error.message}`
+          );
         } else if (error.code === "23505") {
-          throw new Error("Assinatura já existe para este usuário");
+          throw new Error(
+            "[DB][CREATE_SUBSCRIPTION] Assinatura já existe para este usuário"
+          );
         } else if (error.code === "42501") {
-          throw new Error("Permissão negada para criar assinatura");
+          throw new Error(
+            "[DB][CREATE_SUBSCRIPTION] Permissão negada para criar assinatura"
+          );
         } else {
-          throw new Error(`Falha ao salvar assinatura: ${error.message}`);
+          throw new Error(
+            `[DB][CREATE_SUBSCRIPTION] Falha ao salvar assinatura: ${error.message}`
+          );
         }
       }
 
       console.log(
-        "[DB] ✅ INSERT REALIZADO COM SUCESSO na tabela user_subscriptions"
+        "[DB][CREATE_SUBSCRIPTION] ✅ INSERT REALIZADO COM SUCESSO na tabela user_subscriptions"
       );
-      console.log("[DB] Dados inseridos:", data);
-      console.log(`[DB] ID da assinatura criada: ${data?.id}`);
+      console.log("[DB][CREATE_SUBSCRIPTION] Dados inseridos:", data);
       console.log(
-        `[DB] Assinatura criada para usuário: ${userId} com subscription_id: ${stripeSubscriptionId}`
+        `[DB][CREATE_SUBSCRIPTION] ID da assinatura criada: ${data?.id}`
+      );
+      console.log(
+        `[DB][CREATE_SUBSCRIPTION] Assinatura criada para usuário: ${userId} com subscription_id: ${stripeSubscriptionId}`
       );
 
       return data as UserSubscription;
     } catch (error) {
-      console.error("Erro ao criar assinatura:", error);
+      console.error(
+        "[DB][CREATE_SUBSCRIPTION] Erro ao criar assinatura:",
+        error
+      );
       throw error;
     }
   }
@@ -438,7 +467,7 @@ export class UserSubscriptionService {
       const client = supabase || supabaseAdmin;
       // Buscar planos ativos e seus preços usando o join correto do remote schema
       const { data, error } = await client!
-        .from("subscription_plans")
+        .from("subscription_plan_prices")
         .select("*, prices:subscription_plan_prices(*)")
         .eq("active", true);
 
@@ -446,7 +475,6 @@ export class UserSubscriptionService {
         console.error("Erro ao buscar planos:", error);
         return [];
       }
-      console.log("Planos disponíveis obtidos:", data);
       return data as SubscriptionPlan[];
     } catch (error) {
       console.error("Erro ao obter planos:", error);
