@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { ComponentType } from 'react';
-import Link from 'next/link';
-import { RouteGuard } from '@/components/RouteGuard';
-import { CancelSubscriptionModal } from '@/components/CancelSubscriptionModal';
-import { useSubscription } from '@/hooks/use-subscription';
-import { useAuthHeaders } from '@/hooks/use-auth-headers';
-import type { UserInteractionStatus } from '@/types/subscription';
-import { cn } from '@/lib/utils';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ComponentType } from "react";
+import Link from "next/link";
+import { RouteGuard } from "@/components/RouteGuard";
+import { CancelSubscriptionModal } from "@/components/CancelSubscriptionModal";
+import { useSubscription } from "@/hooks/use-subscription";
+import { useAuthHeaders } from "@/hooks/use-auth-headers";
+import type { UserInteractionStatus } from "@/types/subscription";
+import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
   ArrowLeftRight,
@@ -18,22 +18,24 @@ import {
   CreditCard,
   Crown,
   Loader2,
+  LogOutIcon,
   RefreshCcw,
   ShieldCheck,
   Sparkles,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+} from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useAuth } from "@/context/AuthContext";
 
-type PlanMenuSection = 'overview' | 'change' | 'billing' | 'cancel';
+type PlanMenuSection = "overview" | "change" | "billing" | "cancel";
 
 type PlanOption = {
   type: string;
@@ -49,7 +51,7 @@ type PlanOption = {
 
 type SubscriptionDetails = Omit<
   UserInteractionStatus,
-  'currentPeriodEnd' | 'resetTime' | 'trialEndsAt'
+  "currentPeriodEnd" | "resetTime" | "trialEndsAt"
 > & {
   currentPeriodEnd?: Date;
   resetTime?: Date;
@@ -65,46 +67,46 @@ const menuItems: Array<{
   icon: ComponentType<{ className?: string }>;
 }> = [
   {
-    id: 'overview',
-    label: 'Visao geral',
-    description: 'Resumo do plano vigente',
+    id: "overview",
+    label: "Visao geral",
+    description: "Resumo do plano vigente",
     icon: Crown,
   },
   {
-    id: 'change',
-    label: 'Alterar plano',
-    description: 'Compare e escolha outro plano',
+    id: "change",
+    label: "Alterar plano",
+    description: "Compare e escolha outro plano",
     icon: RefreshCcw,
   },
   {
-    id: 'billing',
-    label: 'Cobrancas e faturas',
-    description: 'Detalhes de pagamento e ciclo',
+    id: "billing",
+    label: "Cobrancas e faturas",
+    description: "Detalhes de pagamento e ciclo",
     icon: CreditCard,
   },
   {
-    id: 'cancel',
-    label: 'Cancelar plano',
-    description: 'Encerrar assinatura com seguranca',
+    id: "cancel",
+    label: "Cancelar plano",
+    description: "Encerrar assinatura com seguranca",
     icon: ShieldCheck,
   },
 ];
 
 function formatDate(value?: Date) {
   if (!value) {
-    return '--';
+    return "--";
   }
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
   }).format(value);
 }
 
 function formatCurrency(priceInCents: number, currency: string) {
-  const currencyCode = currency?.toUpperCase() || 'BRL';
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
+  const currencyCode = currency?.toUpperCase() || "BRL";
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
     currency: currencyCode,
     minimumFractionDigits: 2,
   }).format(priceInCents / 100);
@@ -112,21 +114,21 @@ function formatCurrency(priceInCents: number, currency: string) {
 
 function formatResetTime(value?: Date) {
   if (!value) {
-    return 'em breve';
+    return "em breve";
   }
 
   const parsed = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(parsed.getTime())) {
-    return 'em breve';
+    return "em breve";
   }
 
   const now = new Date();
   const tomorrow = new Date(now);
   tomorrow.setDate(now.getDate() + 1);
 
-  const time = parsed.toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
+  const time = parsed.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 
   if (parsed.toDateString() === now.toDateString()) {
@@ -137,11 +139,11 @@ function formatResetTime(value?: Date) {
     return `amanha as ${time}`;
   }
 
-  return `${parsed.toLocaleDateString('pt-BR')} as ${time}`;
+  return `${parsed.toLocaleDateString("pt-BR")} as ${time}`;
 }
 
 function normalizeStatus(
-  status: UserInteractionStatus | null,
+  status: UserInteractionStatus | null
 ): SubscriptionDetails | null {
   if (!status) {
     return null;
@@ -155,18 +157,18 @@ function normalizeStatus(
     resetTime: status.resetTime ? new Date(status.resetTime) : undefined,
     trialEndsAt: status.trialEndsAt ? new Date(status.trialEndsAt) : undefined,
     cancelAtPeriodEnd:
-      'cancelAtPeriodEnd' in status
+      "cancelAtPeriodEnd" in status
         ? Boolean((status as Record<string, unknown>).cancelAtPeriodEnd)
         : undefined,
   };
 }
 
 const FallbackMessage =
-  'Nao foi possivel processar a solicitacao. Tente novamente em instantes.';
+  "Nao foi possivel processar a solicitacao. Tente novamente em instantes.";
 
 export default function PlansManagementPage() {
   const [activeSection, setActiveSection] =
-    useState<PlanMenuSection>('overview');
+    useState<PlanMenuSection>("overview");
   const [subscriptionDetails, setSubscriptionDetails] =
     useState<SubscriptionDetails | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);
@@ -180,7 +182,7 @@ export default function PlansManagementPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [processingAction, setProcessingAction] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-
+  const { logout } = useAuth();
   const {
     subscriptionStatus,
     loading: subscriptionLoading,
@@ -190,7 +192,7 @@ export default function PlansManagementPage() {
 
   const effectiveStatus = useMemo(
     () => subscriptionDetails ?? normalizeStatus(subscriptionStatus ?? null),
-    [subscriptionDetails, subscriptionStatus],
+    [subscriptionDetails, subscriptionStatus]
   );
 
   const trialLabel = useMemo(() => {
@@ -198,21 +200,20 @@ export default function PlansManagementPage() {
       return null;
     }
     if (!effectiveStatus.trialEndsAt) {
-      return 'Periodo de teste ativo';
+      return "Periodo de teste ativo";
     }
 
-    const diff =
-      effectiveStatus.trialEndsAt.getTime() - new Date().getTime();
+    const diff = effectiveStatus.trialEndsAt.getTime() - new Date().getTime();
     if (diff <= 0) {
-      return 'Periodo de teste termina hoje';
+      return "Periodo de teste termina hoje";
     }
 
     const dayMs = 1000 * 60 * 60 * 24;
     const diffDays = Math.ceil(diff / dayMs);
     if (diffDays <= 1) {
-      return 'Ultimo dia de teste';
+      return "Ultimo dia de teste";
     }
-    return `${diffDays} dia${diffDays === 1 ? '' : 's'} restantes no teste`;
+    return `${diffDays} dia${diffDays === 1 ? "" : "s"} restantes no teste`;
   }, [effectiveStatus?.isTrialing, effectiveStatus?.trialEndsAt]);
 
   const fetchSubscriptionStatus = useCallback(async () => {
@@ -225,21 +226,19 @@ export default function PlansManagementPage() {
       setStatusLoading(true);
       setStatusError(null);
 
-      const response = await fetch('/api/subscription/status', {
+      const response = await fetch("/api/subscription/status", {
         headers: authHeaders,
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(
-          data?.error ?? 'Nao foi possivel carregar sua assinatura',
+          data?.error ?? "Nao foi possivel carregar sua assinatura"
         );
       }
 
       setSubscriptionDetails(normalizeStatus(data));
     } catch (error) {
-      setStatusError(
-        error instanceof Error ? error.message : FallbackMessage,
-      );
+      setStatusError(error instanceof Error ? error.message : FallbackMessage);
     } finally {
       setStatusLoading(false);
     }
@@ -250,19 +249,17 @@ export default function PlansManagementPage() {
       setPlansLoading(true);
       setPlansError(null);
 
-      const response = await fetch('/api/subscription/plans');
+      const response = await fetch("/api/subscription/plans");
       const data = await response.json();
       if (!response.ok || data?.success === false) {
         throw new Error(
-          data?.error ?? 'Nao foi possivel carregar os planos disponiveis',
+          data?.error ?? "Nao foi possivel carregar os planos disponiveis"
         );
       }
 
       setPlans(data.plans as PlanOption[]);
     } catch (error) {
-      setPlansError(
-        error instanceof Error ? error.message : FallbackMessage,
-      );
+      setPlansError(error instanceof Error ? error.message : FallbackMessage);
     } finally {
       setPlansLoading(false);
     }
@@ -276,15 +273,15 @@ export default function PlansManagementPage() {
     fetchPlans();
   }, [fetchPlans]);
 
-  const planName = effectiveStatus?.planName ?? 'Sem plano';
-  const planType = effectiveStatus?.planType ?? 'free';
+  const planName = effectiveStatus?.planName ?? "Sem plano";
+  const planType = effectiveStatus?.planType ?? "free";
   const dailyLimit = effectiveStatus?.dailyLimit ?? 0;
   const remainingInteractions = effectiveStatus?.remainingInteractions ?? 0;
   const usagePercentage =
     dailyLimit > 0
       ? Math.min(100, ((dailyLimit - remainingInteractions) / dailyLimit) * 100)
       : 0;
-  const subscriptionState = effectiveStatus?.subscriptionStatus ?? 'unpaid';
+  const subscriptionState = effectiveStatus?.subscriptionStatus ?? "unpaid";
   const currentPeriodEnd =
     effectiveStatus?.currentPeriodEnd instanceof Date
       ? effectiveStatus.currentPeriodEnd
@@ -294,14 +291,14 @@ export default function PlansManagementPage() {
       ? effectiveStatus.resetTime
       : undefined;
   const isCancelScheduled = Boolean(
-    (subscriptionDetails as SubscriptionDetails | null)?.cancelAtPeriodEnd,
+    (subscriptionDetails as SubscriptionDetails | null)?.cancelAtPeriodEnd
   );
-  const isPaidPlan = planType !== 'free';
+  const isPaidPlan = planType !== "free";
 
   const handlePlanSelection = async (plan: PlanOption) => {
     if (!plan.priceId) {
       setActionError(
-        'Este plano ainda nao esta habilitado para checkout. Tente outra opcao ou fale com o suporte.',
+        "Este plano ainda nao esta habilitado para checkout. Tente outra opcao ou fale com o suporte."
       );
       return;
     }
@@ -311,15 +308,15 @@ export default function PlansManagementPage() {
     }
 
     if (!authHeaders.Authorization) {
-      setActionError('Sessao expirada. Faca login novamente para continuar.');
+      setActionError("Sessao expirada. Faca login novamente para continuar.");
       return;
     }
 
-    if (isPaidPlan && subscriptionState === 'active') {
+    if (isPaidPlan && subscriptionState === "active") {
       setActionError(
-        'Para migrar de plano, encerre a assinatura atual e depois selecione o novo plano desejado.',
+        "Para migrar de plano, encerre a assinatura atual e depois selecione o novo plano desejado."
       );
-      setActiveSection('cancel');
+      setActiveSection("cancel");
       return;
     }
 
@@ -328,11 +325,11 @@ export default function PlansManagementPage() {
       setActionError(null);
       setActionMessage(null);
 
-      const response = await fetch('/api/subscription/checkout', {
-        method: 'POST',
+      const response = await fetch("/api/subscription/checkout", {
+        method: "POST",
         headers: {
           ...authHeaders,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           priceId: plan.priceId,
@@ -342,23 +339,22 @@ export default function PlansManagementPage() {
       const data = await response.json();
       if (!response.ok || data?.success === false || !data.checkoutUrl) {
         throw new Error(
-          data?.error ?? 'Nao foi possivel iniciar o processo de alteracao de plano.',
+          data?.error ??
+            "Nao foi possivel iniciar o processo de alteracao de plano."
         );
       }
 
       window.location.href = data.checkoutUrl as string;
     } catch (error) {
-      setActionError(
-        error instanceof Error ? error.message : FallbackMessage,
-      );
+      setActionError(error instanceof Error ? error.message : FallbackMessage);
     } finally {
       setProcessingAction(false);
     }
   };
 
-  const handleCancelSubscription = async (mode: 'immediate' | 'period') => {
+  const handleCancelSubscription = async (mode: "immediate" | "period") => {
     if (!authHeaders.Authorization) {
-      setActionError('Sessao expirada. Faca login novamente para continuar.');
+      setActionError("Sessao expirada. Faca login novamente para continuar.");
       return;
     }
 
@@ -367,11 +363,11 @@ export default function PlansManagementPage() {
       setActionError(null);
       setActionMessage(null);
 
-      const response = await fetch('/api/subscription/cancel', {
-        method: 'POST',
+      const response = await fetch("/api/subscription/cancel", {
+        method: "POST",
         headers: {
           ...authHeaders,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ type: mode }),
       });
@@ -379,20 +375,18 @@ export default function PlansManagementPage() {
       const data = await response.json();
       if (!response.ok || data?.success === false) {
         throw new Error(
-          data?.error ?? 'Nao foi possivel cancelar sua assinatura.',
+          data?.error ?? "Nao foi possivel cancelar sua assinatura."
         );
       }
 
       setActionMessage(
         data?.message ??
-          'Sua assinatura foi cancelada. Voce pode reativa-la quando quiser.',
+          "Sua assinatura foi cancelada. Voce pode reativa-la quando quiser."
       );
       await fetchSubscriptionStatus();
       await refreshSubscription();
     } catch (error) {
-      setActionError(
-        error instanceof Error ? error.message : FallbackMessage,
-      );
+      setActionError(error instanceof Error ? error.message : FallbackMessage);
     } finally {
       setProcessingAction(false);
       setShowCancelModal(false);
@@ -422,10 +416,13 @@ export default function PlansManagementPage() {
           </div>
           <div className="flex flex-col items-start gap-2 sm:items-end">
             <Badge className="border border-emerald-400 bg-emerald-500/10 text-emerald-200">
-              {subscriptionState === 'active' ? 'Ativa' : subscriptionState}
+              {subscriptionState === "active" ? "Ativa" : subscriptionState}
             </Badge>
-            <Badge variant="outline" className="border-slate-600 text-slate-200">
-              Plano {planType === 'free' ? 'gratuito' : planType}
+            <Badge
+              variant="outline"
+              className="border-slate-600 text-slate-200"
+            >
+              Plano {planType === "free" ? "gratuito" : planType}
             </Badge>
             {isCancelScheduled && (
               <Badge className="border border-amber-400 bg-amber-500/10 text-amber-200">
@@ -439,7 +436,7 @@ export default function PlansManagementPage() {
             <p className="text-sm text-slate-300">Status</p>
             <p className="mt-2 flex items-center gap-2 text-base font-semibold text-white">
               <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-              {subscriptionState === 'active' ? 'Ativo' : subscriptionState}
+              {subscriptionState === "active" ? "Ativo" : subscriptionState}
             </p>
           </div>
           <div className="rounded-xl border border-emerald-500/20 bg-slate-900/40 p-4">
@@ -453,7 +450,7 @@ export default function PlansManagementPage() {
             <p className="text-sm text-slate-300">Interacoes diarias</p>
             <p className="mt-2 flex items-center gap-2 text-base font-semibold text-white">
               <Clock className="h-5 w-5 text-emerald-400" />
-              {dailyLimit > 0 ? `${dailyLimit} por dia` : 'Sem limite'}
+              {dailyLimit > 0 ? `${dailyLimit} por dia` : "Sem limite"}
             </p>
           </div>
         </CardContent>
@@ -481,12 +478,12 @@ export default function PlansManagementPage() {
               <div className="mt-2 h-2 rounded-full bg-slate-800">
                 <div
                   className={cn(
-                    'h-full rounded-full transition-all',
+                    "h-full rounded-full transition-all",
                     usagePercentage >= 95
-                      ? 'bg-rose-500'
+                      ? "bg-rose-500"
                       : usagePercentage >= 75
-                      ? 'bg-amber-400'
-                      : 'bg-emerald-400',
+                      ? "bg-amber-400"
+                      : "bg-emerald-400"
                   )}
                   style={{ width: `${usagePercentage}%` }}
                 />
@@ -496,11 +493,12 @@ export default function PlansManagementPage() {
                 <span>Reset {formatResetTime(resetTime)}</span>
               </div>
             </div>
-            {planType === 'free' && (
+            {planType === "free" && (
               <Alert className="border-emerald-500/30 bg-emerald-500/10 text-emerald-50">
                 <AlertTitle>Precisando de mais interacoes?</AlertTitle>
                 <AlertDescription>
-                  Faca upgrade para um plano premium e multiplique sua cota diaria.
+                  Faca upgrade para um plano premium e multiplique sua cota
+                  diaria.
                 </AlertDescription>
               </Alert>
             )}
@@ -518,8 +516,8 @@ export default function PlansManagementPage() {
       <Card
         key={`${plan.type}-${plan.priceId}`}
         className={cn(
-          'flex flex-col justify-between border border-slate-800 bg-slate-900/70 shadow-sm transition hover:border-emerald-500/40 hover:shadow-emerald-500/10',
-          isCurrentPlan && 'border-emerald-500/50 shadow-emerald-500/10',
+          "flex flex-col justify-between border border-slate-800 bg-slate-900/70 shadow-sm transition hover:border-emerald-500/40 hover:shadow-emerald-500/10",
+          isCurrentPlan && "border-emerald-500/50 shadow-emerald-500/10"
         )}
       >
         <CardHeader>
@@ -536,7 +534,7 @@ export default function PlansManagementPage() {
               <CardDescription className="text-slate-300">
                 {plan.dailyLimit > 0
                   ? `${plan.dailyLimit} interacoes/dia`
-                  : 'Interacoes ilimitadas'}
+                  : "Interacoes ilimitadas"}
               </CardDescription>
             </div>
             <div className="text-right">
@@ -552,7 +550,10 @@ export default function PlansManagementPage() {
           {plan.features?.length > 0 && (
             <ul className="space-y-2 text-sm text-slate-300">
               {plan.features.map((feature) => (
-                <li key={`${plan.type}-${feature}`} className="flex items-start gap-2">
+                <li
+                  key={`${plan.type}-${feature}`}
+                  className="flex items-start gap-2"
+                >
                   <CheckCircle2 className="mt-1 h-4 w-4 text-emerald-300" />
                   <span>{feature}</span>
                 </li>
@@ -560,22 +561,22 @@ export default function PlansManagementPage() {
             </ul>
           )}
           <Button
-            variant={isCurrentPlan ? 'secondary' : 'default'}
+            variant={isCurrentPlan ? "secondary" : "default"}
             className={cn(
-              'w-full',
+              "w-full",
               (!hasPriceId || isCurrentPlan) &&
-                'cursor-not-allowed bg-slate-800 text-slate-300 hover:bg-slate-800',
+                "cursor-not-allowed bg-slate-800 text-slate-300 hover:bg-slate-800"
             )}
             disabled={isCurrentPlan || !hasPriceId || processingAction}
             onClick={() => handlePlanSelection(plan)}
           >
             {isCurrentPlan
-              ? 'Plano em uso'
+              ? "Plano em uso"
               : !hasPriceId
-              ? 'Indisponivel no momento'
-              : subscriptionState === 'active' && isPaidPlan
-              ? 'Cancelar plano atual para alterar'
-              : 'Selecionar plano'}
+              ? "Indisponivel no momento"
+              : subscriptionState === "active" && isPaidPlan
+              ? "Cancelar plano atual para alterar"
+              : "Selecionar plano"}
           </Button>
         </CardContent>
       </Card>
@@ -591,16 +592,18 @@ export default function PlansManagementPage() {
             Alterar plano
           </CardTitle>
           <CardDescription>
-            Compare as opcoes e selecione o plano que melhor atende a sua operacao.
+            Compare as opcoes e selecione o plano que melhor atende a sua
+            operacao.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {isPaidPlan && subscriptionState === 'active' && (
+          {isPaidPlan && subscriptionState === "active" && (
             <Alert className="border-amber-500/40 bg-amber-500/10 text-amber-50">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Ja existe uma assinatura ativa</AlertTitle>
               <AlertDescription>
-                Para migrar de plano, finalize primeiro a assinatura atual. Depois volte a esta tela para contratar o novo plano desejado.
+                Para migrar de plano, finalize primeiro a assinatura atual.
+                Depois volte a esta tela para contratar o novo plano desejado.
               </AlertDescription>
             </Alert>
           )}
@@ -613,7 +616,9 @@ export default function PlansManagementPage() {
           {plansLoading ? (
             <div className="flex items-center justify-center py-12 text-slate-300">
               <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="ml-2 text-sm">Carregando opcoes de plano...</span>
+              <span className="ml-2 text-sm">
+                Carregando opcoes de plano...
+              </span>
             </div>
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">
@@ -627,14 +632,19 @@ export default function PlansManagementPage() {
 
       <Card className="border border-slate-800 bg-slate-900/60">
         <CardHeader>
-          <CardTitle className="text-base text-white">Precisa de ajuda?</CardTitle>
+          <CardTitle className="text-base text-white">
+            Precisa de ajuda?
+          </CardTitle>
           <CardDescription>
-            Fale com nossa equipe para ajustes customizados de limites ou faturamento.
+            Fale com nossa equipe para ajustes customizados de limites ou
+            faturamento.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-2">
           <Button asChild variant="outline" size="sm">
-            <Link href="mailto:suporte@nutrichat.com.br">Contato com suporte</Link>
+            <Link href="mailto:suporte@nutrichat.com.br">
+              Contato com suporte
+            </Link>
           </Button>
           <Button asChild variant="ghost" size="sm">
             <Link href="/faq">Central de ajuda</Link>
@@ -720,13 +730,19 @@ export default function PlansManagementPage() {
             Cancelar assinatura
           </CardTitle>
           <CardDescription className="text-rose-100/80">
-            Encerrar a assinatura removera o acesso aos recursos premium ao final do ciclo.
+            Encerrar a assinatura removera o acesso aos recursos premium ao
+            final do ciclo.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <ul className="list-disc space-y-2 pl-5 text-sm text-rose-100/80">
-            <li>Voce pode continuar usando o plano ate o fim do periodo ja pago.</li>
-            <li>E possivel reativar a assinatura posteriormente sem perder historico.</li>
+            <li>
+              Voce pode continuar usando o plano ate o fim do periodo ja pago.
+            </li>
+            <li>
+              E possivel reativar a assinatura posteriormente sem perder
+              historico.
+            </li>
             <li>Cancelamentos imediatos podem gerar reembolso proporcional.</li>
           </ul>
           <div className="flex flex-wrap items-center gap-2">
@@ -757,7 +773,9 @@ export default function PlansManagementPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-slate-300">
-          Pausar a assinatura mantem seu espaco reservado. Entre em contato com nossa equipe e avalie alternativas como downgrade ou pausa temporaria nas cobrancas.
+          Pausar a assinatura mantem seu espaco reservado. Entre em contato com
+          nossa equipe e avalie alternativas como downgrade ou pausa temporaria
+          nas cobrancas.
         </CardContent>
       </Card>
     </div>
@@ -765,13 +783,13 @@ export default function PlansManagementPage() {
 
   const renderActiveSection = () => {
     switch (activeSection) {
-      case 'change':
+      case "change":
         return renderChange();
-      case 'billing':
+      case "billing":
         return renderBilling();
-      case 'cancel':
+      case "cancel":
         return renderCancel();
-      case 'overview':
+      case "overview":
       default:
         return renderOverview();
     }
@@ -808,17 +826,17 @@ export default function PlansManagementPage() {
                       key={item.id}
                       type="button"
                       className={cn(
-                        'w-full rounded-xl border border-transparent bg-slate-900/60 px-4 py-3 text-left transition hover:border-emerald-400/40 hover:bg-slate-900/90',
+                        "w-full rounded-xl border border-transparent bg-slate-900/60 px-4 py-3 text-left transition hover:border-emerald-400/40 hover:bg-slate-900/90",
                         isActive &&
-                          'border-emerald-400/60 bg-slate-900/90 shadow-md shadow-emerald-500/20',
+                          "border-emerald-400/60 bg-slate-900/90 shadow-md shadow-emerald-500/20"
                       )}
                       onClick={() => setActiveSection(item.id)}
                     >
                       <div className="flex items-start gap-3">
                         <span
                           className={cn(
-                            'flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800/80 text-slate-300',
-                            isActive && 'bg-emerald-500/15 text-emerald-300',
+                            "flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800/80 text-slate-300",
+                            isActive && "bg-emerald-500/15 text-emerald-300"
                           )}
                         >
                           <Icon className="h-4 w-4" />
@@ -826,8 +844,8 @@ export default function PlansManagementPage() {
                         <div className="flex-1">
                           <p
                             className={cn(
-                              'text-sm font-medium',
-                              isActive ? 'text-white' : 'text-slate-200',
+                              "text-sm font-medium",
+                              isActive ? "text-white" : "text-slate-200"
                             )}
                           >
                             {item.label}
@@ -846,7 +864,8 @@ export default function PlansManagementPage() {
                   Precisa de suporte?
                 </p>
                 <p>
-                  Nossa equipe esta disponivel para ajudar com upgrades customizados e duvidas de faturamento.
+                  Nossa equipe esta disponivel para ajudar com upgrades
+                  customizados e duvidas de faturamento.
                 </p>
                 <Button
                   asChild
@@ -859,6 +878,17 @@ export default function PlansManagementPage() {
                   </Link>
                 </Button>
               </div>
+              <Button
+                type="button"
+                className="w-full rounded-lg bg-rose-600/80 py-2 text-xs font-semibold text-white transition hover:bg-rose-700"
+                onClick={async () => {
+                  // Importa o contexto de autenticação dinamicamente
+                  await logout();
+                  window.location.href = "/login";
+                }}
+              >
+                Sair da conta
+              </Button>
             </div>
           </aside>
 
@@ -877,7 +907,9 @@ export default function PlansManagementPage() {
             )}
             {statusError && (
               <Alert variant="destructive">
-                <AlertTitle>Nao foi possivel carregar sua assinatura</AlertTitle>
+                <AlertTitle>
+                  Nao foi possivel carregar sua assinatura
+                </AlertTitle>
                 <AlertDescription>{statusError}</AlertDescription>
               </Alert>
             )}
@@ -896,4 +928,3 @@ export default function PlansManagementPage() {
     </RouteGuard>
   );
 }
-

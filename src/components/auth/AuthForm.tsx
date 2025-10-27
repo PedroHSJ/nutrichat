@@ -157,8 +157,59 @@ export function AuthForm(props: AuthFormProps) {
   // Renderiza campos conforme o modo
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* ...todo o conteúdo do formulário, igual ao original... */}
-      {/* Você pode copiar o conteúdo JSX do formulário aqui, usando form e variáveis locais */}
+      {/* Email */}
+      <div>
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          autoComplete="email"
+          {...form.register("email")}
+          disabled={submitting}
+        />
+        {form.formState.errors.email && (
+          <span className="text-xs text-rose-500">
+            {form.formState.errors.email.message}
+          </span>
+        )}
+      </div>
+
+      {/* Senha */}
+      <div>
+        <Label htmlFor="password">Senha</Label>
+        <Input
+          id="password"
+          type="password"
+          autoComplete="current-password"
+          {...form.register("password")}
+          disabled={submitting}
+        />
+        {form.formState.errors.password && (
+          <span className="text-xs text-rose-500">
+            {form.formState.errors.password.message}
+          </span>
+        )}
+      </div>
+
+      {/* Erro geral */}
+      {formError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{formError}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Botão de submit */}
+      <Button type="submit" className="w-full" disabled={submitting}>
+        {submitting ? (
+          <span className="flex items-center justify-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Entrando...
+          </span>
+        ) : (
+          "Entrar"
+        )}
+      </Button>
     </form>
   );
 }
