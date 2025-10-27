@@ -465,9 +465,9 @@ export class UserSubscriptionService {
 
     try {
       const client = supabase || supabaseAdmin;
-      // Buscar planos ativos e seus preços usando o join correto do remote schema
+      // Buscar planos ativos e seus preços atuais
       const { data, error } = await client!
-        .from("subscription_plan_prices")
+        .from("subscription_plans")
         .select("*, prices:subscription_plan_prices(*)")
         .eq("active", true);
 
