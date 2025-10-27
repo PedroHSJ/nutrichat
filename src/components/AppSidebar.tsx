@@ -7,9 +7,11 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Crown, LogOutIcon } from "lucide-react";
@@ -34,9 +36,12 @@ import {
 } from "./ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import Link from "next/link";
+import { Badge } from "./ui/badge";
 
-const sidebarBgClass =
-  "bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 text-white border-none hover:text-white";
+// const sidebarBgClass =
+//   "bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 text-white border-none hover:text-white";
+
+const sidebarBgClass = "";
 
 // This is sample data.
 const data = {
@@ -57,14 +62,23 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { logout, user } = useAuth();
+
   return (
-    <Sidebar {...props} className="border-none">
+    <Sidebar {...props} variant="inset">
+      <SidebarHeader>
+        <div className="flex items-start gap-3 sm:items-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+            <Sparkles className="h-5 w-5 text-emerald-400" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold text-primary">NutriChat</h1>
+          </div>
+        </div>
+      </SidebarHeader>
       <SidebarContent className={sidebarBgClass}>
         {data.navMain.map((item) => (
           <SidebarGroup key={item.title}>
-            <SidebarGroupLabel className="text-white">
-              {item.title}
-            </SidebarGroupLabel>
+            <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {item.items.map((item) => {
@@ -122,7 +136,7 @@ export function NavUser({
           <DropdownMenuTrigger asChild className={sidebarBgClass}>
             <SidebarMenuButton
               size="lg"
-              className="text-white data-[state=open]:bg-sidebar-accent data-[state=open]:text-white"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
@@ -136,7 +150,7 @@ export function NavUser({
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className={`w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg ${sidebarBgClass}`}
+            className={`w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg`}
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}
@@ -165,25 +179,9 @@ export function NavUser({
                 </DropdownMenuItem>
               </Link>
             </DropdownMenuGroup>
-            {/* <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator /> */}
             <DropdownMenuItem>
               <LogOut />
-              Log out
+              Sair
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

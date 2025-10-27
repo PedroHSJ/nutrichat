@@ -457,15 +457,15 @@ export default function AgentChatPage() {
   }, [logout]);
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950">
-      <header className="flex flex-col mb-4 gap-4 border border-slate-800 bg-slate-900/70 px-6 py-4 shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
+    <div className="">
+      {/* <header className="flex flex-col gap-4 px-6 py-4 shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between border-b">
         <div className="flex items-start gap-3 sm:items-center">
-          <SidebarTrigger className="bg-white/10 hover:bg-white/20 focus:ring-2 focus:ring-white/30 text-white hover:text-white" />
+          <SidebarTrigger className="" />
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
             <Sparkles className="h-5 w-5 text-emerald-400" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-white">
+            <h1 className="text-xl font-semibold text-primary">
               Agente Inteligente
             </h1>
             <p className="text-sm text-slate-300">
@@ -486,57 +486,29 @@ export default function AgentChatPage() {
           </div>
         </div>
         <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
-          {/* <Button
-            asChild
-            className="flex items-center justify-center gap-2 bg-emerald-500/90 text-slate-900 shadow-sm shadow-emerald-500/30 transition hover:bg-emerald-400 hover:text-slate-900"
-          >
-            <Link href="/plans">
-              <Crown className="h-4 w-4" />
-              Gerenciar plano
-            </Link>
-          </Button> */}
-          {facts.length > 0 && (
-            <Badge
-              variant="outline"
-              className="flex items-center justify-center border-slate-700 bg-slate-800/80 text-slate-200"
-            >
-              {facts.length} fato{facts.length > 1 ? "s" : ""} salvo
-              {facts.length > 1 ? "s" : ""}
-            </Badge>
-          )}
           {user?.name && (
             <div className="flex flex-col text-right text-xs">
               <span className="text-slate-400">Autenticado como</span>
-              <span className="text-sm font-medium text-slate-100">
+              <span className="text-sm font-medium text-primary">
                 {user.name}
               </span>
             </div>
           )}
-          {/* <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="flex items-center justify-center gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            {isLoggingOut ? "Saindo..." : "Sair"}
-          </Button> */}
+        </div>
+      </header> */}
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
         </div>
       </header>
-      <div className="mx-auto flex max-w-5xl flex-col gap-6 py-4">
-        <Card className="border-slate-800 bg-slate-900/70 backdrop-blur">
-          <CardContent>
-            <div className="relative h-full w-full overflow-hidden">
-              <ChatKitPanel
-                theme={theme}
-                onWidgetAction={performAction}
-                onResponseEnd={refresh}
-                onThemeRequest={handleThemeChange}
-              />
-            </div>
-          </CardContent>
-        </Card>
+
+      <div className="w-full">
+        <ChatKitPanel
+          theme={theme}
+          onWidgetAction={performAction}
+          onResponseEnd={refresh}
+          onThemeRequest={handleThemeChange}
+        />
       </div>
     </div>
   );
