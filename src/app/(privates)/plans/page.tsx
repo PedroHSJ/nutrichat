@@ -657,25 +657,23 @@ export default function PlansManagementPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-lg border border-slate-800 bg-slate-950/40 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-400">
-              Proxima cobranca
-            </p>
+          <div className="rounded-lg border p-4">
+            <p className="text-xs uppercase tracking-wide">Proxima cobranca</p>
             <p className="mt-2 text-lg font-semibold ">
               {formatDate(currentPeriodEnd)}
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs">
               Renovacao automatica mantendo os beneficios ativos.
             </p>
           </div>
-          <div className="rounded-lg border border-slate-800 bg-slate-950/40 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-400">
+          <div className="rounded-lg border p-4">
+            <p className="text-xs uppercase tracking-wide">
               Status de pagamento
             </p>
             <p className="mt-2 text-lg font-semibold  capitalize">
-              {subscriptionState}
+              {subscriptionState == "active" ? "Ativo" : subscriptionState}
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs">
               Caso note alguma divergencia, atualize seus dados de pagamento.
             </p>
           </div>
@@ -719,13 +717,13 @@ export default function PlansManagementPage() {
             <AlertTriangle className="h-4 w-4 text-rose-200" />
             Cancelar assinatura
           </CardTitle>
-          <CardDescription className="text-rose-100/80">
+          <CardDescription>
             Encerrar a assinatura removera o acesso aos recursos premium ao
             final do ciclo.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <ul className="list-disc space-y-2 pl-5 text-sm text-rose-100/80">
+          <ul className="list-disc space-y-2 pl-5 text-sm">
             <li>
               Voce pode continuar usando o plano ate o fim do periodo ja pago.
             </li>
@@ -747,23 +745,13 @@ export default function PlansManagementPage() {
               variant="outline"
               asChild
               size="sm"
-              className="border-rose-500/40 text-rose-100 hover:bg-rose-500/10"
+              className="border-rose-500/40 hover:bg-rose-500/10"
             >
               <Link href="mailto:suspensoes@nutrichat.com.br">
                 Falar com o suporte
               </Link>
             </Button>
           </div>
-        </CardContent>
-      </Card>
-      <Card className="border ">
-        <CardHeader>
-          <CardTitle className="text-base ">Precisa apenas pausar?</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-slate-300">
-          Pausar a assinatura mantem seu espaco reservado. Entre em contato com
-          nossa equipe e avalie alternativas como downgrade ou pausa temporaria
-          nas cobrancas.
         </CardContent>
       </Card>
     </div>
@@ -862,17 +850,17 @@ export default function PlansManagementPage() {
                   Contatar financeiro
                 </Link>
               </Button>
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="mt-2 w-full flex items-center justify-center gap-2 text-foreground"
-              >
-                <Link href="/agent-chat">
-                  <ArrowLeftRight className="h-4 w-4 mr-1" /> Voltar para chat
-                </Link>
-              </Button>
             </div>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="my-2 w-full flex items-center justify-center gap-2 text-foreground"
+            >
+              <Link href="/agent-chat">
+                <ArrowLeftRight className="h-4 w-4 mr-1" /> Voltar para chat
+              </Link>
+            </Button>
             <Button
               type="button"
               className="w-full rounded-lg bg-rose-600/80 py-2 text-xs font-semibold  transition hover:bg-rose-700"
