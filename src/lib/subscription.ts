@@ -126,12 +126,6 @@ export class UserSubscriptionService {
    * Incrementar uso de interação diária
    */
   static async incrementInteractionUsage(userId: string): Promise<boolean> {
-    // BYPASS PARA DESENVOLVIMENTO/TESTE
-    // if (SubscriptionService.subscriptionBypass()) {
-    //   console.log('[BYPASS MODE] Bypassing interaction increment');
-    //   return true;
-    // }
-
     if (!this.isSupabaseConfigured()) {
       throw new Error("Banco de dados não configurado");
     }

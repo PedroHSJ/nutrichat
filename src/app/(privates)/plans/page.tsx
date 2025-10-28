@@ -49,7 +49,7 @@ type PlanOption = {
   features: string[];
 };
 
-type SubscriptionDetails = Omit<
+export type SubscriptionDetails = Omit<
   UserInteractionStatus,
   "currentPeriodEnd" | "resetTime" | "trialEndsAt"
 > & {
@@ -142,7 +142,7 @@ function formatResetTime(value?: Date) {
   return `${parsed.toLocaleDateString("pt-BR")} as ${time}`;
 }
 
-function normalizeStatus(
+export function normalizeStatus(
   status: UserInteractionStatus | null
 ): SubscriptionDetails | null {
   if (!status) {

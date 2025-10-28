@@ -14,7 +14,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Crown, LogOutIcon } from "lucide-react";
+import { Crown, MessageCircleMore } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -55,6 +55,11 @@ const data = {
           url: "/plans",
           icon: <Crown className="h-4 w-4" />,
         },
+        {
+          title: "Chat",
+          url: "/agent-chat",
+          icon: <MessageCircleMore className="h-4 w-4" />,
+        },
       ],
     },
   ],
@@ -76,30 +81,33 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </div>
       </SidebarHeader>
       <SidebarContent className={sidebarBgClass}>
-        {data.navMain.map((item) => (
-          <SidebarGroup key={item.title}>
-            <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {item.items.map((item) => {
-                  return (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <a
-                          href={item.url}
-                          className="flex items-center gap-2 w-full"
-                        >
-                          {item.icon}
-                          <span>{item.title}</span>
-                        </a>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        {data.navMain.map((item) => {
+          const path = window.location.pathname;
+          return (
+            <SidebarGroup key={item.title}>
+              <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {item.items.map((item) => {
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild isActive={path === item.url}>
+                          <a
+                            href={item.url}
+                            className="flex items-center gap-2 w-full"
+                          >
+                            {item.icon}
+                            <span>{item.title}</span>
+                          </a>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          );
+        })}
       </SidebarContent>
       <SidebarFooter className={sidebarBgClass}>
         {/* <Button onClick={() => logout()} variant={"destructive"}>

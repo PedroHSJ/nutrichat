@@ -15,6 +15,10 @@ import type { ColorScheme } from "./useColorSchema";
 import { useFacts } from "./useFacts";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
+import UserSubscriptionService from "@/lib/subscription";
+import { Separator } from "@radix-ui/react-separator";
+import { normalizeStatus, SubscriptionDetails } from "../plans/page";
+import { useSubscription } from "@/hooks/use-subscription";
 
 export type FactAction = {
   type: "save";
@@ -71,6 +75,7 @@ export function ChatKitPanel({
   const setErrorState = useCallback((updates: Partial<ErrorState>) => {
     setErrors((current) => ({ ...current, ...updates }));
   }, []);
+  const { user } = useAuth();
 
   useEffect(() => {
     return () => {
@@ -314,6 +319,8 @@ export function ChatKitPanel({
       return { success: false };
     },
     onResponseStart: () => {
+      // Resetar o flag para garantir incremento em cada mensagem
+      responseEndedRef.current = false;
       if (!responseStartedRef.current) {
         console.log(
           "Mensagem sendo enviada: operação customizada antes do envio"
@@ -324,7 +331,8 @@ export function ChatKitPanel({
     },
     onResponseEnd: () => {
       if (!responseEndedRef.current) {
-        console.log("[ChatKitPanel] onResponseEnd invoked");
+        if (!user?.id) return;
+        UserSubscriptionService.incrementInteractionUsage(user?.id);
         responseEndedRef.current = true;
       }
       onResponseEnd();
@@ -420,11 +428,17 @@ export default function AgentChatPage() {
   const { user, logout, interactionStatus } = useAuth();
   const [theme, setTheme] = useState<ColorScheme>("light");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  const { facts, refresh, performAction } = useFacts();
+  const [dailyUsage, setDailyUsage] = useState<number | null>(null);
+  const [subscriptionDetails, setSubscriptionDetails] =
+    useState<SubscriptionDetails | null>(null);
   const handleThemeChange = (scheme: ColorScheme) => {
     setTheme(scheme);
   };
+  const {
+    subscriptionStatus,
+    loading: subscriptionLoading,
+    refreshSubscription,
+  } = useSubscription();
   const workflowLabel = WORKFLOW_ID ?? "workflow nao configurado";
   const trialRemainingText = useMemo(() => {
     if (!interactionStatus?.isTrialing) {
@@ -447,14 +461,59 @@ export default function AgentChatPage() {
     return `${diffDays} dia${diffDays === 1 ? "" : "s"} de teste restantes`;
   }, [interactionStatus?.isTrialing, interactionStatus?.trialEndsAt]);
 
-  const handleLogout = useCallback(async () => {
-    try {
-      setIsLoggingOut(true);
-      await logout();
-    } finally {
-      setIsLoggingOut(false);
+  const [dailyLimit, setDailyLimit] = useState<number>(0);
+  useEffect(() => {
+    const fetchDailyLimit = async () => {
+      if (user?.id) {
+        try {
+          const status = await UserSubscriptionService.canUserInteract(user.id);
+          console.log("[fetchDailyLimit] status:", status);
+          setDailyLimit(status?.dailyLimit ?? 0);
+        } catch (err) {
+          console.error("[fetchDailyLimit] erro ao buscar dailyLimit:", err);
+          setDailyLimit(0);
+        }
+      } else {
+        setDailyLimit(0);
+      }
+    };
+    fetchDailyLimit();
+  }, [user?.id, subscriptionStatus]);
+
+  useEffect(() => {
+    fetchDailyUsage();
+  }, [user?.id, dailyLimit]);
+
+  const fetchDailyUsage = async () => {
+    if (user?.id) {
+      const usage = await UserSubscriptionService.getDailyUsage(user.id);
+      console.log("[fetchDailyUsage] usage:", usage);
+      setDailyUsage(usage?.interactions_used ?? null);
+    } else {
+      console.log("[fetchDailyUsage] user?.id não definido");
     }
-  }, [logout]);
+  };
+  useEffect(() => {
+    console.log("[AgentChatPage] dailyUsage:", dailyUsage);
+    console.log("[AgentChatPage] dailyLimit:", dailyLimit);
+  }, [dailyUsage, dailyLimit]);
+  const handleRefresh = async () => {
+    await fetchDailyUsage();
+  };
+
+  const dailyInteractionBadgeColor = useMemo(() => {
+    if (dailyUsage === null) return "bg-gray";
+    if (dailyUsage === 0) {
+      return "bg-emerald";
+    }
+    if (dailyLimit > 0 && dailyUsage === dailyLimit) {
+      return "bg-red-100";
+    }
+    if (dailyLimit > 0 && dailyUsage / dailyLimit >= 0.8) {
+      return "bg-yellow-300";
+    }
+    return "bg-gray";
+  }, [dailyUsage, dailyLimit]);
 
   return (
     <div className="">
@@ -499,14 +558,22 @@ export default function AgentChatPage() {
       <header className="flex h-16 shrink-0 items-center gap-2 border-b">
         <div className="flex items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="h-6" />
+          {user?.id && (
+            <Badge
+              className={`rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none ${dailyInteractionBadgeColor}`}
+            >
+              Uso diário: {`${dailyUsage}/${dailyLimit}`}
+            </Badge>
+          )}
         </div>
       </header>
 
       <div className="w-full">
         <ChatKitPanel
           theme={theme}
-          onWidgetAction={performAction}
-          onResponseEnd={refresh}
+          onWidgetAction={() => Promise.resolve()}
+          onResponseEnd={handleRefresh}
           onThemeRequest={handleThemeChange}
         />
       </div>
