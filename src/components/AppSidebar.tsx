@@ -37,7 +37,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import Link from "next/link";
 import { Badge } from "./ui/badge";
-
+import { usePathname } from "next/navigation";
 // const sidebarBgClass =
 //   "bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 text-white border-none hover:text-white";
 
@@ -67,6 +67,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { logout, user } = useAuth();
+  const pathname = usePathname();
 
   return (
     <Sidebar {...props} variant="inset">
@@ -82,7 +83,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent className={sidebarBgClass}>
         {data.navMain.map((item) => {
-          const path = window.location.pathname;
           return (
             <SidebarGroup key={item.title}>
               <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
@@ -91,7 +91,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   {item.items.map((item) => {
                     return (
                       <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild isActive={path === item.url}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={pathname === item.url}
+                        >
                           <a
                             href={item.url}
                             className="flex items-center gap-2 w-full"

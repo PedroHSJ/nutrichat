@@ -4,20 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatKit, useChatKit } from "@openai/chatkit-react";
 import { WORKFLOW_ID, CHATKIT_SESSION_ENDPOINT } from "./config";
 import { useAuth } from "@/context/AuthContext";
-import Link from "next/link";
-import { RouteGuard } from "@/components/RouteGuard";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Crown, LogOut, Sparkles } from "lucide-react";
 
 import type { ColorScheme } from "./useColorSchema";
-import { useFacts } from "./useFacts";
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
 import UserSubscriptionService from "@/lib/subscription";
 import { Separator } from "@radix-ui/react-separator";
-import { normalizeStatus, SubscriptionDetails } from "../plans/page";
+import { SubscriptionDetails } from "../plans/page";
 import { useSubscription } from "@/hooks/use-subscription";
 
 export type FactAction = {
