@@ -20,10 +20,6 @@ const stripeSecretKey = subscriptionConfig.stripeSecretKey;
 
 // Validação para desenvolvimento
 if (!stripeSecretKey && process.env.NODE_ENV !== "development") {
-  console.log("[Stripe] STRIPE_SECRET_KEY is required", { stripeSecretKey });
-  console.error("[Stripe] NODE_ENV is required", {
-    nodeEnv: process.env.NODE_ENV,
-  });
   throw new Error("STRIPE_SECRET_KEY is required");
 }
 

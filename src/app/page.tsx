@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { SiteHeader } from '@/components/SiteHeader';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/context/AuthContext';
-import { useSubscription } from '@/hooks/use-subscription';
+import { useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { SiteHeader } from "@/components/SiteHeader";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useAuth } from "@/context/AuthContext";
+import { useSubscription } from "@/hooks/use-subscription";
 import {
   Activity,
   ArrowRight,
@@ -20,7 +26,7 @@ import {
   Sparkles,
   Users,
   Zap,
-} from 'lucide-react';
+} from "lucide-react";
 
 export default function LandingPage() {
   const { isAuthenticated } = useAuth();
@@ -29,10 +35,10 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (isAuthenticated && !subscriptionLoading && !hasActivePlan) {
-      router.push('/plans');
+      router.push("/agent-chat");
     }
     if (isAuthenticated && !subscriptionLoading && hasActivePlan) {
-      router.push('/select-page');
+      router.push("/select-page");
     }
   }, [isAuthenticated, hasActivePlan, subscriptionLoading, router]);
 
@@ -50,8 +56,9 @@ export default function LandingPage() {
                 Uma central inteligente para transformar o cuidado nutricional.
               </h1>
               <p className="text-base text-slate-300 sm:text-lg">
-                O NutriChat combina fluxos guiados, automacoes e seguranca para que cada consulta
-                entregue acompanhamento com a mesma qualidade do painel do agente.
+                O NutriChat combina fluxos guiados, automacoes e seguranca para
+                que cada consulta entregue acompanhamento com a mesma qualidade
+                do painel do agente.
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                 <Button
@@ -78,19 +85,37 @@ export default function LandingPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="rounded-xl border border-slate-800/80 bg-slate-900/70 p-4 shadow-sm shadow-emerald-500/10">
-                  <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Tempo</p>
-                  <p className="mt-2 text-lg font-semibold text-white">Ate 5x mais rapido</p>
-                  <p className="text-xs text-slate-400">para montar protocolos e cardapios.</p>
+                  <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
+                    Tempo
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-white">
+                    Ate 5x mais rapido
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    para montar protocolos e cardapios.
+                  </p>
                 </div>
                 <div className="rounded-xl border border-slate-800/80 bg-slate-900/70 p-4 shadow-sm shadow-emerald-500/10">
-                  <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Precisao</p>
-                  <p className="mt-2 text-lg font-semibold text-white">Protocolos assistidos</p>
-                  <p className="text-xs text-slate-400">combinando IA e conhecimento clinico.</p>
+                  <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
+                    Precisao
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-white">
+                    Protocolos assistidos
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    combinando IA e conhecimento clinico.
+                  </p>
                 </div>
                 <div className="rounded-xl border border-slate-800/80 bg-slate-900/70 p-4 shadow-sm shadow-emerald-500/10">
-                  <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Seguranca</p>
-                  <p className="mt-2 text-lg font-semibold text-white">LGPD e criptografia</p>
-                  <p className="text-xs text-slate-400">para proteger dados sensiveis.</p>
+                  <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
+                    Seguranca
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-white">
+                    LGPD e criptografia
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    para proteger dados sensiveis.
+                  </p>
                 </div>
               </div>
             </div>
@@ -102,8 +127,9 @@ export default function LandingPage() {
                   Experiencia digna do agent-chat
                 </CardTitle>
                 <CardDescription className="text-sm text-slate-300">
-                  O mesmo visual do painel do agente aplicado ao onboarding, com cards translucidos
-                  e tipografia consistente para orientar sua equipe.
+                  O mesmo visual do painel do agente aplicado ao onboarding, com
+                  cards translucidos e tipografia consistente para orientar sua
+                  equipe.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 text-sm text-slate-300">
@@ -111,21 +137,34 @@ export default function LandingPage() {
                   <MessageCircle className="mt-0.5 h-4 w-4 text-emerald-300" />
                   <div>
                     <p className="font-medium text-slate-200">Fluxos guiados</p>
-                    <p>Scripts adaptativos verificam rotina, historico e objetivos em minutos.</p>
+                    <p>
+                      Scripts adaptativos verificam rotina, historico e
+                      objetivos em minutos.
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 rounded-lg border border-slate-800/60 bg-slate-900/60 p-3">
                   <Shield className="mt-0.5 h-4 w-4 text-emerald-300" />
                   <div>
-                    <p className="font-medium text-slate-200">Controle de dados</p>
-                    <p>Registre consentimento, exporte informacoes e mantenha auditoria de acessos.</p>
+                    <p className="font-medium text-slate-200">
+                      Controle de dados
+                    </p>
+                    <p>
+                      Registre consentimento, exporte informacoes e mantenha
+                      auditoria de acessos.
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 rounded-lg border border-slate-800/60 bg-slate-900/60 p-3">
                   <Clock className="mt-0.5 h-4 w-4 text-emerald-300" />
                   <div>
-                    <p className="font-medium text-slate-200">Entrega imediata</p>
-                    <p>Templates prontos encurtam o tempo entre primeira consulta e plano alimentar.</p>
+                    <p className="font-medium text-slate-200">
+                      Entrega imediata
+                    </p>
+                    <p>
+                      Templates prontos encurtam o tempo entre primeira consulta
+                      e plano alimentar.
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -141,8 +180,8 @@ export default function LandingPage() {
                 Ferramentas prontas para elevar a pratica nutricional
               </h2>
               <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-300 sm:text-base">
-                Um ecossistema integrado para consultas, planos e acompanhamento, sem abrir mao da
-                confidencialidade dos dados.
+                Um ecossistema integrado para consultas, planos e
+                acompanhamento, sem abrir mao da confidencialidade dos dados.
               </p>
             </div>
 
@@ -152,11 +191,13 @@ export default function LandingPage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
                     <Activity className="h-6 w-6 text-emerald-300" />
                   </div>
-                  <CardTitle className="text-xl text-white">Protocolos dinamicos</CardTitle>
+                  <CardTitle className="text-xl text-white">
+                    Protocolos dinamicos
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-slate-300">
-                  Estruture anamnese e follow-up com checklists automatizados e recomendacoes
-                  adaptadas ao perfil do paciente.
+                  Estruture anamnese e follow-up com checklists automatizados e
+                  recomendacoes adaptadas ao perfil do paciente.
                 </CardContent>
               </Card>
 
@@ -165,11 +206,13 @@ export default function LandingPage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
                     <Users className="h-6 w-6 text-emerald-300" />
                   </div>
-                  <CardTitle className="text-xl text-white">Visao 360 da jornada</CardTitle>
+                  <CardTitle className="text-xl text-white">
+                    Visao 360 da jornada
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-slate-300">
-                  Integre historico alimentar, evolucao de consultas e tarefas pendentes em um
-                  painel unico inspirado no agent-chat.
+                  Integre historico alimentar, evolucao de consultas e tarefas
+                  pendentes em um painel unico inspirado no agent-chat.
                 </CardContent>
               </Card>
 
@@ -178,11 +221,14 @@ export default function LandingPage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
                     <Zap className="h-6 w-6 text-emerald-300" />
                   </div>
-                  <CardTitle className="text-xl text-white">Automacao segura</CardTitle>
+                  <CardTitle className="text-xl text-white">
+                    Automacao segura
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-slate-300">
-                  Centralize templates, exportacoes LGPD e integracoes com suplementos ou exames,
-                  tudo protegido com autenticacao Supabase.
+                  Centralize templates, exportacoes LGPD e integracoes com
+                  suplementos ou exames, tudo protegido com autenticacao
+                  Supabase.
                 </CardContent>
               </Card>
             </div>
@@ -191,23 +237,33 @@ export default function LandingPage() {
           <section className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <Card className="border border-slate-800/70 bg-slate-900/70 shadow-lg shadow-emerald-500/10">
               <CardHeader>
-                <CardTitle className="text-2xl text-white">Resultados em numeros</CardTitle>
+                <CardTitle className="text-2xl text-white">
+                  Resultados em numeros
+                </CardTitle>
                 <CardDescription className="text-slate-300">
-                  Equipes que migraram para o NutriChat com a nova interface relataram:
+                  Equipes que migraram para o NutriChat com a nova interface
+                  relataram:
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 text-sm text-slate-300">
                 <div className="flex items-center gap-3">
                   <CheckCircle className="h-5 w-5 text-emerald-300" />
-                  <span>80% de reducao em tarefas repetitivas na elaboracao de planos.</span>
+                  <span>
+                    80% de reducao em tarefas repetitivas na elaboracao de
+                    planos.
+                  </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <CheckCircle className="h-5 w-5 text-emerald-300" />
-                  <span>35% mais pacientes ativos com engajamento continuo.</span>
+                  <span>
+                    35% mais pacientes ativos com engajamento continuo.
+                  </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <CheckCircle className="h-5 w-5 text-emerald-300" />
-                  <span>Tempo medio de onboarding reduzido para 12 minutos.</span>
+                  <span>
+                    Tempo medio de onboarding reduzido para 12 minutos.
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -217,19 +273,24 @@ export default function LandingPage() {
                 Planos flexiveis para cada fase da sua clinica
               </h2>
               <p className="text-sm text-slate-300 sm:text-base">
-                Startups de consultorio ou grandes redes: escolha um plano, migre quando quiser e
-                mantenha sempre a mesma identidade refinada do agent-chat.
+                Startups de consultorio ou grandes redes: escolha um plano,
+                migre quando quiser e mantenha sempre a mesma identidade
+                refinada do agent-chat.
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Card className="border border-emerald-400/40 bg-emerald-500/5 shadow-emerald-500/20">
                   <CardHeader className="space-y-1">
-                    <CardTitle className="text-lg text-white">Starter</CardTitle>
+                    <CardTitle className="text-lg text-white">
+                      Starter
+                    </CardTitle>
                     <CardDescription className="text-slate-200">
                       Profissionais independentes
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm text-slate-200">
-                    <p className="text-xl font-semibold text-emerald-300">R$ 49/mes</p>
+                    <p className="text-xl font-semibold text-emerald-300">
+                      R$ 49/mes
+                    </p>
                     <p>Ate 15 consultas diarias e relatorios automatizados.</p>
                   </CardContent>
                 </Card>
@@ -242,8 +303,13 @@ export default function LandingPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm text-slate-200">
-                    <p className="text-xl font-semibold text-emerald-300">R$ 99/mes</p>
-                    <p>Protocolos completos, relatorios avancados e suporte prioritario.</p>
+                    <p className="text-xl font-semibold text-emerald-300">
+                      R$ 99/mes
+                    </p>
+                    <p>
+                      Protocolos completos, relatorios avancados e suporte
+                      prioritario.
+                    </p>
                   </CardContent>
                 </Card>
               </div>
@@ -267,8 +333,9 @@ export default function LandingPage() {
                   Comece a usar o NutriChat hoje mesmo
                 </h2>
                 <p className="mx-auto max-w-2xl text-sm text-slate-200 sm:text-base">
-                  Em poucos minutos voce cria sua conta, conecta com o Supabase Auth e acessa o
-                  mesmo ambiente do agent-chat para atender seus pacientes com consistencia visual.
+                  Em poucos minutos voce cria sua conta, conecta com o Supabase
+                  Auth e acessa o mesmo ambiente do agent-chat para atender seus
+                  pacientes com consistencia visual.
                 </p>
                 <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
                   <Button

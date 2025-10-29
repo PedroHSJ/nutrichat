@@ -326,7 +326,13 @@ export function ChatKitPanel({
     onResponseEnd: () => {
       if (!responseEndedRef.current) {
         if (!user?.id) return;
-        UserSubscriptionService.incrementInteractionUsage(user?.id);
+        fetch("/api/user-subscription/increment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.id }),
+        }).catch((err) => {
+          console.error("Erro ao incrementar interação:", err);
+        });
         responseEndedRef.current = true;
       }
       onResponseEnd();
@@ -460,7 +466,12 @@ export default function AgentChatPage() {
     const fetchDailyLimit = async () => {
       if (user?.id) {
         try {
-          const status = await UserSubscriptionService.canUserInteract(user.id);
+          const res = await fetch("/api/user-subscription/limit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user.id }),
+          });
+          const status = await res.json();
           console.log("[fetchDailyLimit] status:", status);
           setDailyLimit(status?.dailyLimit ?? 0);
         } catch (err) {
@@ -474,23 +485,34 @@ export default function AgentChatPage() {
     fetchDailyLimit();
   }, [user?.id, subscriptionStatus]);
 
-  useEffect(() => {
-    fetchDailyUsage();
-  }, [user?.id, dailyLimit]);
-
-  const fetchDailyUsage = async () => {
+  const fetchDailyUsage = useCallback(async () => {
+    console.log("[fetchDailyUsage] Iniciando fetch do uso diário");
     if (user?.id) {
-      const usage = await UserSubscriptionService.getDailyUsage(user.id);
-      console.log("[fetchDailyUsage] usage:", usage);
-      setDailyUsage(usage?.interactions_used ?? null);
+      try {
+        const res = await fetch("/api/user-subscription/usage", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.id }),
+        });
+        const usage = await res.json();
+        console.log("[fetchDailyUsage] usage:", usage);
+        setDailyUsage(usage?.interactions_used ?? 0);
+      } catch (err) {
+        console.error("[fetchDailyUsage] erro ao buscar usage:", err);
+        setDailyUsage(0);
+      }
     } else {
       console.log("[fetchDailyUsage] user?.id não definido");
+      setDailyUsage(0);
     }
-  };
+  }, [user?.id]);
+
   useEffect(() => {
-    console.log("[AgentChatPage] dailyUsage:", dailyUsage);
-    console.log("[AgentChatPage] dailyLimit:", dailyLimit);
-  }, [dailyUsage, dailyLimit]);
+    if (user?.id) {
+      fetchDailyUsage();
+    }
+  }, [user?.id, fetchDailyUsage]);
+
   const handleRefresh = async () => {
     await fetchDailyUsage();
   };
