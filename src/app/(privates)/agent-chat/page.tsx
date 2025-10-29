@@ -345,7 +345,7 @@ export function ChatKitPanel({
   const blockingError = errors.script ?? activeError;
 
   return (
-    <div className="relative pb-8 flex h-[90vh] w-full rounded-2xl flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900">
+    <div className="pb-8 flex w-full h-full flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900">
       {(blockingError || isInitializingSession) && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-slate-900/80">
           <div className="flex flex-col items-center gap-2">
@@ -563,7 +563,7 @@ export default function AgentChatPage() {
         </div>
       </header>
 
-      <div className="w-full">
+      <div className="">
         <ChatKitPanel
           theme={theme}
           onWidgetAction={() => Promise.resolve()}

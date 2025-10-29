@@ -77,7 +77,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <Sparkles className="h-5 w-5 text-emerald-400" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-primary">NutriChat</h1>
+            <h1 className="text-xl font-semibold">NutriChat</h1>
           </div>
         </div>
       </SidebarHeader>
