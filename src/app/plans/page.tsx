@@ -36,12 +36,13 @@ async function getPlans(): Promise<PlanOption[]> {
 }
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function PlansPage() {
   const [plans, setPlans] = useState<PlanOption[]>([]);
   const [loading, setLoading] = useState(true);
   const authHeaders = useAuthHeaders();
-
+  const { logout } = useAuth();
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -137,8 +138,11 @@ export default function PlansPage() {
           asChild
           variant="outline"
           className="mt-8 border-emerald-400/50 bg-slate-900/60 text-emerald-200 transition hover:bg-slate-900/80"
+          onClick={async () => {
+            await logout();
+          }}
         >
-          <Link href="/">Voltar para início</Link>
+          Voltar para início
         </Button>
       </div>
     </main>
