@@ -141,7 +141,7 @@ export class UserSubscriptionService {
         console.error("Erro ao incrementar uso:", error);
         return false;
       }
-
+      console.log("Uso de interação incrementado com sucesso:", data);
       return data as boolean;
     } catch (error) {
       console.error("Erro ao incrementar interação:", error);
@@ -479,13 +479,11 @@ export class UserSubscriptionService {
   /**
    * Obter uso diário atual
    */
-  static async getDailyUsage(
-    userId: string
-  ): Promise<DailyInteractionUsage | null> {
+  static async getDailyUsage(userId: string) {
     if (!this.isSupabaseConfigured()) {
       return null;
     }
-
+    console.log("[getDailyUsage] Obtendo uso diário para usuário:", userId);
     try {
       const client = supabase || supabaseAdmin;
       const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
@@ -497,10 +495,36 @@ export class UserSubscriptionService {
         .eq("usage_date", today)
         .single();
 
-      if (error && error.code !== "PGRST116") {
-        console.error("Erro ao buscar uso diário:", error);
-        return null;
-      }
+      console.log("[getDailyUsage] Query executada para usuário:", userId);
+      console.log("[getDailyUsage] Data de uso:", today);
+      console.log("[getDailyUsage] Resultado:", data);
+
+      // Se não existe, cria o registro
+      // if (error && error.code === "PGRST116") {
+      //   const { data: created, error: createError } = await client!
+      //     .from("daily_interaction_usage")
+      //     .insert({
+      //       user_id: userId,
+      //       usage_date: today,
+      //       interactions_used: 0,
+      //       created_at: new Date().toISOString(),
+      //       updated_at: new Date().toISOString(),
+      //     })
+      //     .select("*")
+      //     .single();
+      //   console.log(
+      //     "[getDailyUsage] Criando novo registro de uso diário para usuário:",
+      //     userId
+      //   );
+      //   if (createError) {
+      //     console.error("Erro ao criar uso diário:", createError);
+      //     return null;
+      //   }
+      //   return created as DailyInteractionUsage;
+      // } else if (error) {
+      //   console.error("Erro ao buscar uso diário:", error);
+      //   return null;
+      // }
 
       return data as DailyInteractionUsage;
     } catch (error) {

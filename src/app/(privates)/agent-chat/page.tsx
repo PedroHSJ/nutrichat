@@ -9,11 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import type { ColorScheme } from "./useColorSchema";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
-import UserSubscriptionService from "@/lib/subscription";
 import { Separator } from "@radix-ui/react-separator";
-import { SubscriptionDetails } from "../plans/page";
 import { useSubscription } from "@/hooks/use-subscription";
-
+import { toast } from "sonner";
 export type FactAction = {
   type: "save";
   factId: string;
@@ -49,7 +47,10 @@ export function ChatKitPanel({
   onWidgetAction,
   onResponseEnd,
   onThemeRequest,
-}: ChatKitPanelProps) {
+  isBlocked,
+}: ChatKitPanelProps & {
+  isBlocked: boolean;
+}) {
   const processedFacts = useRef(new Set<string>());
   // Flags to prevent multiple logs per message
   const responseStartedRef = useRef(false);
@@ -65,6 +66,11 @@ export function ChatKitPanel({
       : "pending"
   );
   const [widgetInstanceKey] = useState(0);
+
+  useEffect(() => {
+    if (!errors) return;
+    if (errors) toast.error("Erro ao iniciar sessão");
+  }, [errors]);
 
   const setErrorState = useCallback((updates: Partial<ErrorState>) => {
     setErrors((current) => ({ ...current, ...updates }));
@@ -150,20 +156,11 @@ export function ChatKitPanel({
     }
   }, [isWorkflowConfigured, setErrorState]);
 
-  // const handleResetChat = useCallback(() => {
-  //   processedFacts.current.clear();
-  //   if (isBrowser) {
-  //     setScriptStatus(
-  //       window.customElements?.get("openai-chatkit") ? "ready" : "pending"
-  //     );
-  //   }
-  //   setIsInitializingSession(true);
-  //   setErrors(createInitialErrors());
-  //   setWidgetInstanceKey((prev) => prev + 1);
-  // }, []);
-
   const getClientSecret = useCallback(
     async (currentSecret: string | null) => {
+      if (isBlocked) {
+        throw new Error("Limite diário atingido");
+      }
       if (isDev) {
         console.info("[ChatKitPanel] getClientSecret invoked", {
           currentSecretPresent: Boolean(currentSecret),
@@ -313,29 +310,42 @@ export function ChatKitPanel({
       return { success: false };
     },
     onResponseStart: () => {
-      // Resetar o flag para garantir incremento em cada mensagem
       responseEndedRef.current = false;
-      if (!responseStartedRef.current) {
-        console.log(
-          "Mensagem sendo enviada: operação customizada antes do envio"
-        );
-        responseStartedRef.current = true;
-      }
+      console.log(
+        "Mensagem sendo enviada: operação customizada antes do envio"
+      );
+      responseStartedRef.current = true;
       setErrorState({ integration: null, retryable: false });
     },
-    onResponseEnd: () => {
-      if (!responseEndedRef.current) {
-        if (!user?.id) return;
-        fetch("/api/user-subscription/increment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: user.id }),
-        }).catch((err) => {
-          console.error("Erro ao incrementar interação:", err);
-        });
-        responseEndedRef.current = true;
+    onResponseEnd: async () => {
+      // Incrementa o uso e atualiza o header apenas uma vez por resposta
+      if (responseEndedRef.current) {
+        // Já executado para esta resposta, ignora chamadas adicionais
+        return;
       }
-      onResponseEnd();
+      responseEndedRef.current = true;
+      if (user?.id) {
+        try {
+          console.log(
+            "responseStartedRef.current:",
+            responseStartedRef.current
+          );
+          // Sempre incrementa, sem depender do flag
+          console.log(
+            "[ChatKitPanel] Incrementando uso para usuário:",
+            user.id
+          );
+          await fetch("/api/user-subscription/increment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user.id }),
+          });
+        } catch (err) {
+          console.error("Erro ao incrementar interação:", err);
+        }
+        // Chama o refresh para buscar o novo valor
+        onResponseEnd();
+      }
     },
     onThreadChange: () => {
       processedFacts.current.clear();
@@ -347,12 +357,26 @@ export function ChatKitPanel({
     },
   });
 
-  const activeError = errors.session ?? errors.integration;
-  const blockingError = errors.script ?? activeError;
-
+  // Bloqueio visual e funcional do ChatKit se o usuário estiver bloqueado
+  if (isBlocked) {
+    return (
+      <div className="pb-8 flex w-full flex-col items-center justify-center overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900 rounded-b-2xl min-h-[300px]">
+        <div className="flex flex-col items-center gap-4">
+          <span className="text-lg font-semibold text-red-600 dark:text-red-400">
+            Limite diário atingido
+          </span>
+          <span className="text-sm text-slate-600 dark:text-slate-300 text-center max-w-md">
+            Você atingiu o limite diário de interações. Aguarde até amanhã para
+            novas mensagens ou faça upgrade do plano para continuar usando o
+            chat.
+          </span>
+        </div>
+      </div>
+    );
+  }
   return (
-    <div className="pb-8 flex w-full h-full flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900">
-      {(blockingError || isInitializingSession) && (
+    <div className="pb-8 flex w-full flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900 rounded-b-2xl ">
+      {isInitializingSession && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-slate-900/80">
           <div className="flex flex-col items-center gap-2">
             <Spinner />
@@ -362,15 +386,7 @@ export function ChatKitPanel({
           </div>
         </div>
       )}
-      <ChatKit
-        key={widgetInstanceKey}
-        control={chatkit.control}
-        className={
-          blockingError || isInitializingSession
-            ? "pointer-events-none opacity-0"
-            : "block h-full w-full"
-        }
-      />
+      <ChatKit key={widgetInstanceKey} control={chatkit.control} />
     </div>
   );
 }
@@ -425,97 +441,34 @@ function extractErrorDetail(
 }
 
 export default function AgentChatPage() {
-  const { user, logout, interactionStatus } = useAuth();
+  const { user } = useAuth();
   const [theme, setTheme] = useState<ColorScheme>("light");
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [dailyUsage, setDailyUsage] = useState<number | null>(null);
-  const [subscriptionDetails, setSubscriptionDetails] =
-    useState<SubscriptionDetails | null>(null);
   const handleThemeChange = (scheme: ColorScheme) => {
     setTheme(scheme);
   };
-  const {
-    subscriptionStatus,
-    loading: subscriptionLoading,
-    refreshSubscription,
-  } = useSubscription();
-  const workflowLabel = WORKFLOW_ID ?? "workflow nao configurado";
-  const trialRemainingText = useMemo(() => {
-    if (!interactionStatus?.isTrialing) {
-      return null;
-    }
-    if (!interactionStatus.trialEndsAt) {
-      return "Trial ativo";
-    }
-    const endDate = new Date(interactionStatus.trialEndsAt);
-    const now = new Date();
-    const diffMs = endDate.getTime() - now.getTime();
-    if (diffMs <= 0) {
-      return "PerAodo de teste expira hoje";
-    }
-    const dayMs = 1000 * 60 * 60 * 24;
-    const diffDays = Math.ceil(diffMs / dayMs);
-    if (diffDays <= 1) {
-      return "Asltimo dia de teste";
-    }
-    return `${diffDays} dia${diffDays === 1 ? "" : "s"} de teste restantes`;
-  }, [interactionStatus?.isTrialing, interactionStatus?.trialEndsAt]);
-
-  const [dailyLimit, setDailyLimit] = useState<number>(0);
+  const fetchingRef = useRef(false);
+  const { subscriptionStatus, loading, refreshSubscription } =
+    useSubscription();
+  // Replicando padrão da tela de planos: dailyLimit e remainingInteractions direto do subscriptionStatus
+  const dailyLimit = subscriptionStatus?.dailyLimit ?? 0;
+  const remainingInteractions = subscriptionStatus?.remainingInteractions ?? 0;
+  // dailyUsage = interações já usadas no dia
+  const dailyUsage = dailyLimit > 0 ? dailyLimit - remainingInteractions : 0;
+  // Controle de bloqueio no componente pai
+  const [isBlocked, setIsBlocked] = useState(false);
   useEffect(() => {
-    const fetchDailyLimit = async () => {
-      if (user?.id) {
-        try {
-          const res = await fetch("/api/user-subscription/limit", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: user.id }),
-          });
-          const status = await res.json();
-          console.log("[fetchDailyLimit] status:", status);
-          setDailyLimit(status?.dailyLimit ?? 0);
-        } catch (err) {
-          console.error("[fetchDailyLimit] erro ao buscar dailyLimit:", err);
-          setDailyLimit(0);
-        }
-      } else {
-        setDailyLimit(0);
-      }
-    };
-    fetchDailyLimit();
-  }, [user?.id, subscriptionStatus]);
-
-  const fetchDailyUsage = useCallback(async () => {
-    console.log("[fetchDailyUsage] Iniciando fetch do uso diário");
-    if (user?.id) {
-      try {
-        const res = await fetch("/api/user-subscription/usage", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: user.id }),
-        });
-        const usage = await res.json();
-        console.log("[fetchDailyUsage] usage:", usage);
-        setDailyUsage(usage?.interactions_used ?? 0);
-      } catch (err) {
-        console.error("[fetchDailyUsage] erro ao buscar usage:", err);
-        setDailyUsage(0);
-      }
+    if (dailyLimit > 0 && dailyUsage >= dailyLimit) {
+      setIsBlocked(true);
     } else {
-      console.log("[fetchDailyUsage] user?.id não definido");
-      setDailyUsage(0);
+      setIsBlocked(false);
+    }
+  }, [dailyLimit, dailyUsage]);
+
+  useEffect(() => {
+    if (user?.id) {
+      refreshSubscription();
     }
   }, [user?.id]);
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchDailyUsage();
-    }
-  }, [user?.id, fetchDailyUsage]);
-
-  const handleRefresh = async () => {
-    await fetchDailyUsage();
-  };
 
   const dailyInteractionBadgeColor = useMemo(() => {
     if (dailyUsage === null) return "bg-gray";
@@ -526,13 +479,13 @@ export default function AgentChatPage() {
       return "bg-red-100";
     }
     if (dailyLimit > 0 && dailyUsage / dailyLimit >= 0.8) {
-      return "bg-yellow-300";
+      return "bg-yellow-200 text-foreground border-yellow-400";
     }
     return "bg-gray";
   }, [dailyUsage, dailyLimit]);
 
   return (
-    <div className="">
+    <div className="w-full h-screen flex flex-col overflow-hidden">
       {/* <header className="flex flex-col gap-4 px-6 py-4 shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between border-b">
         <div className="flex items-start gap-3 sm:items-center">
           <SidebarTrigger className="" />
@@ -575,22 +528,29 @@ export default function AgentChatPage() {
         <div className="flex items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="h-6" />
-          {user?.id && (
-            <Badge
-              className={`rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none ${dailyInteractionBadgeColor}`}
-            >
-              Uso diário: {`${dailyUsage}/${dailyLimit}`}
-            </Badge>
-          )}
+          {user?.id &&
+            (dailyUsage === null ? (
+              <Badge className="rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none bg-gray flex items-center gap-2">
+                <Spinner className="w-4 h-4" />
+                Carregando uso...
+              </Badge>
+            ) : (
+              <Badge
+                className={`rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none ${dailyInteractionBadgeColor}`}
+              >
+                Uso diário: {`${dailyUsage}/${dailyLimit}`}
+              </Badge>
+            ))}
         </div>
       </header>
 
-      <div className="">
+      <div className="flex-1 flex overflow-hidden">
         <ChatKitPanel
           theme={theme}
           onWidgetAction={() => Promise.resolve()}
-          onResponseEnd={handleRefresh}
+          onResponseEnd={refreshSubscription}
           onThemeRequest={handleThemeChange}
+          isBlocked={isBlocked}
         />
       </div>
     </div>

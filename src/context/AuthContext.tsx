@@ -64,7 +64,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initializeAuth = async () => {
       try {
         const currentUser = await authService.getCurrentSession();
-        console.log("Sessão atual:", currentUser);
 
         if (currentUser) {
           setUser(currentUser);
