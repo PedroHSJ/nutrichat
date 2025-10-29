@@ -12,17 +12,24 @@ export default function LoginPage() {
   const { login, authError, authLoading, isAuthenticated } = useAuth();
   const [isRedirecting, setIsRedirecting] = useState(false);
 
+  // Usa o hook de assinatura corretamente
+  const { hasActivePlan, loading: subscriptionLoading } = require("@/hooks/use-subscription").useSubscription();
+
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      router.replace("/agent-chat");
+    if (!authLoading && isAuthenticated && !subscriptionLoading) {
+      if (hasActivePlan) {
+        router.replace("/agent-chat");
+      } else {
+        router.replace("/plans");
+      }
     }
-  }, [authLoading, isAuthenticated, router]);
+  }, [authLoading, isAuthenticated, subscriptionLoading, hasActivePlan, router]);
 
   const handleLogin = async (values: LoginFormValues) => {
     try {
       await login(values.email, values.password);
       setIsRedirecting(true);
-      router.replace("/agent-chat");
+      // O redirecionamento será feito pelo useEffect acima, que depende do estado de autenticação e assinatura
     } catch (error) {
       setIsRedirecting(false);
       throw error;

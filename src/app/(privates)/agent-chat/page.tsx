@@ -12,6 +12,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Separator } from "@radix-ui/react-separator";
 import { useSubscription } from "@/hooks/use-subscription";
 import { toast } from "sonner";
+import { RouteGuard } from "@/components/RouteGuard";
 export type FactAction = {
   type: "save";
   factId: string;
@@ -485,8 +486,9 @@ export default function AgentChatPage() {
   }, [dailyUsage, dailyLimit]);
 
   return (
-    <div className="w-full h-screen flex flex-col overflow-hidden">
-      {/* <header className="flex flex-col gap-4 px-6 py-4 shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between border-b">
+    <RouteGuard requiresPlan>
+      <div className="w-full h-screen flex flex-col overflow-hidden">
+        {/* <header className="flex flex-col gap-4 px-6 py-4 shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between border-b">
         <div className="flex items-start gap-3 sm:items-center">
           <SidebarTrigger className="" />
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
@@ -524,35 +526,36 @@ export default function AgentChatPage() {
           )}
         </div>
       </header> */}
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b">
-        <div className="flex items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="h-6" />
-          {user?.id &&
-            (dailyUsage === null ? (
-              <Badge className="rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none bg-gray flex items-center gap-2">
-                <Spinner className="w-4 h-4" />
-                Carregando uso...
-              </Badge>
-            ) : (
-              <Badge
-                className={`rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none ${dailyInteractionBadgeColor}`}
-              >
-                Uso diário: {`${dailyUsage}/${dailyLimit}`}
-              </Badge>
-            ))}
-        </div>
-      </header>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="h-6" />
+            {user?.id &&
+              (dailyUsage === null ? (
+                <Badge className="rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none bg-gray flex items-center gap-2">
+                  <Spinner className="w-4 h-4" />
+                  Carregando uso...
+                </Badge>
+              ) : (
+                <Badge
+                  className={`rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none ${dailyInteractionBadgeColor}`}
+                >
+                  Uso diário: {`${dailyUsage}/${dailyLimit}`}
+                </Badge>
+              ))}
+          </div>
+        </header>
 
-      <div className="flex-1 flex overflow-hidden">
-        <ChatKitPanel
-          theme={theme}
-          onWidgetAction={() => Promise.resolve()}
-          onResponseEnd={refreshSubscription}
-          onThemeRequest={handleThemeChange}
-          isBlocked={isBlocked}
-        />
+        <div className="flex-1 flex overflow-hidden">
+          <ChatKitPanel
+            theme={theme}
+            onWidgetAction={() => Promise.resolve()}
+            onResponseEnd={refreshSubscription}
+            onThemeRequest={handleThemeChange}
+            isBlocked={isBlocked}
+          />
+        </div>
       </div>
-    </div>
+    </RouteGuard>
   );
 }

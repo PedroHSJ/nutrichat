@@ -113,10 +113,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         })}
       </SidebarContent>
       <SidebarFooter className={sidebarBgClass}>
-        {/* <Button onClick={() => logout()} variant={"destructive"}>
-          <LogOutIcon className="h-4 w-4" />
-          Sair
-        </Button> */}
         <NavUser
           user={{
             avatar: "",

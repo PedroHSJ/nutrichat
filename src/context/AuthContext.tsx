@@ -212,6 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
+      router.replace("/login");
       await authService.signOut();
 
       setUser(null);
@@ -219,8 +220,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setHasConsent(false);
       setAuthError(null);
       setInteractionStatus(null);
-
-      router.replace("/login");
     } catch (error) {
       console.error("Erro no logout:", error);
     } finally {

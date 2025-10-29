@@ -15,29 +15,22 @@ export function useSubscription() {
 
   useEffect(() => {
     const checkSubscription = async () => {
-      if (!isAuthenticated || !user) {
+      if (!isAuthenticated || !user || !authHeaders.Authorization) {
         setSubscriptionStatus(null);
         setLoading(false);
         return;
       }
-
       try {
         setLoading(true);
         setError(null);
-
-        if (!authHeaders.Authorization) {
-          return;
-        }
-
         const response = await fetch("/api/subscription/status", {
           headers: authHeaders,
         });
-
         if (!response.ok) {
           throw new Error("Erro ao verificar status da assinatura");
         }
-
         const status = await response.json();
+        console.log("useSubscription - status:", status);
         setSubscriptionStatus(status);
       } catch (err) {
         const errorMessage =
@@ -48,29 +41,24 @@ export function useSubscription() {
         setLoading(false);
       }
     };
-
     checkSubscription();
-  }, []);
+  }, [isAuthenticated, user, authHeaders.Authorization]);
 
   const refreshSubscription = async () => {
-    if (!isAuthenticated || !user) return;
-
+    if (!isAuthenticated || !user || !authHeaders.Authorization) {
+      setSubscriptionStatus(null);
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
-
-      if (!authHeaders.Authorization) {
-        return;
-      }
-
       const response = await fetch("/api/subscription/status", {
         headers: authHeaders,
       });
-
       if (!response.ok) {
         throw new Error("Erro ao verificar status da assinatura");
       }
-
       const status = await response.json();
       setSubscriptionStatus(status);
     } catch (err) {
@@ -83,13 +71,22 @@ export function useSubscription() {
     }
   };
 
+  useEffect(() => {
+    if (!subscriptionStatus) return;
+    console.log(
+      "useSubscription - subscriptionStatus changed:",
+      subscriptionStatus
+    );
+  }, [subscriptionStatus]);
+
   return {
     subscriptionStatus,
     loading,
     error,
     refreshSubscription,
     hasActivePlan:
-      subscriptionStatus?.canInteract && subscriptionStatus.planType !== "free",
+      subscriptionStatus?.planType !== "free" &&
+      subscriptionStatus?.subscriptionStatus === "active",
     isFreePlan: subscriptionStatus?.planType === "free",
     remainingInteractions: subscriptionStatus?.remainingInteractions || 0,
     dailyLimit: subscriptionStatus?.dailyLimit || 0,

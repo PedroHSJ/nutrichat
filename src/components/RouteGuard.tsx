@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 interface RouteGuardProps {
   children: ReactNode;
@@ -19,11 +26,16 @@ export function RouteGuard({
   redirectToPlans = true,
   redirectToLogin = true,
 }: RouteGuardProps) {
-  const { isAuthenticated, authLoading } = useAuth();
-  const { loading: subscriptionLoading, hasActivePlan } = useSubscription();
+  const { isAuthenticated, authLoading, user } = useAuth();
+  const {
+    loading: subscriptionLoading,
+    hasActivePlan,
+    subscriptionStatus,
+  } = useSubscription();
   const router = useRouter();
 
   useEffect(() => {
+    if (subscriptionLoading) return;
     // Aguardar carregamento da autenticação
     if (authLoading) return;
 
@@ -36,15 +48,14 @@ export function RouteGuard({
       requiresPlan,
       hasActivePlan,
       redirectToPlans,
+      redirectToLogin,
     });
-    // Se requer plano e ainda está carregando
-    if (requiresPlan && subscriptionLoading) return;
-
-    // Se requer plano e não tem plano ativo
+    // Se não tem plano ativo, só pode acessar /plans
     if (requiresPlan && !hasActivePlan && redirectToPlans) {
-      router.push("/plans-manage");
+      router.push("/plans");
       return;
     }
+    if (requiresPlan && subscriptionLoading) return;
   }, [
     authLoading,
     isAuthenticated,
@@ -54,27 +65,79 @@ export function RouteGuard({
     redirectToPlans,
     redirectToLogin,
     router,
+    user,
   ]);
 
   // Mostrar loading enquanto verifica autenticação
   if (authLoading || (requiresPlan && subscriptionLoading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-green-600" />
-          <p className="text-gray-600">Verificando acesso...</p>
-        </div>
-      </div>
+      <Dialog open>
+        <DialogContent
+          className="text-center select-none"
+          showCloseButton={false}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-emerald-500" />
+              Verificando acesso...
+            </DialogTitle>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     );
   }
 
   // Se não passou nas verificações, não renderizar o conteúdo
   if (redirectToLogin && !isAuthenticated) {
-    return null;
+    return (
+      <Dialog open>
+        <DialogContent
+          className="text-center select-none"
+          showCloseButton={false}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-red-600">
+              Autenticação necessária
+            </DialogTitle>
+            <DialogDescription className="mb-4">
+              Você precisa estar autenticado para acessar esta página.
+            </DialogDescription>
+          </DialogHeader>
+          <button
+            className="mt-2 px-4 py-2 rounded bg-emerald-500 text-white font-semibold hover:bg-emerald-600 transition"
+            onClick={() => router.push("/login")}
+          >
+            Ir para login
+          </button>
+        </DialogContent>
+      </Dialog>
+    );
   }
 
   if (requiresPlan && !hasActivePlan && redirectToPlans) {
-    return null;
+    return (
+      <Dialog open>
+        <DialogContent
+          className="text-center select-none"
+          showCloseButton={false}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-amber-700">
+              Plano necessário
+            </DialogTitle>
+            <DialogDescription className="mb-4">
+              Você precisa de um plano ativo para acessar esta funcionalidade.
+            </DialogDescription>
+          </DialogHeader>
+          <button
+            className="mt-2 px-4 py-2 rounded bg-emerald-500 text-white font-semibold hover:bg-emerald-600 transition"
+            onClick={() => router.push("/plans")}
+          >
+            Ver planos disponíveis
+          </button>
+        </DialogContent>
+      </Dialog>
+    );
   }
 
   return <>{children}</>;

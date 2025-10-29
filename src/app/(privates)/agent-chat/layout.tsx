@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ChatProvider } from "@/context/ChatContext";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { ProtectedLayout } from "@/components/ProtectedLayout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,15 +28,12 @@ export default function Layout({
   children: React.ReactNode;
 }>) {
   return (
-    <div>
-      <AuthProvider>
-        <ChatProvider>
-          <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset>{children}</SidebarInset>
-          </SidebarProvider>
-        </ChatProvider>
-      </AuthProvider>
-    </div>
+    <AuthProvider>
+      <ChatProvider>
+        <SidebarProvider>
+          <ProtectedLayout>{children}</ProtectedLayout>
+        </SidebarProvider>
+      </ChatProvider>
+    </AuthProvider>
   );
 }

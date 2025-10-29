@@ -385,6 +385,12 @@ export default function PlansManagementPage() {
       );
       await fetchSubscriptionStatus();
       await refreshSubscription();
+
+      // Aguarda 2 segundos, faz logout e redireciona para a raiz
+      setTimeout(async () => {
+        await logout();
+        window.location.href = "/";
+      }, 2000);
     } catch (error) {
       setActionError(error instanceof Error ? error.message : FallbackMessage);
     } finally {
@@ -877,7 +883,7 @@ export default function PlansManagementPage() {
 
         <main className="flex-1 py-4">
           {actionMessage && (
-            <Alert className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-50">
+            <Alert className="border border-emerald-500/30 bg-emerald-500/10 mb-2">
               <AlertTitle>Processo concluido</AlertTitle>
               <AlertDescription>{actionMessage}</AlertDescription>
             </Alert>

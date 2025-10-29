@@ -15,26 +15,88 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const publicRoutes = ["/login", "/register", "/forgot-password", "/"];
-
-  // Se for uma rota pública, permitir acesso direto
-  if (publicRoutes.some((route) => pathname.startsWith(route))) {
+  const plansRoute = "/plans";
+  // Permitir acesso livre às rotas públicas e à página de planos
+  if (
+    publicRoutes.some((route) => pathname.startsWith(route)) ||
+    pathname.startsWith(plansRoute)
+  ) {
     return NextResponse.next();
   }
 
-  // Para todas as outras rotas, verificar autenticação através do updateSession
-  return await updateSession(request);
+  // Buscar tokens de autenticação
+  const authHeader = request.headers.get("authorization");
+  const refreshToken = request.headers.get("x-refresh-token");
+  let accessToken = "";
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    accessToken = authHeader.substring(7);
+  }
+
+  // Se não autenticado, redireciona para login
+  if (!accessToken) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // Verifica status da assinatura via API interna
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin;
+    const statusRes = await fetch(`${baseUrl}/api/subscription/status`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "x-refresh-token": refreshToken || "",
+      },
+    });
+    if (!statusRes.ok) {
+      console.log(
+        "[middleware] Redirecionando para /login: status da assinatura não OK"
+      );
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+    const status = await statusRes.json();
+    // Loga status da assinatura
+    console.log("[middleware] Status assinatura:", status);
+    // Se usuário não tem plano, redireciona para /plans
+    if (
+      status.planType === "free" ||
+      status.subscriptionStatus === "unpaid" ||
+      status.planName === "Sem plano"
+    ) {
+      console.log(
+        "[middleware] Redirecionando para /plans: usuário sem plano ativo"
+      );
+      const url = request.nextUrl.clone();
+      url.pathname = "/plans";
+      return NextResponse.redirect(url);
+    }
+    // Usuário autenticado e com plano: permite acesso normal
+    console.log("[middleware] Usuário com plano ativo, acesso liberado");
+    return NextResponse.next();
+  } catch (err) {
+    console.log(
+      "[middleware] Erro ao verificar assinatura, redirecionando para /login",
+      err
+    );
+    // Em caso de erro, redireciona para login por segurança
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public (public files)
-     */
-    "/((?!_next/static|_next/image|favicon.ico|public).*)",
+    // Protege todas rotas dentro de (privates) e subpastas
+    "/(privates)/:path*",
+    // Protege APIs sensíveis
+    "/api/subscription/:path*",
+    "/api/agent-chat",
+    // Mantém proteção genérica para outras rotas
+    "/((?!_next/static|_next/image|favicon.ico|public|login|register|forgot-password|plans).*)",
   ],
 };
 
