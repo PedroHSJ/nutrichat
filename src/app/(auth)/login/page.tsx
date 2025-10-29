@@ -13,7 +13,8 @@ export default function LoginPage() {
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Usa o hook de assinatura corretamente
-  const { hasActivePlan, loading: subscriptionLoading } = require("@/hooks/use-subscription").useSubscription();
+  const { hasActivePlan, loading: subscriptionLoading } =
+    require("@/hooks/use-subscription").useSubscription();
 
   useEffect(() => {
     if (!authLoading && isAuthenticated && !subscriptionLoading) {
@@ -23,7 +24,13 @@ export default function LoginPage() {
         router.replace("/plans");
       }
     }
-  }, [authLoading, isAuthenticated, subscriptionLoading, hasActivePlan, router]);
+  }, [
+    authLoading,
+    isAuthenticated,
+    subscriptionLoading,
+    hasActivePlan,
+    router,
+  ]);
 
   const handleLogin = async (values: LoginFormValues) => {
     try {

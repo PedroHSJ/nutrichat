@@ -114,7 +114,8 @@ export default function PlansPage() {
                         const data = await res.json();
                         if (!res.ok || !data.checkoutUrl) {
                           alert(
-                            data?.error || "Não foi possível iniciar o checkout."
+                            data?.error ||
+                              "Não foi possível iniciar o checkout."
                           );
                           return;
                         }
