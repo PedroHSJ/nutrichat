@@ -66,7 +66,7 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { logout, user } = useAuth();
+  const { user } = useAuth();
   const pathname = usePathname();
 
   return (
@@ -140,6 +140,8 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const { logout } = useAuth();
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -190,7 +192,7 @@ export function NavUser({
                 </DropdownMenuItem>
               </Link>
             </DropdownMenuGroup>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => logout()}>
               <LogOut />
               Sair
             </DropdownMenuItem>
