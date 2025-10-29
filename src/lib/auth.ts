@@ -1,5 +1,5 @@
-import { supabase } from './supabase';
-import type { User } from '@supabase/supabase-js';
+import { supabase } from "./supabase";
+import type { User } from "@supabase/supabase-js";
 
 export interface AuthUser {
   id: string;
@@ -32,7 +32,9 @@ export class AuthService {
   // Fazer login
   async signIn(email: string, password: string): Promise<AuthUser> {
     if (!this.isSupabaseConfigured()) {
-      throw new Error('Supabase não configurado. Configure as variáveis de ambiente.');
+      throw new Error(
+        "Supabase não configurado. Configure as variáveis de ambiente."
+      );
     }
 
     const { data, error } = await supabase!.auth.signInWithPassword({
@@ -45,55 +47,65 @@ export class AuthService {
     }
 
     if (!data.user) {
-      throw new Error('Falha na autenticação');
+      throw new Error("Falha na autenticação");
     }
 
     const authUser = await this.getUserProfile(data.user);
     this.currentUser = authUser;
-    
+
     return authUser;
   }
 
   // Criar conta
-  async signUp(name: string, email: string, password: string): Promise<AuthUser> {
-    console.log('AuthService.signUp called with:', { name, email, password: '***' });
-    
+  async signUp(
+    name: string,
+    email: string,
+    password: string
+  ): Promise<AuthUser> {
+    console.log("AuthService.signUp called with:", {
+      name,
+      email,
+      password: "***",
+    });
+
     if (!this.isSupabaseConfigured()) {
-      console.log('Supabase not configured');
-      throw new Error('Supabase não configurado. Configure as variáveis de ambiente.');
+      console.log("Supabase not configured");
+      throw new Error(
+        "Supabase não configurado. Configure as variáveis de ambiente."
+      );
     }
 
-    console.log('Calling supabase.auth.signUp...');
+    console.log("Calling supabase.auth.signUp...");
     const { data, error } = await supabase!.auth.signUp({
       email,
       password,
       options: {
         data: {
           name: name.trim(),
-        }
-      }
+        },
+      },
     });
 
-    console.log('Supabase signUp response:', { data, error });
+    console.log("Supabase signUp response:", { data, error });
 
     if (error) {
-      console.error('Supabase signUp error:', error);
+      console.error("Supabase signUp error:", error);
       throw new Error(this.getAuthErrorMessage(error.message));
     }
 
     if (!data.user) {
-      console.error('No user returned from Supabase');
-      throw new Error('Falha ao criar usuário');
+      console.error("No user returned from Supabase");
+      throw new Error("Falha ao criar usuário");
     }
 
     // Se o usuário foi criado mas não confirmado, retornar informação
     if (!data.session) {
-      throw new Error('Verifique seu email para confirmar a conta');
+      throw new Error("Verifique seu email para confirmar a conta");
     }
 
     const authUser = await this.getUserProfile(data.user);
     this.currentUser = authUser;
-    
+
     return authUser;
   }
 
@@ -102,9 +114,9 @@ export class AuthService {
     if (!this.isSupabaseConfigured()) return;
 
     const { error } = await supabase!.auth.signOut();
-    
+
     if (error) {
-      console.error('Erro ao fazer logout:', error);
+      console.error("Erro ao fazer logout:", error);
     }
 
     this.currentUser = null;
@@ -124,7 +136,10 @@ export class AuthService {
   async getCurrentSession(): Promise<AuthUser | null> {
     if (!this.isSupabaseConfigured()) return null;
 
-    const { data: { session }, error } = await supabase!.auth.getSession();
+    const {
+      data: { session },
+      error,
+    } = await supabase!.auth.getSession();
 
     if (error || !session?.user) {
       this.currentUser = null;
@@ -142,17 +157,17 @@ export class AuthService {
   onAuthStateChange(callback: (user: AuthUser | null) => void) {
     if (!this.isSupabaseConfigured()) return () => {};
 
-    const { data: { subscription } } = supabase!.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          this.currentUser = await this.getUserProfile(session.user);
-          callback(this.currentUser);
-        } else if (event === 'SIGNED_OUT') {
-          this.currentUser = null;
-          callback(null);
-        }
+    const {
+      data: { subscription },
+    } = supabase!.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session?.user) {
+        this.currentUser = await this.getUserProfile(session.user);
+        callback(this.currentUser);
+      } else if (event === "SIGNED_OUT") {
+        this.currentUser = null;
+        callback(null);
       }
-    );
+    });
 
     return () => subscription.unsubscribe();
   }
@@ -160,22 +175,23 @@ export class AuthService {
   // Obter perfil completo do usuário
   private async getUserProfile(user: User): Promise<AuthUser> {
     if (!this.isSupabaseConfigured()) {
-      throw new Error('Supabase não configurado');
+      throw new Error("Supabase não configurado");
     }
 
     const { data: profile, error } = await supabase!
-      .from('user_profiles')
-      .select('*')
-      .eq('id', user.id)
+      .from("user_profiles")
+      .select("*")
+      .eq("id", user.id)
       .single();
 
     if (error) {
-      console.error('Erro ao buscar perfil:', error);
+      console.error("Erro ao buscar perfil:", error);
       // Retornar dados básicos se não encontrar perfil
       return {
         id: user.id,
-        email: user.email || '',
-        name: user.user_metadata?.name || user.email?.split('@')[0] || 'Usuário',
+        email: user.email || "",
+        name:
+          user.user_metadata?.name || user.email?.split("@")[0] || "Usuário",
         createdAt: new Date(user.created_at),
       };
     }
@@ -192,16 +208,16 @@ export class AuthService {
   // Atualizar perfil do usuário
   async updateProfile(updates: { name?: string }): Promise<void> {
     if (!this.isSupabaseConfigured() || !this.currentUser) {
-      throw new Error('Usuário não autenticado');
+      throw new Error("Usuário não autenticado");
     }
 
     const { error } = await supabase!
-      .from('user_profiles')
+      .from("user_profiles")
       .update(updates)
-      .eq('id', this.currentUser.id);
+      .eq("id", this.currentUser.id);
 
     if (error) {
-      throw new Error('Erro ao atualizar perfil: ' + error.message);
+      throw new Error("Erro ao atualizar perfil: " + error.message);
     }
 
     // Atualizar dados locais
@@ -213,19 +229,19 @@ export class AuthService {
   // Dar consentimento LGPD
   async giveConsent(): Promise<void> {
     if (!this.isSupabaseConfigured() || !this.currentUser) {
-      throw new Error('Usuário não autenticado');
+      throw new Error("Usuário não autenticado");
     }
 
     const { error } = await supabase!
-      .from('user_profiles')
+      .from("user_profiles")
       .update({
         consent_given: true,
         consent_date: new Date().toISOString(),
       })
-      .eq('id', this.currentUser.id);
+      .eq("id", this.currentUser.id);
 
     if (error) {
-      throw new Error('Erro ao registrar consentimento: ' + error.message);
+      throw new Error("Erro ao registrar consentimento: " + error.message);
     }
   }
 
@@ -236,13 +252,13 @@ export class AuthService {
     }
 
     const { data, error } = await supabase!
-      .from('user_profiles')
-      .select('consent_given')
-      .eq('id', this.currentUser.id)
+      .from("user_profiles")
+      .select("consent_given")
+      .eq("id", this.currentUser.id)
       .single();
-    console.log('Checking user consent:', { data, error });
+    console.log("Checking user consent:", { data, error });
     if (error) {
-      console.error('Erro ao verificar consentimento:', error);
+      console.error("Erro ao verificar consentimento:", error);
       return false;
     }
 
@@ -252,14 +268,15 @@ export class AuthService {
   // Exportar dados do usuário (LGPD)
   async exportUserData(): Promise<Record<string, unknown> | null> {
     if (!this.isSupabaseConfigured() || !this.currentUser) {
-      throw new Error('Usuário não autenticado');
+      throw new Error("Usuário não autenticado");
     }
 
-    const { data, error } = await supabase!
-      .rpc('export_user_data', { user_uuid: this.currentUser.id });
+    const { data, error } = await supabase!.rpc("export_user_data", {
+      user_uuid: this.currentUser.id,
+    });
 
     if (error) {
-      throw new Error('Erro ao exportar dados: ' + error.message);
+      throw new Error("Erro ao exportar dados: " + error.message);
     }
 
     return data;
@@ -268,15 +285,16 @@ export class AuthService {
   // Deletar conta e todos os dados (LGPD)
   async deleteAccount(): Promise<void> {
     if (!this.isSupabaseConfigured() || !this.currentUser) {
-      throw new Error('Usuário não autenticado');
+      throw new Error("Usuário não autenticado");
     }
 
     // Primeiro deletar dados no banco
-    const { error: deleteError } = await supabase!
-      .rpc('delete_user_data', { user_uuid: this.currentUser.id });
+    const { error: deleteError } = await supabase!.rpc("delete_user_data", {
+      user_uuid: this.currentUser.id,
+    });
 
     if (deleteError) {
-      throw new Error('Erro ao deletar dados: ' + deleteError.message);
+      throw new Error("Erro ao deletar dados: " + deleteError.message);
     }
 
     // Depois deletar usuário do auth
@@ -285,7 +303,7 @@ export class AuthService {
     );
 
     if (authError) {
-      console.error('Erro ao deletar usuário do auth:', authError);
+      console.error("Erro ao deletar usuário do auth:", authError);
       // Continuar mesmo com erro no auth, pois os dados já foram removidos
     }
 
@@ -295,13 +313,17 @@ export class AuthService {
   // Traduzir mensagens de erro para português
   private getAuthErrorMessage(error: string): string {
     const errorMessages: Record<string, string> = {
-      'Invalid login credentials': 'Email ou senha incorretos',
-      'Email not confirmed': 'Email não confirmado. Verifique sua caixa de entrada.',
-      'User already registered': 'Usuário já cadastrado com este email',
-      'Password should be at least 6 characters': 'Senha deve ter pelo menos 6 caracteres',
-      'Unable to validate email address: invalid format': 'Formato de email inválido',
-      'Signup is disabled': 'Cadastro desabilitado temporariamente',
-      'Email rate limit exceeded': 'Muitas tentativas. Tente novamente em alguns minutos.',
+      "Invalid login credentials": "Email ou senha incorretos",
+      "Email not confirmed":
+        "Email não confirmado. Verifique sua caixa de entrada.",
+      "User already registered": "Usuário já cadastrado com este email",
+      "Password should be at least 6 characters":
+        "Senha deve ter pelo menos 6 caracteres",
+      "Unable to validate email address: invalid format":
+        "Formato de email inválido",
+      "Signup is disabled": "Cadastro desabilitado temporariamente",
+      "Email rate limit exceeded":
+        "Muitas tentativas. Tente novamente em alguns minutos.",
     };
 
     return errorMessages[error] || `Erro de autenticação: ${error}`;

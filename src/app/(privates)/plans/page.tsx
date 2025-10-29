@@ -863,7 +863,7 @@ export default function PlansManagementPage() {
             </Button>
             <Button
               type="button"
-              className="w-full rounded-lg bg-rose-600/80 py-2 text-xs font-semibold  transition hover:bg-rose-700"
+              className="w-full rounded-lg bg-rose-600/80 py-2 font-semibold  transition hover:bg-rose-700"
               onClick={async () => {
                 // Importa o contexto de autenticação dinamicamente
                 await logout();

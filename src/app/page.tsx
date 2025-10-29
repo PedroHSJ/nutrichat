@@ -1,8 +1,5 @@
-"use client";
-
-import { useEffect } from "react";
+import { cache } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,34 +10,39 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAuth } from "@/context/AuthContext";
-import { useSubscription } from "@/hooks/use-subscription";
 import {
-  Activity,
+  Sparkles,
+  Crown,
   ArrowRight,
   CheckCircle,
-  Clock,
-  Crown,
-  MessageCircle,
-  Shield,
-  Sparkles,
+  Activity,
   Users,
   Zap,
+  MessageCircle,
+  Shield,
+  Clock,
 } from "lucide-react";
 
-export default function LandingPage() {
-  const { isAuthenticated } = useAuth();
-  const { hasActivePlan, loading: subscriptionLoading } = useSubscription();
-  const router = useRouter();
+async function getPlans() {
+  // Cache por 24 horas
+  // Monta URL absoluta para SSR
+  const baseUrl =
+    process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const res = await fetch(
+    `${baseUrl}/api/subscription/plans`,
+    { next: { revalidate: 86400 } }
+  );
+  if (!res.ok) {
+    return [];
+  }
+  const data = await res.json();
+  return data.plans || [];
+}
 
-  useEffect(() => {
-    if (isAuthenticated && !subscriptionLoading && !hasActivePlan) {
-      router.push("/agent-chat");
-    }
-    if (isAuthenticated && !subscriptionLoading && hasActivePlan) {
-      router.push("/select-page");
-    }
-  }, [isAuthenticated, hasActivePlan, subscriptionLoading, router]);
+export default async function LandingPage() {
+  const plans = await getPlans();
 
   return (
     <>
@@ -278,40 +280,47 @@ export default function LandingPage() {
                 refinada do agent-chat.
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Card className="border border-emerald-400/40 bg-emerald-500/5 shadow-emerald-500/20">
-                  <CardHeader className="space-y-1">
-                    <CardTitle className="text-lg text-white">
-                      Starter
-                    </CardTitle>
-                    <CardDescription className="text-slate-200">
-                      Profissionais independentes
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm text-slate-200">
-                    <p className="text-xl font-semibold text-emerald-300">
-                      R$ 49/mes
-                    </p>
-                    <p>Ate 15 consultas diarias e relatorios automatizados.</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="border border-emerald-400/40 bg-emerald-500/5 shadow-emerald-500/20">
-                  <CardHeader className="space-y-1">
-                    <CardTitle className="text-lg text-white">Pro</CardTitle>
-                    <CardDescription className="text-slate-200">
-                      Equipes em crescimento
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm text-slate-200">
-                    <p className="text-xl font-semibold text-emerald-300">
-                      R$ 99/mes
-                    </p>
-                    <p>
-                      Protocolos completos, relatorios avancados e suporte
-                      prioritario.
-                    </p>
-                  </CardContent>
-                </Card>
+                {plans.length === 0 && (
+                  <div className="text-slate-300">
+                    Nenhum plano disponível no momento.
+                  </div>
+                )}
+                {plans.map((plan: any) => (
+                  <Card
+                    key={plan.priceId}
+                    className="border border-emerald-400/40 bg-emerald-500/5 shadow-emerald-500/20"
+                  >
+                    <CardHeader className="space-y-1">
+                      <CardTitle className="text-lg text-white">
+                        {plan.name}
+                      </CardTitle>
+                      <CardDescription className="text-slate-200">
+                        {plan.type === "starter"
+                          ? "Profissionais independentes"
+                          : plan.type === "pro"
+                          ? "Equipes em crescimento"
+                          : plan.type}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm text-slate-200">
+                      <p className="text-xl font-semibold text-emerald-300">
+                        {plan.priceFormatted}
+                      </p>
+                      <p>
+                        {plan.dailyLimit
+                          ? `Até ${plan.dailyLimit} consultas diárias.`
+                          : null}
+                      </p>
+                      {plan.features && plan.features.length > 0 && (
+                        <ul className="mt-2 list-disc pl-4 text-emerald-200">
+                          {plan.features.map((f: string, idx: number) => (
+                            <li key={idx}>{f}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
               <Button
                 asChild
