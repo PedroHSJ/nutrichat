@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { createServerClient } from "@supabase/ssr";
 
 // Rotas que precisam de autenticação
-const protectedRoutes = ["/plans", "/subscription", "/chat", "/consent"];
+const protectedRoutes = ["/plans-manage", "/subscription", "/chat", "/consent"];
 
 // Rotas de API que precisam de autenticação
 const protectedApiRoutes = [

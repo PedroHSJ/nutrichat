@@ -37,7 +37,7 @@ import { useAuth } from "@/context/AuthContext";
 
 type PlanMenuSection = "overview" | "change" | "billing" | "cancel";
 
-type PlanOption = {
+export type PlanOption = {
   type: string;
   name: string;
   dailyLimit: number;

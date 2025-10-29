@@ -48,11 +48,11 @@ const data = {
   navMain: [
     {
       title: "Menu Principal",
-      url: "/plans",
+      url: "/plans-manage",
       items: [
         {
           title: "Gerenciar plano",
-          url: "/plans",
+          url: "/plans-manage",
           icon: <Crown className="h-4 w-4" />,
         },
         {
@@ -185,7 +185,7 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <Link href="/plans" className="w-full">
+              <Link href="/plans-manage" className="w-full">
                 <DropdownMenuItem>
                   <Sparkles />
                   Atualizar plano

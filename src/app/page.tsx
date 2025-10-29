@@ -22,6 +22,7 @@ import {
   Shield,
   Clock,
 } from "lucide-react";
+import { PlanOption } from "./(privates)/plans-manage/page";
 
 async function getPlans() {
   // Cache por 24 horas
@@ -283,7 +284,7 @@ export default async function LandingPage() {
                     Nenhum plano disponível no momento.
                   </div>
                 )}
-                {plans.map((plan: any) => (
+                {plans.map((plan: PlanOption) => (
                   <Card
                     key={plan.priceId}
                     className="border border-emerald-400/40 bg-emerald-500/5 shadow-emerald-500/20"

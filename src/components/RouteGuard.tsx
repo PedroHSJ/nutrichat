@@ -42,7 +42,7 @@ export function RouteGuard({
 
     // Se requer plano e não tem plano ativo
     if (requiresPlan && !hasActivePlan && redirectToPlans) {
-      router.push("/plans");
+      router.push("/plans-manage");
       return;
     }
   }, [
