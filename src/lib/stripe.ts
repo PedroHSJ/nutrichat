@@ -346,9 +346,13 @@ export class SubscriptionService {
    */
   static async getAvailablePlans() {
     try {
+      console.log("[Stripe] Iniciando busca de planos...");
       const { UserSubscriptionService } = await import("@/lib/subscription");
+      console.log("[Stripe] Importado UserSubscriptionService");
       const dbPlans = await UserSubscriptionService.getAvailablePlans();
+      console.log("[Stripe] Planos do banco:", dbPlans);
       if (dbPlans.length === 0) {
+        console.error("[Stripe] Nenhum plano encontrado no banco");
         throw new Error("Nenhum plano encontrado no banco");
       }
       // Se em desenvolvimento e sem chave Stripe válida, usar preços do banco
@@ -357,7 +361,7 @@ export class SubscriptionService {
           "[DEV MODE] Usando preços do banco (Stripe não configurado)"
         );
         // Retornar todos os preços atuais de cada plano
-        return dbPlans.flatMap((plan) =>
+        const result = dbPlans.flatMap((plan) =>
           plan.prices
             .filter((price) => price.is_current)
             .map((price) => ({
@@ -372,9 +376,14 @@ export class SubscriptionService {
               interval: price.billing_interval,
             }))
         );
+        console.log("[Stripe] Resultado final dos planos (DEV):", result);
+        return result;
       }
 
       // Buscar preços reais da Stripe para cada preço atual de cada plano
+      console.log(
+        "[Stripe] Buscando preços reais da Stripe para cada plano..."
+      );
       const plansWithStripeData = await Promise.all(
         dbPlans.flatMap((plan) =>
           plan.prices
@@ -382,11 +391,12 @@ export class SubscriptionService {
             .map(async (price) => {
               try {
                 console.log(
-                  `[Stripe] Buscando preço: ${price.stripe_price_id}`
+                  `[Stripe] Buscando preço: ${price.stripe_price_id} do plano ${plan.name}`
                 );
                 const stripePrice = await stripe.prices.retrieve(
                   price.stripe_price_id
                 );
+                console.log(`[Stripe] Dados do preço Stripe:`, stripePrice);
                 return {
                   type: plan.slug,
                   name: plan.name,
@@ -405,7 +415,7 @@ export class SubscriptionService {
                 };
               } catch (error) {
                 console.warn(
-                  `[Stripe] Erro ao buscar preço ${price.stripe_price_id}, usando dados do banco:`,
+                  `[Stripe] Erro ao buscar preço ${price.stripe_price_id} do plano ${plan.name}, usando dados do banco:`,
                   error
                 );
                 // Fallback para dados do banco em caso de erro
@@ -425,16 +435,17 @@ export class SubscriptionService {
         )
       );
 
+      console.log("[Stripe] Resultado final dos planos:", plansWithStripeData);
       return plansWithStripeData;
     } catch (error) {
-      console.error("Erro ao buscar planos:", error);
+      console.error("[Stripe] Erro ao buscar planos:", error);
 
       // Fallback para dados mockados em desenvolvimento
       if (this.isDevelopment()) {
         console.warn(
           "[DEV MODE] Usando preços mockados como fallback completo"
         );
-        return [
+        const result = [
           {
             type: "basic",
             name: "Plano Básico",
@@ -460,6 +471,8 @@ export class SubscriptionService {
             ],
           },
         ];
+        console.log("[Stripe] Resultado final dos planos (MOCK):", result);
+        return result;
       }
 
       return [];

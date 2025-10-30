@@ -30,18 +30,26 @@ async function getPlans() {
   const baseUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
     : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  console.log(
+    "[LandingPage] Buscando planos em:",
+    `${baseUrl}/api/subscription/plans`
+  );
   const res = await fetch(`${baseUrl}/api/subscription/plans`, {
     next: { revalidate: 86400 },
   });
+  console.log("[LandingPage] Status da resposta:", res.status);
   if (!res.ok) {
+    console.warn("[LandingPage] Falha ao buscar planos");
     return [];
   }
   const data = await res.json();
+  console.log("[LandingPage] Dados recebidos:", data);
   return data.plans || [];
 }
 
 export default async function LandingPage() {
   const plans = await getPlans();
+  console.log("[LandingPage] Planos finais:", plans);
 
   return (
     <>
