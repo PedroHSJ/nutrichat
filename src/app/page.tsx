@@ -27,9 +27,7 @@ import { PlanOption } from "./(privates)/plans-manage/page";
 async function getPlans() {
   // Cache por 24 horas
   // Monta URL absoluta para SSR
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
   console.log(
     "[LandingPage] Buscando planos em:",
     `${baseUrl}/api/subscription/plans`
