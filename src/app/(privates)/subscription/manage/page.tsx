@@ -160,6 +160,7 @@ export default function ManageSubscriptionPage() {
         open={showCancelModal}
         onClose={() => setShowCancelModal(false)}
         onCancel={handleModalCancel}
+        loadingCancel={false}
       />
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold mb-2">Gerenciar Assinatura</h1>
