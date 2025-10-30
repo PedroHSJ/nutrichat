@@ -46,8 +46,9 @@ async function getPlans() {
 }
 
 export default async function LandingPage() {
-  const plans = await getPlans();
-  console.log("[LandingPage] Planos finais:", plans);
+  const plans = (await getPlans()).sort(
+    (a: PlanOption, b: PlanOption) => (a.priceCents ?? 0) - (b.priceCents ?? 0)
+  ) as PlanOption[];
 
   return (
     <>
