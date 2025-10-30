@@ -6,6 +6,7 @@ import { AuthCard } from "@/components/auth/AuthCard";
 import { LoginForm, type LoginFormValues } from "@/components/auth/AuthForm";
 import { useAuth } from "@/context/AuthContext";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useSubscription } from "@/hooks/use-subscription";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,8 +14,7 @@ export default function LoginPage() {
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Usa o hook de assinatura corretamente
-  const { hasActivePlan, loading: subscriptionLoading } =
-    require("@/hooks/use-subscription").useSubscription();
+  const { hasActivePlan, loading: subscriptionLoading } = useSubscription();
 
   useEffect(() => {
     if (!authLoading && isAuthenticated && !subscriptionLoading) {

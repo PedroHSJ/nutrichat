@@ -23,7 +23,7 @@ export function CancelSubscriptionModal({
   loadingCancel,
 }: CancelSubscriptionModalProps) {
   // Sempre será cancelamento ao final do período
-  const cancelType: "period" = "period";
+  const cancelType = "period" as const;
 
   return (
     <Dialog
