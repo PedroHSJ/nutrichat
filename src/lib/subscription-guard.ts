@@ -164,7 +164,15 @@ export class SubscriptionGuard {
         return true;
       }
 
-      return await UserSubscriptionService.incrementInteractionUsage(userId);
+      const result =
+        await UserSubscriptionService.incrementInteractionUsage(userId);
+      if (!result.success) {
+        console.error(
+          "[SUBSCRIPTION GUARD] Falha ao incrementar uso:",
+          result.error
+        );
+      }
+      return result.success;
     } catch (error) {
       console.error("[SUBSCRIPTION GUARD] Erro ao incrementar uso:", error);
       return false;

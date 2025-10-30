@@ -13,6 +13,9 @@ import { Separator } from "@radix-ui/react-separator";
 import { useSubscription } from "@/hooks/use-subscription";
 import { toast } from "sonner";
 import { RouteGuard } from "@/components/RouteGuard";
+import { Button } from "@/components/ui/button";
+import { getStoredAuthHeaders } from "@/hooks/use-auth-headers";
+import { fetchWithAuth } from "@/lib/fetchWIthAuth";
 export type FactAction = {
   type: "save";
   factId: string;
@@ -336,10 +339,8 @@ export function ChatKitPanel({
             "[ChatKitPanel] Incrementando uso para usuário:",
             user.id
           );
-          await fetch("/api/user-subscription/increment", {
+          await fetchWithAuth("/api/user-subscription/increment", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: user.id }),
           });
         } catch (err) {
           console.error("Erro ao incrementar interação:", err);
@@ -377,7 +378,7 @@ export function ChatKitPanel({
   }
   return (
     <div className="pb-8 flex w-full flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900 rounded-b-2xl ">
-      {isInitializingSession && (
+      {/* {isInitializingSession && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-slate-900/80">
           <div className="flex flex-col items-center gap-2">
             <Spinner />
@@ -386,6 +387,17 @@ export function ChatKitPanel({
             </span>
           </div>
         </div>
+      )} */}
+      {process.env.NODE_ENV !== "production" && (
+        <Button
+          onClick={async () => {
+            await fetchWithAuth("/api/user-subscription/increment", {
+              method: "POST",
+            });
+          }}
+        >
+          Incrementar uso
+        </Button>
       )}
       <ChatKit key={widgetInstanceKey} control={chatkit.control} />
     </div>

@@ -1,23 +1,28 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { authenticateRequest } from "@/lib/api-auth";
 import { UserSubscriptionService } from "@/lib/subscription";
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await request.json();
-    if (!userId) {
-      return new Response(JSON.stringify({ error: "userId is required" }), {
-        status: 400,
-      });
+    const auth = await authenticateRequest(request);
+
+    if (!auth) {
+      return NextResponse.json(
+        { error: "Usuário não autenticado" },
+        { status: 401 }
+      );
     }
-    // Busca o limite diário
-    const status = await UserSubscriptionService.canUserInteract(userId);
-    return new Response(
-      JSON.stringify({ dailyLimit: status?.dailyLimit ?? 0 }),
+
+    const status = await UserSubscriptionService.canUserInteract(auth.user.id);
+
+    return NextResponse.json(
+      { dailyLimit: status?.dailyLimit ?? 0 },
       { status: 200 }
     );
-  } catch (err) {
-    return new Response(
-      JSON.stringify({ error: "Internal error", details: String(err) }),
+  } catch (error) {
+    console.error("[user-subscription/limit] Unexpected error:", error);
+    return NextResponse.json(
+      { error: "Erro interno", details: String(error) },
       { status: 500 }
     );
   }

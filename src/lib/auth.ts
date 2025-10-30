@@ -1,5 +1,6 @@
+import { NextRequest } from "next/server";
 import { supabase } from "./supabase";
-import type { User } from "@supabase/supabase-js";
+import { createClient, type User } from "@supabase/supabase-js";
 
 export interface AuthUser {
   id: string;
@@ -332,3 +333,59 @@ export class AuthService {
 
 // Instância singleton
 export const authService = new AuthService();
+
+// Função para obter usuário autenticado do cabeçalho
+export async function getAuthenticatedUser(request: NextRequest) {
+  // Busca o header sempre em minúsculo (Next.js converte para minúsculo)
+  const authHeader =
+    request.headers.get("authorization") ??
+    request.headers.get("Authorization");
+  console.log("[AUTH] Header recebido:", authHeader);
+  if (!authHeader) {
+    console.error("[AUTH] Header de autorização ausente");
+    return null;
+  }
+  if (!authHeader.startsWith("Bearer ")) {
+    console.error("[AUTH] Header de autorização malformado:", authHeader);
+    return null;
+  }
+
+  const token = authHeader.substring(7);
+  if (!token) {
+    console.error("[AUTH] Token vazio");
+    return null;
+  }
+
+  // Verificar token com Supabase via REST API
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      console.error(
+        "[AUTH] Erro na resposta do Supabase REST:",
+        response.status,
+        await response.text()
+      );
+      return null;
+    }
+    const user = await response.json();
+    if (!user || !user.id) {
+      console.error("[AUTH] Usuário não encontrado para token REST:", token);
+      return null;
+    }
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.user_metadata?.name || user.email,
+    };
+  } catch (error) {
+    console.error("[AUTH] Erro ao verificar autenticação REST:", error);
+    return null;
+  }
+}

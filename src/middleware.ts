@@ -94,6 +94,7 @@ export const config = {
     "/(privates)/:path*",
     // Protege APIs sensíveis
     "/api/subscription/:path*",
+    "/api/user-subscription/:path*",
     "/api/agent-chat",
     // Mantém proteção genérica para outras rotas
     "/((?!_next/static|_next/image|favicon.ico|public|login|register|forgot-password|plans).*)",

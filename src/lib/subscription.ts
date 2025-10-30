@@ -30,6 +30,12 @@ interface InteractionCheckResult {
   trialEnd?: string;
 }
 
+interface IncrementUsageResult {
+  success: boolean;
+  status: number;
+  error?: string;
+}
+
 // =====================================================
 // SERVIÇO DE GERENCIAMENTO DE ASSINATURAS
 // =====================================================
@@ -125,27 +131,83 @@ export class UserSubscriptionService {
   /**
    * Incrementar uso de interação diária
    */
-  static async incrementInteractionUsage(userId: string): Promise<boolean> {
-    if (!this.isSupabaseConfigured()) {
-      throw new Error("Banco de dados não configurado");
+  static async incrementInteractionUsage(
+    userId: string
+  ): Promise<IncrementUsageResult> {
+    const client = supabaseAdmin ?? supabase;
+    if (!client) {
+      console.error(
+        "[SUBSCRIPTION] Supabase não configurado para incrementar uso diário"
+      );
+      return {
+        success: false,
+        status: 500,
+        error: "Banco de dados não configurado",
+      };
     }
 
     try {
-      const client = supabase || supabaseAdmin;
-      const { data, error } = await client!.rpc(
-        "increment_daily_interaction_usage",
-        { user_id: userId }
-      );
+      const today = new Date().toISOString().split("T")[0];
 
-      if (error) {
-        console.error("Erro ao incrementar uso:", error);
-        return false;
+      const { data: usage, error: usageErr } = await client
+        .from("daily_interaction_usage")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("usage_date", today)
+        .single();
+
+      if (usageErr && usageErr.code !== "PGRST116") {
+        console.error(
+          "[SUBSCRIPTION] Erro ao buscar uso diário:",
+          usageErr.message
+        );
+        return { success: false, status: 500, error: "Erro ao buscar uso diário" };
       }
-      console.log("Uso de interação incrementado com sucesso:", data);
-      return data as boolean;
+
+      if (!usage) {
+        return {
+          success: false,
+          status: 404,
+          error: "Registro diário não encontrado",
+        };
+      }
+
+      if (usage.interactions_used >= usage.daily_limit) {
+        return {
+          success: false,
+          status: 403,
+          error: "Limite diário atingido",
+        };
+      }
+
+      const { error: updateErr } = await client
+        .from("daily_interaction_usage")
+        .update({
+          interactions_used: usage.interactions_used + 1,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", usage.id);
+
+      if (updateErr) {
+        console.error(
+          "[SUBSCRIPTION] Erro ao atualizar uso diário:",
+          updateErr.message
+        );
+        return {
+          success: false,
+          status: 500,
+          error: "Erro ao incrementar uso",
+        };
+      }
+
+      return { success: true, status: 200 };
     } catch (error) {
-      console.error("Erro ao incrementar interação:", error);
-      return false;
+      console.error("[SUBSCRIPTION] Erro inesperado ao incrementar uso:", error);
+      return {
+        success: false,
+        status: 500,
+        error: "Erro interno ao incrementar uso",
+      };
     }
   }
 
@@ -781,6 +843,44 @@ export class UserSubscriptionService {
     } catch (error) {
       console.error("Erro ao cancelar assinatura do usuário:", error);
       throw error;
+    }
+  }
+
+  /**
+   * Atualiza ou cria o registro de uso diário após upgrade de plano
+   */
+  async resetDailyUsageOnUpgrade(userId: string, newDailyLimit: number) {
+    const client = supabase || supabaseAdmin;
+    if (!client) throw new Error("Supabase client não configurado");
+    const today = new Date().toISOString().split("T")[0];
+    // Verifica se já existe registro
+    const { data: usage, error } = await client
+      .from("daily_interaction_usage")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("usage_date", today)
+      .single();
+
+    if (usage) {
+      // Atualiza registro existente
+      await client
+        .from("daily_interaction_usage")
+        .update({
+          interactions_used: 0,
+          daily_limit: newDailyLimit,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", usage.id);
+    } else {
+      // Cria novo registro
+      await client.from("daily_interaction_usage").insert({
+        user_id: userId,
+        usage_date: today,
+        interactions_used: 0,
+        daily_limit: newDailyLimit,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
     }
   }
 }
