@@ -177,7 +177,7 @@ export default function PlansManagementPage() {
   const [plans, setPlans] = useState<PlanOption[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [plansError, setPlansError] = useState<string | null>(null);
-
+  const [loadingCancel, setLoadingCancel] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [processingAction, setProcessingAction] = useState(false);
@@ -353,8 +353,10 @@ export default function PlansManagementPage() {
   };
 
   const handleCancelSubscription = async (mode: "immediate" | "period") => {
+    setLoadingCancel(true);
     if (!authHeaders.Authorization) {
       setActionError("Sessao expirada. Faca login novamente para continuar.");
+      setLoadingCancel(false);
       return;
     }
 
@@ -393,9 +395,11 @@ export default function PlansManagementPage() {
       }, 2000);
     } catch (error) {
       setActionError(error instanceof Error ? error.message : FallbackMessage);
+      setLoadingCancel(false);
     } finally {
       setProcessingAction(false);
       setShowCancelModal(false);
+      setLoadingCancel(false);
     }
   };
 
@@ -733,11 +737,6 @@ export default function PlansManagementPage() {
             <li>
               Voce pode continuar usando o plano ate o fim do periodo ja pago.
             </li>
-            <li>
-              E possivel reativar a assinatura posteriormente sem perder
-              historico.
-            </li>
-            <li>Cancelamentos imediatos podem gerar reembolso proporcional.</li>
           </ul>
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -785,6 +784,7 @@ export default function PlansManagementPage() {
         open={showCancelModal}
         onClose={() => setShowCancelModal(false)}
         onCancel={handleCancelSubscription}
+        loadingCancel={loadingCancel}
       />
 
       <div className="h-screen flex max-w-6xl flex-col gap-8 lg:flex-row">

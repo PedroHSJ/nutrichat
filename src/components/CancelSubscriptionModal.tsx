@@ -1,73 +1,55 @@
-import { useState } from 'react';
-import { Button } from './ui/button';
+import { useState } from "react";
+import { Button } from "./ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogClose
-} from './ui/dialog';
+  DialogClose,
+} from "./ui/dialog";
 
 export interface CancelSubscriptionModalProps {
   open: boolean;
   onClose: () => void;
-  onCancel: (type: 'immediate' | 'period') => void;
+  onCancel: (type: "immediate" | "period") => void;
+  loadingCancel: boolean;
 }
 
 export function CancelSubscriptionModal({
   open,
   onClose,
-  onCancel
+  onCancel,
+  loadingCancel,
 }: CancelSubscriptionModalProps) {
-  const [cancelType, setCancelType] = useState<'immediate' | 'period'>('period');
+  // Sempre será cancelamento ao final do período
+  const cancelType: "period" = "period";
 
   return (
-  <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) onClose();
+      }}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Cancelar assinatura</DialogTitle>
         </DialogHeader>
         <p>
-          Escolha como deseja cancelar sua assinatura. O cancelamento imediato encerra o acesso e pode gerar reembolso proporcional. O cancelamento ao final do período mantém o acesso até o fim do ciclo já pago, sem reembolso.
+          Ao confirmar, sua assinatura será cancelada ao final do período atual.
         </p>
-        <div style={{ marginTop: 16 }}>
-          <label>
-            <input
-              type="radio"
-              name="cancelType"
-              value="immediate"
-              checked={cancelType === 'immediate'}
-              onChange={() => setCancelType('immediate')}
-            />
-            Cancelar imediatamente (reembolso proporcional)
-          </label>
-          <br />
-          <label>
-            <input
-              type="radio"
-              name="cancelType"
-              value="period"
-              checked={cancelType === 'period'}
-              onChange={() => setCancelType('period')}
-            />
-            Cancelar ao final do período (sem reembolso)
-          </label>
-        </div>
-        <DialogFooter>
-          <Button onClick={() => onCancel(cancelType)}>
-            Confirmar cancelamento
+        <DialogFooter className="gap-2">
+          <Button onClick={() => onCancel(cancelType)} disabled={loadingCancel}>
+            {loadingCancel ? "Cancelando..." : "Confirmar cancelamento"}
           </Button>
-          <DialogClose onClick={onClose}>Voltar</DialogClose>
+          {/* <DialogClose onClick={onClose}>Voltar</DialogClose> */}
         </DialogFooter>
-        <p style={{ marginTop: 16, fontSize: 12, color: '#888' }}>
-          {cancelType === 'immediate'
-            ? 'Você poderá receber reembolso proporcional ao tempo não utilizado, conforme nossos Termos de Serviço.'
-            : 'O acesso será mantido até o fim do ciclo já pago. Não há reembolso para esta opção.'}
+        <p style={{ marginTop: 16, fontSize: 12, color: "#888" }}>
+          O acesso será mantido até o fim do ciclo já pago. Não há reembolso
+          para esta opção.
         </p>
       </DialogContent>
     </Dialog>
   );
 }
-
-
