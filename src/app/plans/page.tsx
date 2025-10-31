@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -8,10 +7,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { CheckCircle2 } from "lucide-react";
 import { useAuthHeaders } from "@/hooks/use-auth-headers";
-
+import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 interface PlanOption {
   type: string;
   name: string;
@@ -29,20 +29,30 @@ async function getPlans(): Promise<PlanOption[]> {
     const res = await fetch("/api/subscription/plans");
     if (!res.ok) return [];
     const data = await res.json();
-    return data.plans || [];
+    const sortedPlans = (a: PlanOption, b: PlanOption) => {
+      if (a.priceCents < b.priceCents) return -1;
+      if (a.priceCents > b.priceCents) return 1;
+      return 0;
+    };
+
+    return data.plans.sort(sortedPlans);
   } catch {
     return [];
   }
 }
 
-import { useEffect, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
-
 export default function PlansPage() {
   const [plans, setPlans] = useState<PlanOption[]>([]);
   const [loading, setLoading] = useState(true);
   const authHeaders = useAuthHeaders();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const router = useRouter();
+  useEffect(() => {
+    if (!user) {
+      router.push("/");
+    }
+  }, [user, router]);
+
   useEffect(() => {
     (async () => {
       setLoading(true);

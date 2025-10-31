@@ -33,6 +33,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
 
 type PlanMenuSection = "overview" | "change" | "billing" | "cancel";
@@ -762,20 +763,6 @@ export default function PlansManagementPage() {
     </div>
   );
 
-  const renderActiveSection = () => {
-    switch (activeSection) {
-      case "change":
-        return renderChange();
-      case "billing":
-        return renderBilling();
-      case "cancel":
-        return renderCancel();
-      case "overview":
-      default:
-        return renderOverview();
-    }
-  };
-
   const isLoading = statusLoading || subscriptionLoading;
 
   return (
@@ -787,130 +774,91 @@ export default function PlansManagementPage() {
         loadingCancel={loadingCancel}
       />
 
-      <div className="h-screen flex max-w-6xl flex-col gap-8 lg:flex-row">
-        <aside className="lg:w-72">
-          <div className="h-full border border-b p-6 shadow-lg shadow-emerald-500/5">
-            <div className="mb-6">
-              <h1 className="text-xl font-semibold ">Central de planos</h1>
-              <p className="mt-1 text-sm text-slate-400">
-                Gerencie assinatura, cobrancas e upgrade em um so lugar.
-              </p>
-            </div>
-            <nav className="space-y-2">
-              {menuItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = item.id === activeSection;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={cn(
-                      "w-full rounded-xl border border-transparent bg-slate-300/60 px-4 py-3 text-left transition hover:border-emerald-400/40 hover:bg-slate-900/90 hover:text-white",
-                      isActive &&
-                        "border-emerald-400/60 bg-slate-900/90 shadow-md shadow-emerald-500/20"
-                    )}
-                    onClick={() => setActiveSection(item.id)}
-                  >
-                    <div className="flex flex-row items-center gap-3">
-                      <span
-                        className={cn(
-                          "flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800/80 text-slate-300",
-                          isActive && "bg-emerald-500/15 text-emerald-300"
-                        )}
-                      >
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <div className="flex-1 flex flex-col justify-center">
-                        <p
-                          className={cn(
-                            "text-sm font-medium",
-                            isActive && "text-emerald-200"
-                          )}
-                        >
-                          {item.label}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          {item.description}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </nav>
-            <div className="mt-6 mb-2 rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-xs text-slate-400">
-              <p className="font-semibold text-slate-200">
-                Precisa de suporte?
-              </p>
-              <p>
-                Nossa equipe esta disponivel para ajudar com upgrades
-                customizados e duvidas de faturamento.
-              </p>
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="mt-3 w-full text-foreground"
-              >
-                <Link href="mailto:financeiro@nutrichat.com.br">
-                  Contatar financeiro
-                </Link>
-              </Button>
-            </div>
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="my-2 w-full flex items-center justify-center gap-2 text-foreground"
-            >
-              <Link href="/agent-chat">
-                <ArrowLeftRight className="h-4 w-4 mr-1" /> Voltar para chat
-              </Link>
-            </Button>
-            <Button
-              type="button"
-              className="w-full rounded-lg bg-rose-600/80 py-2 font-semibold  transition hover:bg-rose-700"
-              onClick={async () => {
-                // Importa o contexto de autenticação dinamicamente
-                await logout();
-                window.location.href = "/login";
-              }}
-            >
-              Sair da conta
-            </Button>
+      <Tabs
+        value={activeSection}
+        onValueChange={(value) => setActiveSection(value as PlanMenuSection)}
+        className="min-h-screen py-8"
+      >
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+          <div>
+            <h1 className="text-3xl font-semibold">Central de planos</h1>
+            <p className="mt-2 text-sm text-slate-500">
+              Gerencie assinatura, cobrancas e upgrade em um so lugar.
+            </p>
           </div>
-        </aside>
 
-        <main className="flex-1 py-4">
-          {actionMessage && (
-            <Alert className="border border-emerald-500/30 bg-emerald-500/10 mb-2">
-              <AlertTitle>Processo concluido</AlertTitle>
-              <AlertDescription>{actionMessage}</AlertDescription>
-            </Alert>
-          )}
-          {actionError && (
-            <Alert variant="destructive">
-              <AlertTitle>Ops! Algo nao saiu como esperado</AlertTitle>
-              <AlertDescription>{actionError}</AlertDescription>
-            </Alert>
-          )}
-          {statusError && (
-            <Alert variant="destructive">
-              <AlertTitle>Nao foi possivel carregar sua assinatura</AlertTitle>
-              <AlertDescription>{statusError}</AlertDescription>
-            </Alert>
-          )}
+          <TabsList className="flex flex-wrap gap-3 bg-transparent p-0">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <TabsTrigger
+                  key={item.id}
+                  value={item.id}
+                  className={cn(
+                    "group flex min-w-[220px] flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left text-sm font-medium shadow-sm transition hover:border-emerald-300 hover:bg-emerald-500/10",
+                    "data-[state=active]:border-emerald-400 data-[state=active]:bg-emerald-500/15 data-[state=active]:shadow-md data-[state=active]:shadow-emerald-500/20"
+                  )}
+                >
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition group-data-[state=active]:bg-emerald-500/20 group-data-[state=active]:text-emerald-600">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <div className="flex flex-1 flex-col justify-center">
+                    <span>{item.label}</span>
+                    <span className="text-xs text-slate-500">
+                      {item.description}
+                    </span>
+                  </div>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
 
-          {isLoading ? (
-            <div className="flex min-h-80 flex-col items-center justify-center gap-3 rounded-2xl border">
-              <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
-              <p className="text-sm">Carregando dados da assinatura...</p>
-            </div>
-          ) : (
-            renderActiveSection()
-          )}
-        </main>
-      </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            {actionMessage && (
+              <Alert className="mb-4 border border-emerald-500/30 bg-emerald-500/10">
+                <AlertTitle>Processo concluido</AlertTitle>
+                <AlertDescription>{actionMessage}</AlertDescription>
+              </Alert>
+            )}
+            {actionError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTitle>Ops! Algo nao saiu como esperado</AlertTitle>
+                <AlertDescription>{actionError}</AlertDescription>
+              </Alert>
+            )}
+            {statusError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTitle>Nao foi possivel carregar sua assinatura</AlertTitle>
+                <AlertDescription>{statusError}</AlertDescription>
+              </Alert>
+            )}
+
+            {isLoading ? (
+              <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50">
+                <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+                <p className="text-sm text-slate-600">
+                  Carregando dados da assinatura...
+                </p>
+              </div>
+            ) : (
+              <>
+                <TabsContent value="overview" className="mt-0">
+                  {renderOverview()}
+                </TabsContent>
+                <TabsContent value="change" className="mt-0">
+                  {renderChange()}
+                </TabsContent>
+                <TabsContent value="billing" className="mt-0">
+                  {renderBilling()}
+                </TabsContent>
+                <TabsContent value="cancel" className="mt-0">
+                  {renderCancel()}
+                </TabsContent>
+              </>
+            )}
+          </div>
+        </div>
+      </Tabs>
     </div>
   );
 }

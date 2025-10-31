@@ -377,7 +377,7 @@ export function ChatKitPanel({
     );
   }
   return (
-    <div className="pb-8 flex w-full flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900 rounded-b-2xl ">
+    <div className=" flex w-full flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900 rounded-b-2xl md:pb-8 pb-[95px]">
       {/* {isInitializingSession && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-slate-900/80">
           <div className="flex flex-col items-center gap-2">
