@@ -92,6 +92,47 @@ export class SubscriptionService {
   }
 
   /**
+   * Verificar se um customer tem assinaturas ativas na Stripe
+   */
+  static async hasActiveStripeSubscription(
+    customerId: string
+  ): Promise<boolean> {
+    try {
+      console.log(
+        `[Stripe] Verificando assinaturas ativas para customer: ${customerId}`
+      );
+
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        status: "active",
+        limit: 1,
+      });
+
+      // Também verificar subscriptions em trialing
+      const trialingSubscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        status: "trialing",
+        limit: 1,
+      });
+
+      const hasActive =
+        subscriptions.data.length > 0 || trialingSubscriptions.data.length > 0;
+
+      if (hasActive) {
+        console.log(
+          `[Stripe] Customer ${customerId} já possui assinatura ativa/trialing`
+        );
+      }
+
+      return hasActive;
+    } catch (error) {
+      console.error("[Stripe] Erro ao verificar assinaturas ativas:", error);
+      // Em caso de erro, assumir que não há assinatura (fail-safe)
+      return false;
+    }
+  }
+
+  /**
    * Criar customer no Stripe (ou buscar existente por email)
    */
   static async createStripeCustomer(

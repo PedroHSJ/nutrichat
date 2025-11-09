@@ -215,6 +215,41 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
         return;
       }
 
+      // 🛡️ CAMADA DE SEGURANÇA: Verificar se usuário já tem assinatura ativa
+      console.log(
+        `[Webhook] Verificando se usuário ${userId} já tem assinatura ativa`
+      );
+      const existingUserSubscription =
+        await UserSubscriptionService.getUserActiveSubscription(userId);
+      if (existingUserSubscription) {
+        console.error(
+          `[Webhook] ⚠️ BLOQUEADO: Usuário ${userId} já possui assinatura ativa: ${existingUserSubscription.stripe_subscription_id}`
+        );
+        console.error(
+          `[Webhook] Tentativa de criar assinatura duplicada para subscription: ${subscription.id}`
+        );
+        // Cancelar a nova subscription no Stripe para evitar cobrança duplicada
+        try {
+          await stripe.subscriptions.update(subscription.id, {
+            cancel_at_period_end: true,
+            metadata: {
+              cancelation_reason: "duplicate_subscription_detected",
+              original_subscription_id:
+                existingUserSubscription.stripe_subscription_id,
+            },
+          });
+          console.log(
+            `[Webhook] Subscription duplicada ${subscription.id} marcada para cancelamento`
+          );
+        } catch (cancelError) {
+          console.error(
+            `[Webhook] Erro ao cancelar subscription duplicada:`,
+            cancelError
+          );
+        }
+        return;
+      }
+
       // Buscar plano baseado no price_id
       const priceId = subscription.items.data[0]?.price?.id;
       if (!priceId) {

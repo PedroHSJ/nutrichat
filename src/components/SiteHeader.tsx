@@ -57,7 +57,7 @@ export function SiteHeader() {
           {/* CTA Button */}
           <div className="hidden md:flex">
             <Button asChild>
-              <Link href="/login">Assinar Agora</Link>
+              <Link href="/login">Entrar Agora</Link>
             </Button>
           </div>
 
