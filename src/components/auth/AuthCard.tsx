@@ -2,7 +2,14 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
 type AuthCardProps = {
@@ -30,8 +37,12 @@ export function AuthCard({
   return (
     <Card className="w-full max-w-md rounded-2xl border border-slate-800/70 bg-slate-900/70 shadow-lg shadow-emerald-500/10 backdrop-blur">
       <CardHeader className="space-y-2">
-        <CardTitle className="text-2xl font-semibold text-white">{title}</CardTitle>
-        <CardDescription className="text-sm text-slate-300">{subtitle}</CardDescription>
+        <CardTitle className="text-2xl font-semibold text-white">
+          {title}
+        </CardTitle>
+        <CardDescription className="text-sm text-slate-300">
+          {subtitle}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">{children}</CardContent>
       {(footer || footerLink) && (

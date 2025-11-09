@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
-import { ChatProvider } from "@/context/ChatContext";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { ProtectedLayout } from "@/components/ProtectedLayout";
 
 const geistSans = Geist({
@@ -29,11 +27,9 @@ export default function Layout({
 }>) {
   return (
     <AuthProvider>
-      <ChatProvider>
-        <SidebarProvider>
-          <ProtectedLayout>{children}</ProtectedLayout>
-        </SidebarProvider>
-      </ChatProvider>
+      <SidebarProvider>
+        <ProtectedLayout>{children}</ProtectedLayout>
+      </SidebarProvider>
     </AuthProvider>
   );
 }

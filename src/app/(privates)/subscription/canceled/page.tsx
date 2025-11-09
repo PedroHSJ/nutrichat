@@ -1,9 +1,15 @@
-'use client';
+"use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { XCircle, ArrowLeft, CreditCard } from 'lucide-react';
-import Link from 'next/link';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { XCircle, ArrowLeft, CreditCard } from "lucide-react";
+import Link from "next/link";
 
 export default function SubscriptionCanceledPage() {
   return (
@@ -18,12 +24,13 @@ export default function SubscriptionCanceledPage() {
             Você cancelou o processo de assinatura
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent>
           <div className="space-y-4">
             <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground">
-                Não se preocupe! Você pode retornar e assinar a qualquer momento.
+                Não se preocupe! Você pode retornar e assinar a qualquer
+                momento.
               </p>
               <p className="text-sm text-muted-foreground">
                 Nenhuma cobrança foi realizada.
@@ -37,7 +44,7 @@ export default function SubscriptionCanceledPage() {
                   Ver Planos Novamente
                 </Link>
               </Button>
-              
+
               <Button variant="outline" asChild className="w-full">
                 <Link href="/">
                   <ArrowLeft className="mr-2 h-4 w-4" />

@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     if (!auth) {
       return NextResponse.json(
         { error: "Usuário não autenticado" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -17,13 +17,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { dailyLimit: status?.dailyLimit ?? 0 },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("[user-subscription/limit] Unexpected error:", error);
     return NextResponse.json(
       { error: "Erro interno", details: String(error) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

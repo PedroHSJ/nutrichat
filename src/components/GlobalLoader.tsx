@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useAuth } from '@/context/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { useAuth } from "@/context/AuthContext";
+import { Loader2 } from "lucide-react";
 
 export function GlobalLoader({ children }: { children: React.ReactNode }) {
   const { authLoading } = useAuth();

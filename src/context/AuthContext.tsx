@@ -10,325 +10,244 @@ import React, {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { authService, AuthUser } from "@/lib/auth";
-import { chatPersistence } from "@/lib/persistence";
-import { getStoredAuthHeaders, useAuthHeaders } from "@/hooks/use-auth-headers";
+import type { Session, User } from "@supabase/supabase-js";
+import supabase from "@/lib/supabase";
+import { apiClient } from "@/lib/api";
 import { UserInteractionStatus } from "@/types/subscription";
 
 interface AuthContextType {
-  user: AuthUser | null;
+  user: User | null;
+  session: Session | null;
   isAuthenticated: boolean;
   authLoading: boolean;
   authError: string | null;
-  hasConsent: boolean;
   interactionStatus: UserInteractionStatus | null;
   login: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
+  loginWithGoogle: (redirectPath?: string) => Promise<void>;
   logout: () => Promise<void>;
-  requestConsent: () => Promise<boolean>;
-  exportUserData: () => Promise<void>;
-  deleteUserAccount: () => Promise<void>;
   refreshInteractionStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+type UserProfileRow = {
+  name?: string | null;
+  email?: string | null;
+};
+
+const translateAuthError = (message: string) => {
+  const translations: Record<string, string> = {
+    "Invalid login credentials": "Email ou senha incorretos",
+    "Email not confirmed":
+      "Email não confirmado. Verifique sua caixa de entrada.",
+    "User already registered": "Usuário já cadastrado com este email",
+    "Password should be at least 6 characters":
+      "Senha deve ter pelo menos 6 caracteres",
+    "Unable to validate email address: invalid format":
+      "Formato de email inválido",
+    "Signup is disabled": "Cadastro desabilitado temporariamente",
+    "Email rate limit exceeded":
+      "Muitas tentativas. Tente novamente em alguns minutos.",
+  };
+
+  return translations[message] || message;
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const authHeaders = useAuthHeaders();
 
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [hasConsent, setHasConsent] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
   const [interactionStatus, setInteractionStatus] =
     useState<UserInteractionStatus | null>(null);
 
-  const initializePersistence = useCallback(
-    async (currentUser: AuthUser | null) => {
-      if (!currentUser) {
-        return;
-      }
+  const login = async (email: string, password: string) => {
+    setAuthLoading(true);
 
-      try {
-        await chatPersistence.initialize(currentUser);
-      } catch (error) {
-        console.error("Erro ao inicializar persistência do chat:", error);
-      }
-    },
-    []
-  );
+    const { error, data } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    setUser(data?.user ?? null);
 
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const currentUser = await authService.getCurrentSession();
+    if (error) {
+      setAuthError(translateAuthError(error.message));
+    } else {
+      setAuthError(null);
+    }
 
-        if (currentUser) {
-          setUser(currentUser);
-          setIsAuthenticated(true);
-          await initializePersistence(currentUser);
+    setAuthLoading(false);
+  };
 
-          const consent = await authService.hasConsent();
-          setHasConsent(consent);
-        } else {
-          setUser(null);
-          setIsAuthenticated(false);
-          setHasConsent(false);
-          setInteractionStatus(null);
-        }
-      } catch (error) {
-        console.error("Erro na inicialização de autenticação:", error);
-        setAuthError("Erro ao verificar sessão");
-        setUser(null);
-        setIsAuthenticated(false);
-        setHasConsent(false);
-        setInteractionStatus(null);
-      } finally {
-        setAuthLoading(false);
-      }
-    };
+  const signUp = async (name: string, email: string, password: string) => {
+    setAuthLoading(true);
 
-    initializeAuth();
+    const { error, data } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name,
+        } as UserProfileRow,
+      },
+    });
+    setUser(data?.user ?? null);
 
-    const unsubscribe = authService.onAuthStateChange(async (authUser) => {
-      setUser(authUser);
-      setIsAuthenticated(authUser !== null);
+    if (error) {
+      setAuthError(translateAuthError(error.message));
+    } else {
+      setAuthError(null);
+    }
 
-      if (authUser) {
-        await initializePersistence(authUser);
-      }
+    setAuthLoading(false);
+  };
 
-      if (!authUser) {
-        setHasConsent(false);
-        setInteractionStatus(null);
-      }
+  const loginWithGoogle = async (redirectPath?: string) => {
+    setAuthLoading(true);
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`, // Redirecionar após login
+        queryParams: {
+          prompt: "select_account", // Força a mostrar o seletor de contas do Google
+        },
+      },
     });
 
-    return unsubscribe;
-  }, [initializePersistence]);
+    if (error) {
+      setAuthError(translateAuthError(error.message));
+    } else {
+      setAuthError(null);
+    }
+
+    setAuthLoading(false);
+  };
+
+  const logout = async () => {
+    setAuthLoading(true);
+
+    const { error } = await supabase.auth.signOut();
+    setUser(null);
+    setIsAuthenticated(false);
+    setInteractionStatus(null);
+
+    if (error) {
+      setAuthError(translateAuthError(error.message));
+    } else {
+      setAuthError(null);
+    }
+
+    setAuthLoading(false);
+    router.push("/login");
+  };
 
   const refreshInteractionStatus = useCallback(async () => {
-    if (!isAuthenticated || !user) {
+    if (!user || !session) {
       setInteractionStatus(null);
       return;
     }
 
-    const headers = authHeaders.Authorization
-      ? authHeaders
-      : getStoredAuthHeaders();
-    if (!headers.Authorization) {
-      return;
-    }
-
     try {
-      const response = await fetch("/api/subscription/status", {
-        headers,
-      });
-      const status = response.ok ? await response.json() : null;
-      setInteractionStatus(status);
+      // ✅ Usando Axios com token automático
+      const response = await apiClient.getSubscriptionStatus();
+      setInteractionStatus(response.data.status as UserInteractionStatus);
     } catch (error) {
-      console.error("Erro ao buscar status de interações:", error);
-    }
-  }, [isAuthenticated, user]);
-
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      refreshInteractionStatus();
-    } else {
+      console.warn("[AuthContext] Erro ao buscar status da assinatura:", error);
       setInteractionStatus(null);
     }
-  }, [isAuthenticated, user, refreshInteractionStatus]);
-
-  const login = useCallback(
-    async (email: string, password: string) => {
-      try {
-        setAuthLoading(true);
-        setAuthError(null);
-
-        const authUser = await authService.signIn(email, password);
-        setUser(authUser);
-        setIsAuthenticated(true);
-        await initializePersistence(authUser);
-
-        const consent = await authService.hasConsent();
-        setHasConsent(consent);
-
-        const headers = getStoredAuthHeaders();
-        if (headers.Authorization) {
-          const statusResponse = await fetch("/api/subscription/status", {
-            headers,
-          });
-          const status = statusResponse.ok ? await statusResponse.json() : null;
-          setInteractionStatus(status);
-        }
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Erro no login";
-        setAuthError(errorMessage);
-        throw error;
-      } finally {
-        setAuthLoading(false);
-      }
-    },
-    [initializePersistence]
-  );
-
-  const signUp = useCallback(
-    async (name: string, email: string, password: string) => {
-      try {
-        setAuthLoading(true);
-        setAuthError(null);
-
-        const authUser = await authService.signUp(name, email, password);
-
-        setUser(authUser);
-        setIsAuthenticated(true);
-        await initializePersistence(authUser);
-
-        setHasConsent(false);
-
-        const headers = getStoredAuthHeaders();
-        if (headers.Authorization) {
-          const statusResponse = await fetch("/api/subscription/status", {
-            headers,
-          });
-          const status = statusResponse.ok ? await statusResponse.json() : null;
-          setInteractionStatus(status);
-        }
-      } catch (error) {
-        console.error("Error in signUp function:", error);
-        const errorMessage =
-          error instanceof Error ? error.message : "Erro no cadastro";
-        setAuthError(errorMessage);
-        throw error;
-      } finally {
-        setAuthLoading(false);
-      }
-    },
-    [authHeaders, initializePersistence]
-  );
-
-  const logout = useCallback(async () => {
-    try {
-      router.replace("/login");
-      await authService.signOut();
-
-      setUser(null);
-      setIsAuthenticated(false);
-      setHasConsent(false);
-      setAuthError(null);
-      setInteractionStatus(null);
-    } catch (error) {
-      console.error("Erro no logout:", error);
-    } finally {
-      setAuthLoading(false);
-    }
-  }, [router]);
-
-  const requestConsent = useCallback(async () => {
-    console.log("requestConsent chamado - isAuthenticated:", isAuthenticated);
-
-    if (!isAuthenticated) {
-      console.error(
-        "Usuário não autenticado, não é possível dar consentimento"
-      );
-      return false;
-    }
-
-    try {
-      console.log("Chamando authService.giveConsent()...");
-      await authService.giveConsent();
-      console.log("authService.giveConsent() executado com sucesso");
-      setHasConsent(true);
-      console.log("hasConsent definido como true");
-      return true;
-    } catch (error) {
-      console.error("Erro ao dar consentimento:", error);
-      console.error(
-        "Detalhes do erro:",
-        error instanceof Error ? error.message : String(error)
-      );
-      return false;
-    }
-  }, [isAuthenticated]);
-
-  const exportUserData = useCallback(async () => {
-    if (!isAuthenticated) return;
-
-    try {
-      const data = await chatPersistence.exportUserData();
-      if (data) {
-        const blob = new Blob([JSON.stringify(data, null, 2)], {
-          type: "application/json",
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `nutrichat-dados-${
-          new Date().toISOString().split("T")[0]
-        }.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-    } catch (error) {
-      console.error("Erro ao exportar dados:", error);
-      throw error;
-    }
-  }, [isAuthenticated]);
-
-  const deleteUserAccount = useCallback(async () => {
-    if (!isAuthenticated) return;
-
-    try {
-      await chatPersistence.deleteAllUserData();
-
-      setUser(null);
-      setIsAuthenticated(false);
-      setHasConsent(false);
-      setAuthError(null);
-      setInteractionStatus(null);
-    } catch (error) {
-      console.error("Erro ao deletar conta:", error);
-      throw error;
-    }
-  }, [isAuthenticated]);
+  }, [user, session]); // ✅ Adicionar session nas dependências
 
   const value = useMemo<AuthContextType>(
     () => ({
-      user,
-      isAuthenticated,
-      authLoading,
       authError,
-      hasConsent,
+      authLoading,
+      user,
+      session,
+      isAuthenticated,
       interactionStatus,
       login,
       signUp,
+      loginWithGoogle,
       logout,
-      requestConsent,
-      exportUserData,
-      deleteUserAccount,
       refreshInteractionStatus,
     }),
     [
-      user,
-      isAuthenticated,
-      authLoading,
       authError,
-      hasConsent,
+      authLoading,
+      user,
+      session,
+      isAuthenticated,
       interactionStatus,
       login,
       signUp,
+      loginWithGoogle,
       logout,
-      requestConsent,
-      exportUserData,
-      deleteUserAccount,
       refreshInteractionStatus,
-    ]
+    ],
   );
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session: Session | null) => {
+      setSession(session);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      setIsAuthenticated(!!currentUser);
+
+      // ✅ Só redirecionar se vier do OAuth (não em navegação normal)
+      if (
+        event === "SIGNED_IN" &&
+        session &&
+        window.location.pathname !== "/subscription/success"
+      ) {
+        router.replace("/auth/callback");
+        return;
+      }
+
+      // NÃO redirecionar automaticamente para login
+      // Deixar o RouteGuard/ProtectedLayout controlar isso
+      // if (!session) {
+      //   router.push("/login");
+      // }
+    });
+
+    // Check initial auth state
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("[AuthContext] Sessão inicial carregada:", {
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        userId: session?.user?.id,
+        userEmail: session?.user?.email,
+      });
+
+      const currentUser = session?.user ?? null;
+      setSession(session);
+      setUser(currentUser);
+      setIsAuthenticated(!!currentUser);
+
+      if (!currentUser) {
+        console.warn(
+          "[AuthContext] ⚠️ Nenhum usuário autenticado encontrado na sessão inicial",
+        );
+      } else {
+        console.log("[AuthContext] ✅ Usuário autenticado:", currentUser.email);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    refreshInteractionStatus();
+  }, [user, refreshInteractionStatus]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

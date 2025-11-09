@@ -8,24 +8,31 @@ import {
   type RegisterFormValues,
 } from "@/components/auth/AuthForm";
 import { useAuth } from "@/context/AuthContext";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { useSubscription } from "@/hooks/use-subscription";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { signUp, authError, authLoading, isAuthenticated } = useAuth();
+  const { signUp, loginWithGoogle, authError, authLoading, isAuthenticated } =
+    useAuth();
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const { hasActivePlan, loading: subscriptionLoading } = useSubscription();
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      router.replace("/agent-chat");
+    if (!authLoading && isAuthenticated && !subscriptionLoading) {
+      router.replace(hasActivePlan ? "/agent-chat" : "/plans");
     }
-  }, [authLoading, isAuthenticated, router]);
+  }, [
+    authLoading,
+    isAuthenticated,
+    subscriptionLoading,
+    hasActivePlan,
+    router,
+  ]);
 
   const handleRegister = async (values: RegisterFormValues) => {
     try {
       await signUp(values.name ?? "", values.email, values.password);
       setIsRedirecting(true);
-      router.replace("/agent-chat");
     } catch (error) {
       setIsRedirecting(false);
       throw error;
@@ -33,24 +40,13 @@ export default function RegisterPage() {
   };
 
   const handleGoogle = async () => {
-    const supabase = getSupabaseBrowserClient();
-    const redirectTo =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/agent-chat`
-        : undefined;
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo,
-      },
-    });
-
-    if (error) {
-      throw new Error(error.message);
+    try {
+      setIsRedirecting(true);
+      await loginWithGoogle();
+    } catch (error) {
+      setIsRedirecting(false);
+      throw error;
     }
-
-    setIsRedirecting(true);
   };
 
   return (

@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import StripeService from '@/lib/stripe';
+import { NextResponse } from "next/server";
+import StripeService from "@/lib/stripe";
 
 /**
  * GET /api/subscription/plans
@@ -8,7 +8,7 @@ import StripeService from '@/lib/stripe';
 export async function GET() {
   try {
     const plans = await StripeService.getAvailablePlans();
-    
+
     const formattedPlans = plans.map((plan) => ({
       type: plan.type,
       name: plan.name,
@@ -16,23 +16,23 @@ export async function GET() {
       priceId: plan.priceId,
       productId: plan.productId,
       priceCents: plan.priceCents,
-      currency: plan.currency || 'brl',
-      priceFormatted: `R$ ${(plan.priceCents / 100).toFixed(2).replace('.', ',')}`,
-      features: plan.features || []
+      currency: plan.currency || "brl",
+      priceFormatted: `R$ ${(plan.priceCents / 100).toFixed(2).replace(".", ",")}`,
+      features: plan.features || [],
     }));
-    
+
     return NextResponse.json({
       success: true,
-      plans: formattedPlans
+      plans: formattedPlans,
     });
   } catch (error) {
-    console.error('[API] Erro ao buscar planos:', error);
+    console.error("[API] Erro ao buscar planos:", error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Erro ao carregar planos disponíveis' 
+      {
+        success: false,
+        error: "Erro ao carregar planos disponíveis",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

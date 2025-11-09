@@ -3,11 +3,10 @@
 import { useState, useEffect } from "react";
 import { UserInteractionStatus } from "@/types/subscription";
 import { useAuth } from "@/context/AuthContext";
-import { useAuthHeaders } from "@/hooks/use-auth-headers";
+import { apiClient } from "@/lib/api";
 
 export function useSubscription() {
   const { user, isAuthenticated } = useAuth();
-  const authHeaders = useAuthHeaders();
   const [subscriptionStatus, setSubscriptionStatus] =
     useState<UserInteractionStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -15,7 +14,7 @@ export function useSubscription() {
 
   useEffect(() => {
     const checkSubscription = async () => {
-      if (!isAuthenticated || !user || !authHeaders.Authorization) {
+      if (!isAuthenticated || !user) {
         setSubscriptionStatus(null);
         setLoading(false);
         return;
@@ -23,13 +22,8 @@ export function useSubscription() {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch("/api/subscription/status", {
-          headers: authHeaders,
-        });
-        if (!response.ok) {
-          throw new Error("Erro ao verificar status da assinatura");
-        }
-        const status = await response.json();
+        const response = await apiClient.getSubscriptionStatus();
+        const status = response.data;
         console.log("useSubscription - status:", status);
         setSubscriptionStatus(status);
       } catch (err) {
@@ -42,10 +36,10 @@ export function useSubscription() {
       }
     };
     checkSubscription();
-  }, [isAuthenticated, user, authHeaders.Authorization]);
+  }, [isAuthenticated, user]);
 
   const refreshSubscription = async () => {
-    if (!isAuthenticated || !user || !authHeaders.Authorization) {
+    if (!isAuthenticated || !user) {
       setSubscriptionStatus(null);
       setLoading(false);
       return;
@@ -53,13 +47,8 @@ export function useSubscription() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch("/api/subscription/status", {
-        headers: authHeaders,
-      });
-      if (!response.ok) {
-        throw new Error("Erro ao verificar status da assinatura");
-      }
-      const status = await response.json();
+      const response = await apiClient.getSubscriptionStatus();
+      const status = response.data;
       setSubscriptionStatus(status);
     } catch (err) {
       const errorMessage =
@@ -75,7 +64,7 @@ export function useSubscription() {
     if (!subscriptionStatus) return;
     console.log(
       "useSubscription - subscriptionStatus changed:",
-      subscriptionStatus
+      subscriptionStatus,
     );
   }, [subscriptionStatus]);
 

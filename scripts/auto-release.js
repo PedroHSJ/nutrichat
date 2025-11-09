@@ -229,7 +229,7 @@ async function translateWithGoogleAPI(text) {
     ];
     const wordsInText = text.toLowerCase().split(/\s+/);
     const portugueseWordCount = wordsInText.filter((word) =>
-      portugueseWords.includes(word)
+      portugueseWords.includes(word),
     ).length;
 
     // Se mais de 30% das palavras são portuguesas, provavelmente já está em português
@@ -292,7 +292,7 @@ async function translateCommitMessageAdvanced(message) {
       translatedWords.filter(
         (word, index) =>
           originalWords[index] &&
-          word.toLowerCase() === originalWords[index].toLowerCase()
+          word.toLowerCase() === originalWords[index].toLowerCase(),
       ).length) /
     originalWords.length;
 
@@ -526,11 +526,11 @@ function createReleaseWithApi(version, title, body, isPrerelease = false) {
   const token = process.env.GITHUB_TOKEN;
   if (!token || token.trim() === "") {
     console.error(
-      "❌ Token do GitHub não encontrado ou vazio. Verifique a variável GITHUB_TOKEN no arquivo .env"
+      "❌ Token do GitHub não encontrado ou vazio. Verifique a variável GITHUB_TOKEN no arquivo .env",
     );
     console.log(
       "🔍 Token atual:",
-      token ? `${token.substring(0, 10)}...` : "undefined"
+      token ? `${token.substring(0, 10)}...` : "undefined",
     );
     return false;
   }
@@ -611,7 +611,7 @@ function main() {
         const status = execSync("git status --porcelain", { encoding: "utf8" });
         if (status.trim()) {
           console.error(
-            "❌ Há mudanças não commitadas. Commit ou stash antes de fazer release."
+            "❌ Há mudanças não commitadas. Commit ou stash antes de fazer release.",
           );
           process.exit(1);
         }
@@ -631,14 +631,14 @@ function main() {
       // 3. Obter commits
       const commits = getCommitsSinceLastTag();
       console.log(
-        `📝 Encontrados ${commits.length} commits desde a última tag`
+        `📝 Encontrados ${commits.length} commits desde a última tag`,
       );
 
       if (commits.length === 0) {
         console.log("⚠️  Nenhum commit novo encontrado.");
         console.log("❌ Não é possível criar uma release sem commits novos.");
         console.log(
-          "💡 Faça algumas alterações e commits antes de criar uma release."
+          "💡 Faça algumas alterações e commits antes de criar uma release.",
         );
         process.exit(0);
       }
@@ -682,7 +682,7 @@ function main() {
           nextVersion,
           title,
           body,
-          versionType === "major"
+          versionType === "major",
         );
       } else {
         console.log("🌐 Usando API do GitHub...");
@@ -690,7 +690,7 @@ function main() {
           nextVersion,
           title,
           body,
-          versionType === "major"
+          versionType === "major",
         );
       }
 
@@ -701,10 +701,10 @@ function main() {
 
         console.log("\n📋 Links úteis:");
         console.log(
-          `� GitHub Release: https://github.com/PedroHSJ/nutrichat/releases/tag/v${nextVersion}`
+          `� GitHub Release: https://github.com/PedroHSJ/nutrichat/releases/tag/v${nextVersion}`,
         );
         console.log(
-          "� Todas as Releases: https://github.com/PedroHSJ/nutrichat/releases"
+          "� Todas as Releases: https://github.com/PedroHSJ/nutrichat/releases",
         );
         console.log("🌐 Vercel Dashboard: https://vercel.com/dashboard");
       } else {

@@ -1,6 +1,9 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import type { User } from "@supabase/supabase-js";
-import { getSupabaseServerClient } from "@/lib/supabase-server";
+import {
+  getSupabaseBearerClient,
+  getSupabaseServerClient,
+} from "@/lib/supabase-server";
 
 export interface AuthenticatedRequest {
   token: string;
@@ -44,22 +47,32 @@ export function extractBearerToken(request: NextRequest): string | null {
 }
 
 export async function authenticateRequest(
-  request: NextRequest
+  request: NextRequest,
 ): Promise<AuthenticatedRequest | null> {
   const token = extractBearerToken(request);
-  if (!token) {
-    return null;
+  if (token) {
+    const supabase = getSupabaseBearerClient(token);
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      return null;
+    }
+
+    return { token, user };
   }
 
-  const supabase = getSupabaseServerClient(request, token);
+  const res = new NextResponse();
+  const supabase = getSupabaseServerClient(request, res);
   const {
     data: { user },
-    error,
   } = await supabase.auth.getUser();
 
-  if (error || !user) {
+  if (!user) {
     return null;
   }
 
-  return { token, user };
+  return { token: "", user };
 }

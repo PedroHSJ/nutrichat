@@ -19,7 +19,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { useAuthHeaders } from "@/hooks/use-auth-headers";
+import { apiClient } from "@/lib/api";
 
 interface SubscriptionInfo {
   hasSubscription: boolean;
@@ -35,11 +35,10 @@ interface SubscriptionInfo {
 export default function ManageSubscriptionPage() {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(
-    null
+    null,
   );
   const [error, setError] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const authHeaders = useAuthHeaders();
 
   const handleCancelSubscription = () => {
     setShowCancelModal(true);
@@ -47,11 +46,7 @@ export default function ManageSubscriptionPage() {
 
   const handleModalCancel = async (type: "immediate" | "period") => {
     setShowCancelModal(false);
-    await fetch("/api/subscription/cancel", {
-      method: "POST",
-      headers: authHeaders,
-      body: JSON.stringify({ type }),
-    });
+    await apiClient.cancelSubscription();
     fetchSubscriptionInfo();
   };
 
@@ -61,18 +56,22 @@ export default function ManageSubscriptionPage() {
 
   const fetchSubscriptionInfo = async () => {
     try {
-      const response = await fetch("/api/subscription/status", {
-        headers: authHeaders,
-      });
-      const data = await response.json();
+      const response = await apiClient.getSubscriptionStatus();
+      const data = response.data;
       console.log("Subscription data fetched:", data);
-      if (response.ok) {
-        setSubscription(data);
-      } else {
-        setError(data.error || "Erro ao carregar informações da assinatura");
-      }
-    } catch (err) {
-      setError("Erro de conexão");
+      setSubscription({
+        hasSubscription: data.subscriptionStatus === "active",
+        planName: data.planName,
+        planType: data.planType,
+        status: data.subscriptionStatus,
+        currentPeriodEnd: data.currentPeriodEnd,
+        dailyLimit: data.dailyLimit,
+        remainingInteractions: data.remainingInteractions,
+        cancelAtPeriodEnd: data.cancelAtPeriodEnd,
+      });
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+      setError("Erro ao carregar informações da assinatura");
     } finally {
       setLoading(false);
     }
@@ -211,7 +210,7 @@ export default function ManageSubscriptionPage() {
                 </p>
                 <p className="text-sm text-blue-700">
                   {new Date(subscription.currentPeriodEnd).toLocaleDateString(
-                    "pt-BR"
+                    "pt-BR",
                   )}
                 </p>
               </div>

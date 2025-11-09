@@ -100,14 +100,14 @@ export function InteractionStatusDisplay({
                 planType === "free"
                   ? "Gratuito"
                   : planType === "premium"
-                  ? "Premium"
-                  : planType === "enterprise"
-                  ? "Enterprise"
-                  : planType === "basic"
-                  ? "BAsico"
-                  : planType === "pro"
-                  ? "Pro"
-                  : "Desconhecido"
+                    ? "Premium"
+                    : planType === "enterprise"
+                      ? "Enterprise"
+                      : planType === "basic"
+                        ? "BAsico"
+                        : planType === "pro"
+                          ? "Pro"
+                          : "Desconhecido"
               }`}
           </span>
         </div>

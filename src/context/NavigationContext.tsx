@@ -44,7 +44,7 @@ export function NavigationProvider({
           } as React.CSSProperties
         }
       > */}
-        {children}
+      {children}
       {/* </SidebarProvider> */}
     </NavigationContext.Provider>
   );

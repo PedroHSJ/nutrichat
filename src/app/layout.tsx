@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
-import { ChatProvider } from "@/context/ChatContext";
-import TrialBanner from "@/components/TrialBanner";
 import Script from "next/script";
 
 const geistSans = Geist({
@@ -18,7 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "NutriChat - Assistente Nutricional",
-  description: "Assistente especializado em nutrição para nutricionistas de produção",
+  description:
+    "Assistente especializado em nutrição para nutricionistas de produção",
 };
 
 export default function RootLayout({
@@ -37,11 +36,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <ChatProvider>
-            {children}
-          </ChatProvider>
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

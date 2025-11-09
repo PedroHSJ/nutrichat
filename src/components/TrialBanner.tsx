@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useAuth } from "@/context/AuthContext";
 import { Crown, Clock } from "lucide-react";
@@ -32,10 +32,9 @@ export default function TrialBanner() {
             {daysRemaining !== null && (
               <span className="ml-2 text-violet-200">
                 <Clock className="inline h-3 w-3 mr-1" />
-                {daysRemaining > 0 
-                  ? `${daysRemaining} ${daysRemaining === 1 ? 'dia restante' : 'dias restantes'}`
-                  : 'Último dia!'
-                }
+                {daysRemaining > 0
+                  ? `${daysRemaining} ${daysRemaining === 1 ? "dia restante" : "dias restantes"}`
+                  : "Último dia!"}
               </span>
             )}
           </span>

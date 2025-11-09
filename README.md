@@ -48,6 +48,7 @@ AI_PROVIDER=github
 ### Passo 3: Configurar as Credenciais
 
 #### Para OpenAI/ChatGPT:
+
 ```env
 AI_PROVIDER=openai
 OPENAI_API_KEY=sk-your-openai-api-key-here
@@ -56,12 +57,14 @@ OPENAI_API_KEY=sk-your-openai-api-key-here
 **Como obter:** https://platform.openai.com/api-keys
 
 #### Para GitHub Models:
+
 ```env
 AI_PROVIDER=github
 GITHUB_TOKEN=ghp_your-github-token-here
 ```
 
 **Como obter:**
+
 1. Vá para https://github.com/settings/tokens
 2. Crie um novo token com o escopo `model`
 3. Use o token gerado
@@ -73,6 +76,7 @@ Para habilitar a persistência de dados, configure o Supabase:
 1. **Siga o guia completo:** [SUPABASE_SETUP.md](./SUPABASE_SETUP.md)
 
 2. **Configure as variáveis no `.env.local`:**
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
@@ -83,16 +87,19 @@ ENCRYPTION_KEY=your_32_character_encryption_key_here
    - Copie e execute o SQL em `database/schema.sql` no SQL Editor do Supabase
 
 ### Sem Supabase
+
 Se não configurar o Supabase, o chat funcionará apenas durante a sessão (sem persistência).
 
 ## 🎯 Providers Suportados
 
 ### 1. OpenAI (ChatGPT)
+
 - **Valor da variável:** `openai` ou `chatgpt`
 - **Modelos:** gpt-3.5-turbo, gpt-4, etc.
 - **Requer:** `OPENAI_API_KEY`
 
 ### 2. GitHub Models
+
 - **Valor da variável:** `github` ou `copilot`
 - **Modelos:** gpt-4o, gpt-4o-mini, gpt-3.5-turbo
 - **Requer:** `GITHUB_TOKEN` e `GITHUB_MODEL` (opcional)
@@ -100,15 +107,17 @@ Se não configurar o Supabase, o chat funcionará apenas durante a sessão (sem 
 ## 🔄 Como Alternar Entre APIs
 
 1. **Edite o arquivo `.env.local`:**
+
    ```env
    # Mude de:
    AI_PROVIDER=openai
-   
+
    # Para:
    AI_PROVIDER=github
    ```
 
 2. **Reinicie o servidor:**
+
    ```bash
    npm run dev
    ```
@@ -118,23 +127,27 @@ Se não configurar o Supabase, o chat funcionará apenas durante a sessão (sem 
 ## 📦 Instalação e Execução
 
 1. **Clone o repositório:**
+
    ```bash
    git clone <repository-url>
    cd nutrichat
    ```
 
 2. **Instale as dependências:**
+
    ```bash
    npm install
    ```
 
 3. **Configure as variáveis de ambiente:**
+
    ```bash
    cp .env.example .env.local
    # Edite .env.local com suas credenciais
    ```
 
 4. **Execute o projeto:**
+
    ```bash
    npm run dev
    ```

@@ -116,7 +116,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavUser
           user={{
             avatar: "",
-            name: user?.name || "",
+            name: user?.user_metadata?.name || "",
             email: user?.email || "",
           }}
           key={"nav-user"}
