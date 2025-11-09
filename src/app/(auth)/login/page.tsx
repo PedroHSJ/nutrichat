@@ -7,6 +7,8 @@ import { LoginForm, type LoginFormValues } from "@/components/auth/AuthForm";
 import { useAuth } from "@/context/AuthContext";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useSubscription } from "@/hooks/use-subscription";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -67,6 +69,15 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 px-4 py-12">
       <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-8 text-center">
+        <Button
+          variant="ghost"
+          className="absolute left-4 top-4 text-slate-400 hover:text-emerald-300"
+          onClick={() => router.push("/")}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar para início
+        </Button>
+
         <div className="flex flex-col items-center gap-3">
           <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-emerald-300">
             NutriChat

@@ -770,7 +770,7 @@ export default function PlansManagementPage() {
       <CancelSubscriptionModal
         open={showCancelModal}
         onClose={() => setShowCancelModal(false)}
-        onCancel={handleCancelSubscription}
+        onCancel={() => handleCancelSubscription("immediate")}
         loadingCancel={loadingCancel}
       />
 
@@ -828,7 +828,9 @@ export default function PlansManagementPage() {
             )}
             {statusError && (
               <Alert variant="destructive" className="mb-4">
-                <AlertTitle>Nao foi possivel carregar sua assinatura</AlertTitle>
+                <AlertTitle>
+                  Nao foi possivel carregar sua assinatura
+                </AlertTitle>
                 <AlertDescription>{statusError}</AlertDescription>
               </Alert>
             )}

@@ -123,6 +123,16 @@ export default function PlansPage() {
                           body: JSON.stringify({ priceId: plan.priceId }),
                         });
                         const data = await res.json();
+
+                        // Tratamento específico para erro de assinatura duplicada
+                        if (res.status === 409) {
+                          alert(
+                            "⚠️ Você já possui uma assinatura ativa.\n\n" +
+                              "Para alterar seu plano, primeiro cancele sua assinatura atual na área de gerenciamento de assinaturas."
+                          );
+                          return;
+                        }
+
                         if (!res.ok || !data.checkoutUrl) {
                           alert(
                             data?.error ||
@@ -132,6 +142,7 @@ export default function PlansPage() {
                         }
                         window.location.href = data.checkoutUrl;
                       } catch (err) {
+                        console.error("Erro ao iniciar checkout:", err);
                         alert("Erro ao iniciar checkout. Tente novamente.");
                       }
                     }}
@@ -145,14 +156,13 @@ export default function PlansPage() {
           )}
         </div>
         <Button
-          asChild
           variant="outline"
           className="mt-8 border-emerald-400/50 bg-slate-900/60 text-emerald-200 transition hover:bg-slate-900/80"
           onClick={async () => {
             await logout();
           }}
         >
-          Voltar para início
+          Sair
         </Button>
       </div>
     </main>
