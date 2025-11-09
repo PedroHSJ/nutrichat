@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import StripeService, { stripe } from "@/lib/stripe";
 import { UserSubscriptionService } from "@/lib/subscription";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import Stripe from "stripe";
 
 // Tipos para objetos do Stripe
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
     if (!sessionId) {
       return NextResponse.json(
         { error: "Session ID é obrigatório" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
     if (session.payment_status !== "paid") {
       return NextResponse.json(
         { error: "Pagamento não confirmado" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
         const { SubscriptionService } = await import("@/lib/stripe");
         if (typeof session.subscription === "string") {
           fullSubscription = await SubscriptionService.getSubscription(
-            session.subscription
+            session.subscription,
           );
         } else if (
           typeof session.subscription === "object" &&
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
     if (!fullSubscription) {
       console.warn(
-        "[STRIPE] Nenhuma subscription Stripe encontrada para fallback!"
+        "[STRIPE] Nenhuma subscription Stripe encontrada para fallback!",
       );
     }
 
@@ -103,11 +104,19 @@ export async function POST(request: NextRequest) {
     // Se não existir, criar como backup (caso webhook tenha falhado)
     if (fullSubscription && fullSubscription.id) {
       try {
+        console.log(
+          "[STRIPE] Iniciando fallback de verificação/criação de subscription...",
+        );
         await ensureSubscriptionInDatabase(fullSubscription, session);
+        console.log("[STRIPE] Fallback de subscription concluído com sucesso");
       } catch (error) {
         console.error(
-          "[STRIPE] Erro crítico no fallback de criação de assinatura:",
-          error
+          "[STRIPE] ⚠️ ERRO CRÍTICO no fallback de criação de assinatura:",
+          error,
+        );
+        console.error(
+          "[STRIPE] Stack trace:",
+          error instanceof Error ? error.stack : "N/A",
         );
 
         // Se o erro for crítico (dados inválidos), falhar a verificação
@@ -116,12 +125,25 @@ export async function POST(request: NextRequest) {
           (error.message.includes("não pode ser nulo") ||
             error.message.includes("Campo obrigatório"))
         ) {
+          console.error(
+            "[STRIPE] Erro de validação de dados, falhando verificação",
+          );
           throw new Error(`Erro na criação da assinatura: ${error.message}`);
         }
 
         // Para outros erros, apenas logar (não bloquear)
-        console.warn("[STRIPE] Fallback falhou mas continuando verificação");
+        console.warn(
+          "[STRIPE] Fallback falhou mas continuando verificação (webhook deve processar)",
+        );
       }
+    } else {
+      console.warn(
+        "[STRIPE] Nenhuma subscription válida para fallback - dados:",
+        {
+          hasFullSubscription: !!fullSubscription,
+          subscriptionId: fullSubscription?.id,
+        },
+      );
     }
 
     console.log(`[STRIPE] Pagamento verificado com sucesso`);
@@ -136,13 +158,13 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Sessão de checkout não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     return NextResponse.json(
       { error: "Erro ao verificar pagamento" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -152,12 +174,11 @@ export async function POST(request: NextRequest) {
  */
 async function ensureSubscriptionInDatabase(
   subscription: Stripe.Subscription,
-  session: Stripe.Checkout.Session
+  session: Stripe.Checkout.Session,
 ) {
   try {
     // Verificar se já existe no banco
-    const { supabase } = await import("@/lib/supabase");
-
+    const supabase = supabaseAdmin;
     if (!supabase) {
       console.log("[STRIPE] Supabase não configurado, pulando fallback");
       return;
@@ -172,7 +193,7 @@ async function ensureSubscriptionInDatabase(
 
     if (existingSubscription) {
       console.log(
-        "[STRIPE] ✅ Subscription já existe no banco, não é necessário criar"
+        "[STRIPE] ✅ Subscription já existe no banco, não é necessário criar",
       );
       return;
     }
@@ -180,7 +201,7 @@ async function ensureSubscriptionInDatabase(
     // ⚠️ FALLBACK: Só chegamos aqui se o webhook checkout.session.completed falhou
     // Isso não deveria ser o fluxo normal, mas é uma segurança
     console.warn(
-      "[STRIPE] ⚠️ Subscription não existe no banco - webhook pode ter falhado"
+      "[STRIPE] ⚠️ Subscription não existe no banco - webhook pode ter falhado",
     );
     console.log("[STRIPE] Criando subscription como fallback de segurança");
 
@@ -189,7 +210,7 @@ async function ensureSubscriptionInDatabase(
     if (typeof session.customer === "string") {
       // Se for string, buscar no Stripe
       customer = (await stripe.customers.retrieve(
-        session.customer
+        session.customer,
       )) as StripeCustomer;
     } else {
       // Se já for objeto, usar diretamente
@@ -198,7 +219,7 @@ async function ensureSubscriptionInDatabase(
 
     if (!customer.email) {
       console.error(
-        "[STRIPE] Customer sem email, não é possível criar fallback"
+        "[STRIPE] Customer sem email, não é possível criar fallback",
       );
       return;
     }
@@ -208,7 +229,7 @@ async function ensureSubscriptionInDatabase(
     if (!userId) {
       console.error(
         "[STRIPE] Usuário não encontrado para email:",
-        customer.email
+        customer.email,
       );
       return;
     }
@@ -224,7 +245,7 @@ async function ensureSubscriptionInDatabase(
     if (!planPrice) {
       console.error(
         "[STRIPE] Plano/Preço não encontrado para price_id:",
-        priceId
+        priceId,
       );
       return;
     }
@@ -246,7 +267,7 @@ async function ensureSubscriptionInDatabase(
         planId,
         customer.id,
         subscription.id,
-        subscription
+        subscription,
       );
 
     console.log("[STRIPE] ✅ Subscription criada como fallback com sucesso!");
@@ -262,8 +283,7 @@ async function ensureSubscriptionInDatabase(
  */
 async function getUserIdByEmail(email: string): Promise<string | null> {
   try {
-    const { supabase } = await import("@/lib/supabase");
-
+    const supabase = supabaseAdmin;
     if (!supabase) return null;
 
     // Buscar em user_profiles
@@ -289,10 +309,10 @@ async function getUserIdByEmail(email: string): Promise<string | null> {
  * Helper para buscar plano por price_id (duplicado para evitar dependências)
  */
 async function getPlanPriceByStripePrice(
-  stripePriceId: string
+  stripePriceId: string,
 ): Promise<{ id: string; plan_id: string } | null> {
   try {
-    const { supabase } = await import("@/lib/supabase");
+    const supabase = supabaseAdmin;
     if (!supabase) return null;
     const { data } = await supabase
       .from("subscription_plan_prices")

@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SubscriptionService } from "@/lib/stripe";
 import { UserSubscriptionService } from "@/lib/subscription";
-import { supabase } from "@/lib/supabase";
+import {
+  getSupabaseBearerClient,
+  getSupabaseServerClient,
+} from "@/lib/supabase-server";
 
 /**
  * POST /api/subscription/checkout
@@ -9,35 +12,29 @@ import { supabase } from "@/lib/supabase";
  */
 export async function POST(request: NextRequest) {
   try {
-    // Obter o token de autorização do header
-    const authorization = request.headers.get("authorization");
-    if (!authorization?.startsWith("Bearer ")) {
+    const authHeader = request.headers.get("Authorization");
+    const token = authHeader?.replace("Bearer ", "");
+
+    console.log("Authorization header:", !!authHeader);
+    console.log("Token extracted:", !!token);
+
+    if (!token) {
+      console.log("❌ No token provided in Authorization header");
       return NextResponse.json(
-        {
-          success: false,
-          error: "Token de autorização é obrigatório",
-        },
-        { status: 401 }
+        { success: false, error: "Token de acesso não fornecido" },
+        { status: 401 },
       );
     }
 
-    const token = authorization.substring(7); // Remove "Bearer "
-
-    // Verificar o token usando Supabase
-    if (!supabase) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Serviço de autenticação não configurado",
-        },
-        { status: 500 }
-      );
-    }
+    // Usar Bearer client em vez de Server client
+    const supabase = getSupabaseBearerClient(token);
 
     const {
       data: { user },
       error: userError,
-    } = await supabase.auth.getUser(token);
+    } = await supabase.auth.getUser();
+
+    console.error("User fetch error:", userError);
 
     if (userError || !user) {
       return NextResponse.json(
@@ -45,7 +42,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Token inválido ou expirado",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -58,10 +55,9 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Price ID é obrigatório",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
-
     // Verificar se o plano existe
     const planInfo = await SubscriptionService.getPlanByPriceId(priceId);
     if (!planInfo) {
@@ -70,7 +66,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Plano não encontrado",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -84,7 +80,7 @@ export async function POST(request: NextRequest) {
           error:
             "Você já possui uma assinatura ativa. Cancele sua assinatura atual antes de criar uma nova.",
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -101,7 +97,7 @@ export async function POST(request: NextRequest) {
 
       const customer = await SubscriptionService.createStripeCustomer(
         customerEmail,
-        customerName
+        customerName,
       );
       customerId = customer.id;
 
@@ -111,7 +107,7 @@ export async function POST(request: NextRequest) {
       if (hasActiveStripeSubscription) {
         console.error(
           "[API] Customer já possui assinatura ativa na Stripe:",
-          customerId
+          customerId,
         );
         return NextResponse.json(
           {
@@ -119,7 +115,7 @@ export async function POST(request: NextRequest) {
             error:
               "Já existe uma assinatura ativa vinculada a este cliente. Por favor, entre em contato com o suporte.",
           },
-          { status: 409 }
+          { status: 409 },
         );
       }
     } catch (error) {
@@ -129,7 +125,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Erro ao processar dados do cliente",
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -147,7 +143,7 @@ export async function POST(request: NextRequest) {
       customerId,
       priceId,
       successUrl,
-      cancelUrl
+      cancelUrl,
     );
 
     return NextResponse.json({
@@ -162,7 +158,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: "Erro interno do servidor",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

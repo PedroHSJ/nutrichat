@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       console.error("[Webhook] Signature não encontrada");
       return NextResponse.json(
         { error: "Signature não encontrada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -41,13 +41,13 @@ export async function POST(request: NextRequest) {
       case "customer.subscription.created":
       case "customer.subscription.updated":
         await handleSubscriptionUpdated(
-          event.data.object as Stripe.Subscription
+          event.data.object as Stripe.Subscription,
         );
         break;
 
       case "customer.subscription.deleted":
         await handleSubscriptionDeleted(
-          event.data.object as Stripe.Subscription
+          event.data.object as Stripe.Subscription,
         );
         break;
 
@@ -81,7 +81,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
     await UserSubscriptionService.updateSubscription(
       subscription.id,
-      subscription
+      subscription,
     );
 
     console.log(`[Webhook] Dados da subscription atualizados no banco`);
@@ -100,7 +100,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     // Marcar como cancelada no banco
     await UserSubscriptionService.updateSubscription(
       subscription.id,
-      subscription
+      subscription,
     );
 
     console.log(`[Webhook] Subscription marcada como cancelada no banco`);
@@ -120,17 +120,16 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
       "subscription" in invoice ? invoice.subscription : null;
     if (subscriptionId && typeof subscriptionId === "string") {
       // Buscar subscription e atualizar status
-      const subscription = await SubscriptionService.getSubscription(
-        subscriptionId
-      );
+      const subscription =
+        await SubscriptionService.getSubscription(subscriptionId);
 
       await UserSubscriptionService.updateSubscription(
         subscription.id,
-        subscription
+        subscription,
       );
 
       console.log(
-        `[Webhook] Status da subscription atualizado após falha de pagamento`
+        `[Webhook] Status da subscription atualizado após falha de pagamento`,
       );
     }
   } catch (error) {
@@ -149,15 +148,14 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
       "subscription" in invoice ? invoice.subscription : null;
     if (!subscriptionId || typeof subscriptionId !== "string") {
       console.log(
-        `[Webhook] Invoice ${invoice.id} não está associada a uma subscription`
+        `[Webhook] Invoice ${invoice.id} não está associada a uma subscription`,
       );
       return;
     }
 
     // Buscar subscription completa no Stripe
-    const subscription = await SubscriptionService.getSubscription(
-      subscriptionId
-    );
+    const subscription =
+      await SubscriptionService.getSubscription(subscriptionId);
 
     // Verificar se a subscription já existe no banco
     const { supabaseAdmin } = await import("@/lib/supabase-admin");
@@ -166,7 +164,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
       return;
     }
     console.log(
-      `[Webhook] Verificando existência da subscription no banco: ${subscription.id}`
+      `[Webhook] Verificando existência da subscription no banco: ${subscription.id}`,
     );
     const { data: existingSubscription } = await supabaseAdmin
       .from("user_subscriptions")
@@ -179,29 +177,29 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
       // Subscription já existe, apenas atualizar
       await UserSubscriptionService.updateSubscription(
         subscription.id,
-        subscription
+        subscription,
       );
       console.log(
-        `[Webhook] ✅ Subscription existente atualizada: ${subscription.id}`
+        `[Webhook] ✅ Subscription existente atualizada: ${subscription.id}`,
       );
     } else {
       // 🎯 CRIAR NOVA SUBSCRIPTION - Este é agora o local principal
       console.log(
-        `[Webhook] 🎯 CRIANDO SUBSCRIPTION PRINCIPAL - invoice.payment_succeeded`
+        `[Webhook] 🎯 CRIANDO SUBSCRIPTION PRINCIPAL - invoice.payment_succeeded`,
       );
       console.log(
-        `[Webhook] Subscription não existe no banco, criando nova: ${subscription.id}`
+        `[Webhook] Subscription não existe no banco, criando nova: ${subscription.id}`,
       );
 
       // Buscar customer no Stripe
       const customer = (await stripe.customers.retrieve(
-        subscription.customer as string
+        subscription.customer as string,
       )) as Stripe.Customer;
 
       if (!customer.email) {
         console.error(
           "[Webhook] Customer sem email para subscription:",
-          subscription.id
+          subscription.id,
         );
         return;
       }
@@ -210,23 +208,23 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
       const userId = await getUserIdByEmail(customer.email);
       if (!userId) {
         console.error(
-          `[Webhook] Usuário não encontrado para email: ${customer.email}`
+          `[Webhook] Usuário não encontrado para email: ${customer.email}`,
         );
         return;
       }
 
       // 🛡️ CAMADA DE SEGURANÇA: Verificar se usuário já tem assinatura ativa
       console.log(
-        `[Webhook] Verificando se usuário ${userId} já tem assinatura ativa`
+        `[Webhook] Verificando se usuário ${userId} já tem assinatura ativa`,
       );
       const existingUserSubscription =
         await UserSubscriptionService.getUserActiveSubscription(userId);
       if (existingUserSubscription) {
         console.error(
-          `[Webhook] ⚠️ BLOQUEADO: Usuário ${userId} já possui assinatura ativa: ${existingUserSubscription.stripe_subscription_id}`
+          `[Webhook] ⚠️ BLOQUEADO: Usuário ${userId} já possui assinatura ativa: ${existingUserSubscription.stripe_subscription_id}`,
         );
         console.error(
-          `[Webhook] Tentativa de criar assinatura duplicada para subscription: ${subscription.id}`
+          `[Webhook] Tentativa de criar assinatura duplicada para subscription: ${subscription.id}`,
         );
         // Cancelar a nova subscription no Stripe para evitar cobrança duplicada
         try {
@@ -239,12 +237,12 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
             },
           });
           console.log(
-            `[Webhook] Subscription duplicada ${subscription.id} marcada para cancelamento`
+            `[Webhook] Subscription duplicada ${subscription.id} marcada para cancelamento`,
           );
         } catch (cancelError) {
           console.error(
             `[Webhook] Erro ao cancelar subscription duplicada:`,
-            cancelError
+            cancelError,
           );
         }
         return;
@@ -255,7 +253,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
       if (!priceId) {
         console.error(
           "[Webhook] Price ID não encontrado na subscription:",
-          subscription.id
+          subscription.id,
         );
         return;
       }
@@ -263,7 +261,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
       const planId = await getPlanIdByStripePrice(priceId);
       if (!planId) {
         console.error(
-          `[Webhook] Plano não encontrado para price_id: ${priceId}`
+          `[Webhook] Plano não encontrado para price_id: ${priceId}`,
         );
         return;
       }
@@ -282,13 +280,13 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
           planId,
           customer.id,
           subscription.id,
-          subscription
+          subscription,
         );
 
       console.log("[Webhook] ✅ SUBSCRIPTION CRIADA COM SUCESSO!");
       console.log(
         "[Webhook] Dados da subscription criada:",
-        createdSubscription
+        createdSubscription,
       );
     }
   } catch (error) {
@@ -300,11 +298,11 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
  * Helper para buscar ID do plano na tabela subscription_plans pelo stripe_price_id
  */
 async function getPlanIdByStripePrice(
-  stripePriceId: string
+  stripePriceId: string,
 ): Promise<string | null> {
   try {
     console.log(
-      `[Webhook] Buscando plano por stripe_price_id: ${stripePriceId}`
+      `[Webhook] Buscando plano por stripe_price_id: ${stripePriceId}`,
     );
 
     const { supabaseAdmin } = await import("@/lib/supabase-admin");
@@ -324,7 +322,7 @@ async function getPlanIdByStripePrice(
     if (error) {
       console.error(
         "[Webhook] Erro ao buscar plano por stripe_price_id:",
-        error
+        error,
       );
       return null;
     }

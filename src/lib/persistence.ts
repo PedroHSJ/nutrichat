@@ -4,7 +4,7 @@ import {
   encryptSensitiveData,
   decryptSensitiveData,
 } from "@/lib/supabase";
-import { authService, AuthUser } from "@/lib/auth";
+import type { AuthUser } from "@/types/auth";
 
 export class ChatPersistenceService {
   private currentUser: AuthUser | null = null;
@@ -118,7 +118,7 @@ export class ChatPersistenceService {
             role,
             created_at
           )
-        `
+        `,
         )
         .eq("user_id", this.currentUser!.id)
         .order("updated_at", { ascending: false });
@@ -138,7 +138,7 @@ export class ChatPersistenceService {
         for (const msgData of (chatData as any).messages || []) {
           try {
             const decryptedContent = decryptSensitiveData(
-              msgData.content_encrypted
+              msgData.content_encrypted,
             );
             messages.push({
               id: msgData.id,
@@ -150,7 +150,7 @@ export class ChatPersistenceService {
             console.error(
               "Erro ao descriptografar mensagem:",
               msgData.id,
-              error
+              error,
             );
           }
         }
@@ -158,13 +158,13 @@ export class ChatPersistenceService {
         // Descriptografar título do chat
         try {
           const decryptedTitle = await decryptSensitiveData(
-            chatData.title_encrypted
+            chatData.title_encrypted,
           );
           const chatWithMessages = {
             id: chatData.id,
             title: decryptedTitle,
             messages: messages.sort(
-              (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+              (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
             ),
             createdAt: new Date(chatData.created_at),
             updatedAt: new Date(chatData.updated_at),
@@ -174,7 +174,7 @@ export class ChatPersistenceService {
           console.error(
             "Erro ao descriptografar título do chat:",
             chatData.id,
-            error
+            error,
           );
         }
       }
@@ -275,17 +275,6 @@ export class ChatPersistenceService {
       console.error("Erro ao obter estatísticas:", error);
       return { totalChats: 0, totalMessages: 0 };
     }
-  }
-
-  // Exportar dados do usuário (usa função do authService)
-  async exportUserData(): Promise<Record<string, unknown> | null> {
-    return await authService.exportUserData();
-  }
-
-  // Limpar dados do usuário (delegado para authService)
-  async deleteAllUserData(): Promise<void> {
-    await authService.deleteAccount();
-    this.currentUser = null;
   }
 
   // Obter usuário atual

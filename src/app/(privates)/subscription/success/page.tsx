@@ -49,6 +49,7 @@ function SubscriptionSuccessContent() {
 
   useEffect(() => {
     if (sessionId) {
+      console.log("Verificando sessão de pagamento:", sessionId);
       verifyPayment();
     } else {
       setPaymentStatus("error");
@@ -166,7 +167,7 @@ function SubscriptionSuccessContent() {
                     <strong>Próxima cobrança:</strong>{" "}
                     {subscriptionDetails.nextBilling
                       ? new Date(
-                          subscriptionDetails.nextBilling
+                          subscriptionDetails.nextBilling,
                         ).toLocaleDateString()
                       : "Não disponível"}
                   </p>

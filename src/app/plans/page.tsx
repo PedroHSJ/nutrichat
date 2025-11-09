@@ -8,10 +8,10 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
-import { useAuthHeaders } from "@/hooks/use-auth-headers";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import { apiClient } from "@/lib/api";
 interface PlanOption {
   type: string;
   name: string;
@@ -26,9 +26,8 @@ interface PlanOption {
 
 async function getPlans(): Promise<PlanOption[]> {
   try {
-    const res = await fetch("/api/subscription/plans");
-    if (!res.ok) return [];
-    const data = await res.json();
+    const response = await apiClient.getPlans();
+    const data = response.data;
     const sortedPlans = (a: PlanOption, b: PlanOption) => {
       if (a.priceCents < b.priceCents) return -1;
       if (a.priceCents > b.priceCents) return 1;
@@ -44,14 +43,20 @@ async function getPlans(): Promise<PlanOption[]> {
 export default function PlansPage() {
   const [plans, setPlans] = useState<PlanOption[]>([]);
   const [loading, setLoading] = useState(true);
-  const authHeaders = useAuthHeaders();
-  const { logout, user } = useAuth();
+  const [checkoutPlanId, setCheckoutPlanId] = useState<string | null>(null);
+  const { logout, authLoading, isAuthenticated, session, user } = useAuth();
+  const displayName =
+    (user?.user_metadata as { name?: string } | undefined)?.name ??
+    (session?.user.user_metadata as { name?: string } | undefined)?.name ??
+    user?.email ??
+    session?.user.email ??
+    "";
   const router = useRouter();
   useEffect(() => {
-    if (!user) {
-      router.push("/");
+    if (!authLoading && !isAuthenticated) {
+      router.replace("/login");
     }
-  }, [user, router]);
+  }, [authLoading, isAuthenticated, router]);
 
   useEffect(() => {
     (async () => {
@@ -64,9 +69,17 @@ export default function PlansPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 flex flex-col items-center justify-center">
       <div className="mx-auto w-full max-w-4xl px-4 py-16 flex flex-col gap-12 items-center">
+        {authLoading && (
+          <div className="text-slate-300">Verificando sua sessão...</div>
+        )}
         <h1 className="text-4xl font-semibold text-white mb-2">
           Escolha seu plano
         </h1>
+        {session ? (
+          <p className="text-sm text-emerald-300">Oi, {displayName}!</p>
+        ) : (
+          <p className="text-sm text-amber-300">Nenhuma sessão ativa.</p>
+        )}
         <p className="mb-8 text-base text-slate-300 text-center max-w-2xl">
           Compare as opções e selecione o plano ideal para sua jornada no
           NutriChat.
@@ -113,30 +126,25 @@ export default function PlansPage() {
                     className="w-full bg-emerald-500/90 text-slate-900 shadow-sm shadow-emerald-500/30 transition hover:bg-emerald-400 hover:text-slate-900"
                     variant="default"
                     onClick={async () => {
+                      setCheckoutPlanId(plan.priceId);
                       try {
-                        const res = await fetch("/api/subscription/checkout", {
-                          method: "POST",
-                          headers: {
-                            ...authHeaders,
-                            "Content-Type": "application/json",
-                          },
-                          body: JSON.stringify({ priceId: plan.priceId }),
+                        const response = await apiClient.createCheckoutSession({
+                          priceId: plan.priceId,
                         });
-                        const data = await res.json();
+                        const data = response.data;
 
-                        // Tratamento específico para erro de assinatura duplicada
-                        if (res.status === 409) {
+                        if (response.status === 409) {
                           alert(
                             "⚠️ Você já possui uma assinatura ativa.\n\n" +
-                              "Para alterar seu plano, primeiro cancele sua assinatura atual na área de gerenciamento de assinaturas."
+                              "Para alterar seu plano, primeiro cancele sua assinatura atual na área de gerenciamento de assinaturas.",
                           );
                           return;
                         }
 
-                        if (!res.ok || !data.checkoutUrl) {
+                        if (!data.checkoutUrl) {
                           alert(
                             data?.error ||
-                              "Não foi possível iniciar o checkout."
+                              "Não foi possível iniciar o checkout.",
                           );
                           return;
                         }
@@ -144,11 +152,19 @@ export default function PlansPage() {
                       } catch (err) {
                         console.error("Erro ao iniciar checkout:", err);
                         alert("Erro ao iniciar checkout. Tente novamente.");
+                      } finally {
+                        setCheckoutPlanId(null);
                       }
                     }}
-                    disabled={!plan.priceId}
+                    disabled={
+                      !plan.priceId ||
+                      !session ||
+                      checkoutPlanId === plan.priceId
+                    }
                   >
-                    Selecionar plano
+                    {checkoutPlanId === plan.priceId
+                      ? "Iniciando..."
+                      : "Selecionar plano"}
                   </Button>
                 </CardContent>
               </Card>

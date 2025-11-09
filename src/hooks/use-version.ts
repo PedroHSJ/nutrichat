@@ -34,7 +34,7 @@ export function useVersion(): VersionInfo {
           return;
         }
       } catch (error) {
-        console.debug("Build version info not available");
+        console.debug("Build version info not available", error);
       }
 
       // Fallback: usa informações básicas do ambiente

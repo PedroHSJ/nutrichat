@@ -9,18 +9,18 @@ export async function POST(request: NextRequest) {
     if (!auth) {
       return NextResponse.json(
         { success: false, error: "Usuário não autenticado" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const result = await UserSubscriptionService.incrementInteractionUsage(
-      auth.user.id
+      auth.user.id,
     );
 
     if (!result.success) {
       return NextResponse.json(
         { success: false, error: result.error },
-        { status: result.status }
+        { status: result.status },
       );
     }
 
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     console.error("[user-subscription/increment] Unexpected error:", error);
     return NextResponse.json(
       { success: false, error: "Erro interno" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

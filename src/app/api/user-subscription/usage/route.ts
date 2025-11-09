@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     if (!auth) {
       return NextResponse.json(
         { error: "Usuário não autenticado" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     console.error("[user-subscription/usage] Unexpected error:", error);
     return NextResponse.json(
       { error: "Erro interno", details: String(error) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

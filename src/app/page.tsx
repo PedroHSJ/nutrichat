@@ -30,7 +30,7 @@ async function getPlans() {
   const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
   console.log(
     "[LandingPage] Buscando planos em:",
-    `${baseUrl}/api/subscription/plans`
+    `${baseUrl}/api/subscription/plans`,
   );
   const res = await fetch(`${baseUrl}/api/subscription/plans`, {
     next: { revalidate: 86400 },
@@ -47,7 +47,7 @@ async function getPlans() {
 
 export default async function LandingPage() {
   const plans = (await getPlans()).sort(
-    (a: PlanOption, b: PlanOption) => (a.priceCents ?? 0) - (b.priceCents ?? 0)
+    (a: PlanOption, b: PlanOption) => (a.priceCents ?? 0) - (b.priceCents ?? 0),
   ) as PlanOption[];
 
   return (
@@ -304,8 +304,8 @@ export default async function LandingPage() {
                         {plan.type === "starter"
                           ? "Profissionais independentes"
                           : plan.type === "pro"
-                          ? "Equipes em crescimento"
-                          : plan.type}
+                            ? "Equipes em crescimento"
+                            : plan.type}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-2 text-sm text-slate-200">

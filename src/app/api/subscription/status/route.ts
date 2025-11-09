@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { UserSubscriptionService } from "@/lib/subscription";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseBearerClient } from "@/lib/supabase-server";
 
 /**
  * GET /api/subscription/status
@@ -8,51 +8,49 @@ import { createClient } from "@supabase/supabase-js";
  */
 export async function GET(request: NextRequest) {
   try {
-    // Pega tokens dos headers da requisição
-    const authHeader = request.headers.get("authorization");
-    const refreshToken = request.headers.get("x-refresh-token");
+    // Extrair token do header Authorization
+    const authHeader = request.headers.get("Authorization");
+    const token = authHeader?.replace("Bearer ", "");
 
-    let accessToken = "";
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      accessToken = authHeader.substring(7);
-    }
+    console.log("Authorization header:", !!authHeader);
+    console.log("Token extracted:", !!token);
 
-    if (!accessToken) {
+    if (!token) {
+      console.log("❌ No token provided in Authorization header");
       return NextResponse.json(
-        { success: false, error: "Usuário não autenticado (token ausente)" },
-        { status: 401 }
+        { success: false, error: "Token de acesso não fornecido" },
+        { status: 401 },
       );
     }
 
-    // Cria cliente Supabase
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error(
-        "Supabase URL ou Anon Key não definidos nas variáveis de ambiente"
-      );
-    }
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    // Usar Bearer client em vez de Server client
+    const supabase = getSupabaseBearerClient(token);
 
-    // Seta sessão manualmente
     const {
-      data: { session },
+      data: { user },
       error,
-    } = await supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken || "",
+    } = await supabase.auth.getUser();
+
+    console.log("User fetched for subscription status:", {
+      hasUser: !!user,
+      userId: user?.id,
+      email: user?.email,
+      error: error?.message,
     });
 
-    if (error || !session?.user) {
+    if (error || !user) {
+      console.log("❌ Authentication failed:", error?.message);
       return NextResponse.json(
-        { success: false, error: "Usuário não autenticado (sessão inválida)" },
-        { status: 401 }
+        { success: false, error: "Usuário não autenticado" },
+        { status: 401 },
       );
     }
+
+    console.log("✅ User authenticated successfully:", user.email);
 
     // Obter status completo do usuário
     const interactionStatus = await UserSubscriptionService.canUserInteract(
-      session.user.id
+      user.id,
     );
 
     // Retornar status no formato UserInteractionStatus
@@ -64,7 +62,7 @@ export async function GET(request: NextRequest) {
         success: false,
         error: "Erro ao carregar status da assinatura",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

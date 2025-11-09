@@ -50,6 +50,7 @@ COMMENT ON TABLE user_subscriptions IS
 'Armazena assinaturas de usuários. POLÍTICA: Cada usuário pode ter apenas UMA assinatura ativa ou em trial por vez. Esta regra é aplicada via índice único parcial e trigger de validação.';
 
 -- 6. Criar função para obter assinatura ativa do usuário (helper útil)
+DROP FUNCTION IF EXISTS get_user_active_subscription(UUID);
 CREATE OR REPLACE FUNCTION get_user_active_subscription(p_user_id UUID)
 RETURNS TABLE (
   id UUID,

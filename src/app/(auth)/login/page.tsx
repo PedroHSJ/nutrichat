@@ -5,34 +5,18 @@ import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { LoginForm, type LoginFormValues } from "@/components/auth/AuthForm";
 import { useAuth } from "@/context/AuthContext";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, authError, authLoading, isAuthenticated } = useAuth();
+  const { login, loginWithGoogle, authError, authLoading, isAuthenticated } =
+    useAuth();
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Usa o hook de assinatura corretamente
   const { hasActivePlan, loading: subscriptionLoading } = useSubscription();
-
-  useEffect(() => {
-    if (!authLoading && isAuthenticated && !subscriptionLoading) {
-      if (hasActivePlan) {
-        router.replace("/agent-chat");
-      } else {
-        router.replace("/plans");
-      }
-    }
-  }, [
-    authLoading,
-    isAuthenticated,
-    subscriptionLoading,
-    hasActivePlan,
-    router,
-  ]);
 
   const handleLogin = async (values: LoginFormValues) => {
     try {
@@ -46,24 +30,13 @@ export default function LoginPage() {
   };
 
   const handleGoogle = async () => {
-    const supabase = getSupabaseBrowserClient();
-    const redirectTo =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/agent-chat`
-        : undefined;
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo,
-      },
-    });
-
-    if (error) {
-      throw new Error(error.message);
+    try {
+      setIsRedirecting(true);
+      await loginWithGoogle();
+    } catch (error) {
+      setIsRedirecting(false);
+      throw error;
     }
-
-    setIsRedirecting(true);
   };
 
   return (

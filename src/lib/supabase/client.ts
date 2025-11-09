@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 export function getSupabaseBrowserClient() {
   if (!supabase) {
     throw new Error(
-      "Supabase não está configurado. Defina NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY."
+      "Supabase não está configurado. Defina NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY.",
     );
   }
 

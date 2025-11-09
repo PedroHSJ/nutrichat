@@ -6,7 +6,6 @@ import Link from "next/link";
 import { RouteGuard } from "@/components/RouteGuard";
 import { CancelSubscriptionModal } from "@/components/CancelSubscriptionModal";
 import { useSubscription } from "@/hooks/use-subscription";
-import { useAuthHeaders } from "@/hooks/use-auth-headers";
 import type { UserInteractionStatus } from "@/types/subscription";
 import { cn } from "@/lib/utils";
 import {
@@ -35,6 +34,9 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
+import { apiClient } from "@/lib/api";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 
 type PlanMenuSection = "overview" | "change" | "billing" | "cancel";
 
@@ -144,7 +146,7 @@ function formatResetTime(value?: Date) {
 }
 
 export function normalizeStatus(
-  status: UserInteractionStatus | null
+  status: UserInteractionStatus | null,
 ): SubscriptionDetails | null {
   if (!status) {
     return null;
@@ -189,11 +191,10 @@ export default function PlansManagementPage() {
     loading: subscriptionLoading,
     refreshSubscription,
   } = useSubscription();
-  const authHeaders = useAuthHeaders();
 
   const effectiveStatus = useMemo(
     () => subscriptionDetails ?? normalizeStatus(subscriptionStatus ?? null),
-    [subscriptionDetails, subscriptionStatus]
+    [subscriptionDetails, subscriptionStatus],
   );
 
   const trialLabel = useMemo(() => {
@@ -218,24 +219,12 @@ export default function PlansManagementPage() {
   }, [effectiveStatus?.isTrialing, effectiveStatus?.trialEndsAt]);
 
   const fetchSubscriptionStatus = useCallback(async () => {
-    if (!authHeaders.Authorization) {
-      setStatusLoading(false);
-      return;
-    }
-
     try {
       setStatusLoading(true);
       setStatusError(null);
 
-      const response = await fetch("/api/subscription/status", {
-        headers: authHeaders,
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(
-          data?.error ?? "Nao foi possivel carregar sua assinatura"
-        );
-      }
+      const response = await apiClient.getSubscriptionStatus();
+      const data = response.data;
 
       setSubscriptionDetails(normalizeStatus(data));
     } catch (error) {
@@ -243,20 +232,15 @@ export default function PlansManagementPage() {
     } finally {
       setStatusLoading(false);
     }
-  }, [authHeaders]);
+  }, []);
 
   const fetchPlans = useCallback(async () => {
     try {
       setPlansLoading(true);
       setPlansError(null);
 
-      const response = await fetch("/api/subscription/plans");
-      const data = await response.json();
-      if (!response.ok || data?.success === false) {
-        throw new Error(
-          data?.error ?? "Nao foi possivel carregar os planos disponiveis"
-        );
-      }
+      const response = await apiClient.getPlans();
+      const data = response.data;
 
       setPlans(data.plans as PlanOption[]);
     } catch (error) {
@@ -292,14 +276,14 @@ export default function PlansManagementPage() {
       ? effectiveStatus.resetTime
       : undefined;
   const isCancelScheduled = Boolean(
-    (subscriptionDetails as SubscriptionDetails | null)?.cancelAtPeriodEnd
+    (subscriptionDetails as SubscriptionDetails | null)?.cancelAtPeriodEnd,
   );
   const isPaidPlan = planType !== "free";
 
   const handlePlanSelection = async (plan: PlanOption) => {
     if (!plan.priceId) {
       setActionError(
-        "Este plano ainda nao esta habilitado para checkout. Tente outra opcao ou fale com o suporte."
+        "Este plano ainda nao esta habilitado para checkout. Tente outra opcao ou fale com o suporte.",
       );
       return;
     }
@@ -308,14 +292,9 @@ export default function PlansManagementPage() {
       return;
     }
 
-    if (!authHeaders.Authorization) {
-      setActionError("Sessao expirada. Faca login novamente para continuar.");
-      return;
-    }
-
     if (isPaidPlan && subscriptionState === "active") {
       setActionError(
-        "Para migrar de plano, encerre a assinatura atual e depois selecione o novo plano desejado."
+        "Para migrar de plano, encerre a assinatura atual e depois selecione o novo plano desejado.",
       );
       setActiveSection("cancel");
       return;
@@ -326,22 +305,15 @@ export default function PlansManagementPage() {
       setActionError(null);
       setActionMessage(null);
 
-      const response = await fetch("/api/subscription/checkout", {
-        method: "POST",
-        headers: {
-          ...authHeaders,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          priceId: plan.priceId,
-        }),
+      const response = await apiClient.createCheckoutSession({
+        priceId: plan.priceId,
       });
+      const data = response.data;
 
-      const data = await response.json();
-      if (!response.ok || data?.success === false || !data.checkoutUrl) {
+      if (!data.checkoutUrl) {
         throw new Error(
           data?.error ??
-            "Nao foi possivel iniciar o processo de alteracao de plano."
+            "Nao foi possivel iniciar o processo de alteracao de plano.",
         );
       }
 
@@ -355,36 +327,17 @@ export default function PlansManagementPage() {
 
   const handleCancelSubscription = async (mode: "immediate" | "period") => {
     setLoadingCancel(true);
-    if (!authHeaders.Authorization) {
-      setActionError("Sessao expirada. Faca login novamente para continuar.");
-      setLoadingCancel(false);
-      return;
-    }
-
     try {
       setProcessingAction(true);
       setActionError(null);
       setActionMessage(null);
 
-      const response = await fetch("/api/subscription/cancel", {
-        method: "POST",
-        headers: {
-          ...authHeaders,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ type: mode }),
-      });
-
-      const data = await response.json();
-      if (!response.ok || data?.success === false) {
-        throw new Error(
-          data?.error ?? "Nao foi possivel cancelar sua assinatura."
-        );
-      }
+      const response = await apiClient.cancelSubscription();
+      const data = response.data;
 
       setActionMessage(
         data?.message ??
-          "Sua assinatura foi cancelada. Voce pode reativa-la quando quiser."
+          "Sua assinatura foi cancelada. Voce pode reativa-la quando quiser.",
       );
       await fetchSubscriptionStatus();
       await refreshSubscription();
@@ -490,8 +443,8 @@ export default function PlansManagementPage() {
                     usagePercentage >= 95
                       ? "bg-rose-500"
                       : usagePercentage >= 75
-                      ? "bg-amber-400"
-                      : "bg-emerald-400"
+                        ? "bg-amber-400"
+                        : "bg-emerald-400",
                   )}
                   style={{ width: `${usagePercentage}%` }}
                 />
@@ -525,7 +478,7 @@ export default function PlansManagementPage() {
         key={`${plan.type}-${plan.priceId}`}
         className={cn(
           "flex flex-col justify-between border",
-          isCurrentPlan && "border-emerald-500/50 shadow-emerald-500/10"
+          isCurrentPlan && "border-emerald-500/50 shadow-emerald-500/10",
         )}
       >
         <CardHeader>
@@ -568,7 +521,7 @@ export default function PlansManagementPage() {
             variant={"default"}
             className={cn(
               "w-full",
-              (!hasPriceId || isCurrentPlan) && "cursor-not-allowed"
+              (!hasPriceId || isCurrentPlan) && "cursor-not-allowed",
             )}
             disabled={isCurrentPlan || !hasPriceId || processingAction}
             onClick={() => handlePlanSelection(plan)}
@@ -576,10 +529,10 @@ export default function PlansManagementPage() {
             {isCurrentPlan
               ? "Plano em uso"
               : !hasPriceId
-              ? "Indisponivel no momento"
-              : subscriptionState === "active" && isPaidPlan
-              ? "Cancelar plano atual para alterar"
-              : "Selecionar plano"}
+                ? "Indisponivel no momento"
+                : subscriptionState === "active" && isPaidPlan
+                  ? "Cancelar plano atual para alterar"
+                  : "Selecionar plano"}
           </Button>
         </CardContent>
       </Card>
@@ -766,101 +719,108 @@ export default function PlansManagementPage() {
   const isLoading = statusLoading || subscriptionLoading;
 
   return (
-    <div className="">
+    <div className="w-full h-screen flex flex-col overflow-hidden">
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="h-6" />
+        </div>
+      </header>
       <CancelSubscriptionModal
         open={showCancelModal}
         onClose={() => setShowCancelModal(false)}
         onCancel={() => handleCancelSubscription("immediate")}
         loadingCancel={loadingCancel}
       />
+      <div className="px-8 py-4">
+        <Tabs
+          value={activeSection}
+          onValueChange={(value) => setActiveSection(value as PlanMenuSection)}
+          className="min-h-screen py-8"
+        >
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+            <div>
+              <h1 className="text-3xl font-semibold">Central de planos</h1>
+              <p className="mt-2 text-sm text-slate-500">
+                Gerencie assinatura, cobrancas e upgrade em um so lugar.
+              </p>
+            </div>
 
-      <Tabs
-        value={activeSection}
-        onValueChange={(value) => setActiveSection(value as PlanMenuSection)}
-        className="min-h-screen py-8"
-      >
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-          <div>
-            <h1 className="text-3xl font-semibold">Central de planos</h1>
-            <p className="mt-2 text-sm text-slate-500">
-              Gerencie assinatura, cobrancas e upgrade em um so lugar.
-            </p>
-          </div>
-
-          <TabsList className="flex flex-wrap gap-3 bg-transparent p-0">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <TabsTrigger
-                  key={item.id}
-                  value={item.id}
-                  className={cn(
-                    "group flex min-w-[220px] flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left text-sm font-medium shadow-sm transition hover:border-emerald-300 hover:bg-emerald-500/10",
-                    "data-[state=active]:border-emerald-400 data-[state=active]:bg-emerald-500/15 data-[state=active]:shadow-md data-[state=active]:shadow-emerald-500/20"
-                  )}
-                >
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition group-data-[state=active]:bg-emerald-500/20 group-data-[state=active]:text-emerald-600">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <div className="flex flex-1 flex-col justify-center">
-                    <span>{item.label}</span>
-                    <span className="text-xs text-slate-500">
-                      {item.description}
+            <TabsList className="flex flex-wrap gap-3 bg-transparent p-0">
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <TabsTrigger
+                    key={item.id}
+                    value={item.id}
+                    className={cn(
+                      "group flex min-w-[220px] flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left text-sm font-medium shadow-sm transition hover:border-emerald-300 hover:bg-emerald-500/10",
+                      "data-[state=active]:border-emerald-400 data-[state=active]:bg-emerald-500/15 data-[state=active]:shadow-md data-[state=active]:shadow-emerald-500/20",
+                    )}
+                  >
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition group-data-[state=active]:bg-emerald-500/20 group-data-[state=active]:text-emerald-600">
+                      <Icon className="h-4 w-4" />
                     </span>
-                  </div>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
+                    <div className="flex flex-1 flex-col justify-center">
+                      <span>{item.label}</span>
+                      <span className="text-xs text-slate-500">
+                        {item.description}
+                      </span>
+                    </div>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            {actionMessage && (
-              <Alert className="mb-4 border border-emerald-500/30 bg-emerald-500/10">
-                <AlertTitle>Processo concluido</AlertTitle>
-                <AlertDescription>{actionMessage}</AlertDescription>
-              </Alert>
-            )}
-            {actionError && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertTitle>Ops! Algo nao saiu como esperado</AlertTitle>
-                <AlertDescription>{actionError}</AlertDescription>
-              </Alert>
-            )}
-            {statusError && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertTitle>
-                  Nao foi possivel carregar sua assinatura
-                </AlertTitle>
-                <AlertDescription>{statusError}</AlertDescription>
-              </Alert>
-            )}
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              {actionMessage && (
+                <Alert className="mb-4 border border-emerald-500/30 bg-emerald-500/10">
+                  <AlertTitle>Processo concluido</AlertTitle>
+                  <AlertDescription>{actionMessage}</AlertDescription>
+                </Alert>
+              )}
+              {actionError && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTitle>Ops! Algo nao saiu como esperado</AlertTitle>
+                  <AlertDescription>{actionError}</AlertDescription>
+                </Alert>
+              )}
+              {statusError && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTitle>
+                    Nao foi possivel carregar sua assinatura
+                  </AlertTitle>
+                  <AlertDescription>{statusError}</AlertDescription>
+                </Alert>
+              )}
 
-            {isLoading ? (
-              <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50">
-                <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
-                <p className="text-sm text-slate-600">
-                  Carregando dados da assinatura...
-                </p>
-              </div>
-            ) : (
-              <>
-                <TabsContent value="overview" className="mt-0">
-                  {renderOverview()}
-                </TabsContent>
-                <TabsContent value="change" className="mt-0">
-                  {renderChange()}
-                </TabsContent>
-                <TabsContent value="billing" className="mt-0">
-                  {renderBilling()}
-                </TabsContent>
-                <TabsContent value="cancel" className="mt-0">
-                  {renderCancel()}
-                </TabsContent>
-              </>
-            )}
+              {isLoading ? (
+                <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50">
+                  <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+                  <p className="text-sm text-slate-600">
+                    Carregando dados da assinatura...
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <TabsContent value="overview" className="mt-0">
+                    {renderOverview()}
+                  </TabsContent>
+                  <TabsContent value="change" className="mt-0">
+                    {renderChange()}
+                  </TabsContent>
+                  <TabsContent value="billing" className="mt-0">
+                    {renderBilling()}
+                  </TabsContent>
+                  <TabsContent value="cancel" className="mt-0">
+                    {renderCancel()}
+                  </TabsContent>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   );
 }

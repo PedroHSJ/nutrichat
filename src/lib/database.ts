@@ -157,8 +157,8 @@ export interface SupabaseMessage {
   created_at: string;
   content_encrypted: string;
   content_hash?: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   tokens_used?: number;
-  sentiment?: 'positive' | 'neutral' | 'negative';
+  sentiment?: "positive" | "neutral" | "negative";
   category?: string;
 }

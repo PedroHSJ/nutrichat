@@ -8,11 +8,15 @@ function getInitialScheme(): ColorScheme {
   if (typeof window === "undefined") {
     return "light";
   }
-  const stored = window.localStorage.getItem(THEME_STORAGE_KEY) as ColorScheme | null;
+  const stored = window.localStorage.getItem(
+    THEME_STORAGE_KEY,
+  ) as ColorScheme | null;
   if (stored === "light" || stored === "dark") {
     return stored;
   }
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
 export function useColorScheme() {
@@ -33,7 +37,9 @@ export function useColorScheme() {
     setScheme((current) => (current === "dark" ? "light" : "dark"));
   }, []);
 
-  const setExplicit = useCallback((value: ColorScheme) => { setScheme(value); }, []);
+  const setExplicit = useCallback((value: ColorScheme) => {
+    setScheme(value);
+  }, []);
 
   return { scheme, toggle, setScheme: setExplicit };
 }

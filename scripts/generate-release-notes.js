@@ -5,20 +5,20 @@
  * Uso: node scripts/generate-release-notes.js [patch|minor|major]
  */
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+const fs = require("fs");
+const path = require("path");
+const { execSync } = require("child_process");
 
 // Função para obter a próxima versão
-function getNextVersion(currentVersion, type = 'patch') {
-  const [major, minor, patch] = currentVersion.split('.').map(Number);
-  
+function getNextVersion(currentVersion, type = "patch") {
+  const [major, minor, patch] = currentVersion.split(".").map(Number);
+
   switch (type) {
-    case 'major':
+    case "major":
       return `${major + 1}.0.0`;
-    case 'minor':
+    case "minor":
       return `${major}.${minor + 1}.0`;
-    case 'patch':
+    case "patch":
     default:
       return `${major}.${minor}.${patch + 1}`;
   }
@@ -27,13 +27,19 @@ function getNextVersion(currentVersion, type = 'patch') {
 // Função para obter commits desde a última tag
 function getCommitsSinceLastTag() {
   try {
-    const lastTag = execSync('git describe --tags --abbrev=0', { encoding: 'utf8' }).trim();
-    const commits = execSync(`git log ${lastTag}..HEAD --oneline --no-merges`, { encoding: 'utf8' }).trim();
-    return commits ? commits.split('\n') : [];
+    const lastTag = execSync("git describe --tags --abbrev=0", {
+      encoding: "utf8",
+    }).trim();
+    const commits = execSync(`git log ${lastTag}..HEAD --oneline --no-merges`, {
+      encoding: "utf8",
+    }).trim();
+    return commits ? commits.split("\n") : [];
   } catch (error) {
     // Se não há tags, pega todos os commits
-    const commits = execSync('git log --oneline --no-merges', { encoding: 'utf8' }).trim();
-    return commits ? commits.split('\n') : [];
+    const commits = execSync("git log --oneline --no-merges", {
+      encoding: "utf8",
+    }).trim();
+    return commits ? commits.split("\n") : [];
   }
 }
 
@@ -44,27 +50,43 @@ function categorizeCommits(commits) {
     fixes: [],
     improvements: [],
     technical: [],
-    breaking: []
+    breaking: [],
   };
 
-  commits.forEach(commit => {
+  commits.forEach((commit) => {
     const message = commit.toLowerCase();
-    
-    if (message.includes('feat:') || message.includes('feature:')) {
+
+    if (message.includes("feat:") || message.includes("feature:")) {
       categories.features.push(commit);
-    } else if (message.includes('fix:') || message.includes('bug:')) {
+    } else if (message.includes("fix:") || message.includes("bug:")) {
       categories.fixes.push(commit);
-    } else if (message.includes('improve:') || message.includes('perf:') || message.includes('style:')) {
+    } else if (
+      message.includes("improve:") ||
+      message.includes("perf:") ||
+      message.includes("style:")
+    ) {
       categories.improvements.push(commit);
-    } else if (message.includes('refactor:') || message.includes('chore:') || message.includes('deps:')) {
+    } else if (
+      message.includes("refactor:") ||
+      message.includes("chore:") ||
+      message.includes("deps:")
+    ) {
       categories.technical.push(commit);
-    } else if (message.includes('breaking:') || message.includes('!:')) {
+    } else if (message.includes("breaking:") || message.includes("!:")) {
       categories.breaking.push(commit);
     } else {
       // Categorizar por palavras-chave
-      if (message.includes('add') || message.includes('implement') || message.includes('create')) {
+      if (
+        message.includes("add") ||
+        message.includes("implement") ||
+        message.includes("create")
+      ) {
         categories.features.push(commit);
-      } else if (message.includes('fix') || message.includes('correct') || message.includes('resolve')) {
+      } else if (
+        message.includes("fix") ||
+        message.includes("correct") ||
+        message.includes("resolve")
+      ) {
         categories.fixes.push(commit);
       } else {
         categories.improvements.push(commit);
@@ -77,22 +99,22 @@ function categorizeCommits(commits) {
 
 // Função para gerar template baseado em commits
 function generateReleaseNotes(version, type, commits) {
-  const date = new Date().toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
+  const date = new Date().toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
   });
 
   const typeLabels = {
-    major: 'Major (Breaking Changes)',
-    minor: 'Minor (Novas Funcionalidades)',
-    patch: 'Patch (Correções e Melhorias)'
+    major: "Major (Breaking Changes)",
+    minor: "Minor (Novas Funcionalidades)",
+    patch: "Patch (Correções e Melhorias)",
   };
 
   const typeIcons = {
-    major: '🚀',
-    minor: '✨',
-    patch: '🔧'
+    major: "🚀",
+    minor: "✨",
+    patch: "🔧",
   };
 
   const categories = categorizeCommits(commits);
@@ -108,15 +130,17 @@ function generateReleaseNotes(version, type, commits) {
 `;
 
   // Breaking Changes (para major)
-  if (type === 'major' && categories.breaking.length > 0) {
+  if (type === "major" && categories.breaking.length > 0) {
     content += `## ⚠️ **Breaking Changes**
 
 `;
-    categories.breaking.forEach(commit => {
-      const message = commit.replace(/^[a-f0-9]+\s/, '').replace(/^breaking:\s*/i, '');
+    categories.breaking.forEach((commit) => {
+      const message = commit
+        .replace(/^[a-f0-9]+\s/, "")
+        .replace(/^breaking:\s*/i, "");
       content += `- **${message}**: [Descrever impacto e migração necessária]\n`;
     });
-    content += '\n---\n\n';
+    content += "\n---\n\n";
   }
 
   // Novas Funcionalidades
@@ -124,11 +148,13 @@ function generateReleaseNotes(version, type, commits) {
     content += `## ✨ **Novas Funcionalidades**
 
 `;
-    categories.features.forEach(commit => {
-      const message = commit.replace(/^[a-f0-9]+\s/, '').replace(/^(feat|feature):\s*/i, '');
+    categories.features.forEach((commit) => {
+      const message = commit
+        .replace(/^[a-f0-9]+\s/, "")
+        .replace(/^(feat|feature):\s*/i, "");
       content += `- **${message}**: [Descrever funcionalidade em detalhes]\n`;
     });
-    content += '\n---\n\n';
+    content += "\n---\n\n";
   }
 
   // Correções de Bugs
@@ -136,11 +162,13 @@ function generateReleaseNotes(version, type, commits) {
     content += `## 🐛 **Correções de Bugs**
 
 `;
-    categories.fixes.forEach(commit => {
-      const message = commit.replace(/^[a-f0-9]+\s/, '').replace(/^(fix|bug):\s*/i, '');
+    categories.fixes.forEach((commit) => {
+      const message = commit
+        .replace(/^[a-f0-9]+\s/, "")
+        .replace(/^(fix|bug):\s*/i, "");
       content += `- **${message}**: [Descrever problema e solução]\n`;
     });
-    content += '\n---\n\n';
+    content += "\n---\n\n";
   }
 
   // Melhorias
@@ -148,11 +176,13 @@ function generateReleaseNotes(version, type, commits) {
     content += `## ⚡ **Melhorias**
 
 `;
-    categories.improvements.forEach(commit => {
-      const message = commit.replace(/^[a-f0-9]+\s/, '').replace(/^(improve|perf|style):\s*/i, '');
+    categories.improvements.forEach((commit) => {
+      const message = commit
+        .replace(/^[a-f0-9]+\s/, "")
+        .replace(/^(improve|perf|style):\s*/i, "");
       content += `- **${message}**: [Descrever melhoria e benefício]\n`;
     });
-    content += '\n---\n\n';
+    content += "\n---\n\n";
   }
 
   // Alterações Técnicas
@@ -160,18 +190,20 @@ function generateReleaseNotes(version, type, commits) {
     content += `## 🔧 **Alterações Técnicas**
 
 `;
-    categories.technical.forEach(commit => {
-      const message = commit.replace(/^[a-f0-9]+\s/, '').replace(/^(refactor|chore|deps):\s*/i, '');
+    categories.technical.forEach((commit) => {
+      const message = commit
+        .replace(/^[a-f0-9]+\s/, "")
+        .replace(/^(refactor|chore|deps):\s*/i, "");
       content += `- **${message}**: [Descrever mudança técnica]\n`;
     });
-    content += '\n---\n\n';
+    content += "\n---\n\n";
   }
 
   // Próximas versões
   const nextVersions = {
-    patch: { version: getNextVersion(version, 'minor'), type: 'minor' },
-    minor: { version: getNextVersion(version, 'minor'), type: 'minor' },
-    major: { version: getNextVersion(version, 'minor'), type: 'minor' }
+    patch: { version: getNextVersion(version, "minor"), type: "minor" },
+    minor: { version: getNextVersion(version, "minor"), type: "minor" },
+    major: { version: getNextVersion(version, "minor"), type: "minor" },
   };
 
   content += `## 📈 **Próxima Versão (v${nextVersions[type].version})**
@@ -197,16 +229,16 @@ Planejado para a próxima versão:
 // Função principal
 function main() {
   const args = process.argv.slice(2);
-  const versionType = args[0] || 'patch';
+  const versionType = args[0] || "patch";
 
-  if (!['patch', 'minor', 'major'].includes(versionType)) {
-    console.error('❌ Tipo de versão inválido. Use: patch, minor ou major');
+  if (!["patch", "minor", "major"].includes(versionType)) {
+    console.error("❌ Tipo de versão inválido. Use: patch, minor ou major");
     process.exit(1);
   }
 
   try {
     // Ler versão atual
-    const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+    const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
     const currentVersion = packageJson.version;
     const nextVersion = getNextVersion(currentVersion, versionType);
 
@@ -218,7 +250,11 @@ function main() {
     console.log(`📝 Encontrados ${commits.length} commits desde a última tag`);
 
     // Gerar release notes
-    const releaseNotes = generateReleaseNotes(nextVersion, versionType, commits);
+    const releaseNotes = generateReleaseNotes(
+      nextVersion,
+      versionType,
+      commits,
+    );
     const filename = `RELEASE_NOTES_v${nextVersion}.md`;
 
     // Salvar arquivo
@@ -226,14 +262,15 @@ function main() {
     console.log(`✅ Release notes criadas: ${filename}`);
 
     // Mostrar próximos passos
-    console.log('\n📋 Próximos passos:');
-    console.log('1. Edite o arquivo de release notes gerado');
-    console.log('2. Preencha as descrições detalhadas');
-    console.log('3. Execute: npm run release');
-    console.log(`4. Ou execute: npm version ${versionType} && git push origin master --follow-tags`);
-
+    console.log("\n📋 Próximos passos:");
+    console.log("1. Edite o arquivo de release notes gerado");
+    console.log("2. Preencha as descrições detalhadas");
+    console.log("3. Execute: npm run release");
+    console.log(
+      `4. Ou execute: npm version ${versionType} && git push origin master --follow-tags`,
+    );
   } catch (error) {
-    console.error('❌ Erro ao gerar release notes:', error.message);
+    console.error("❌ Erro ao gerar release notes:", error.message);
     process.exit(1);
   }
 }

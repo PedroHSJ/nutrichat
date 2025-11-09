@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { UserSubscriptionService } from "@/lib/subscription";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseServerClient } from "@/lib/supabase-server";
 
 /**
  * POST /api/subscription/cancel
@@ -8,52 +8,24 @@ import { createClient } from "@supabase/supabase-js";
  */
 export async function POST(request: NextRequest) {
   try {
-    // Pega tokens dos headers da requisição
-    const authHeader = request.headers.get("authorization");
-    const refreshToken = request.headers.get("x-refresh-token");
-
-    let accessToken = "";
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      accessToken = authHeader.substring(7);
-    }
-
-    if (!accessToken) {
-      return NextResponse.json(
-        { success: false, error: "Usuário não autenticado (token ausente)" },
-        { status: 401 }
-      );
-    }
-
-    // Cria cliente Supabase
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error(
-        "Supabase URL ou Anon Key não definidos nas variáveis de ambiente"
-      );
-    }
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-    // Seta sessão manualmente
+    const res = new NextResponse();
+    const supabase = getSupabaseServerClient(request, res);
     const {
-      data: { session },
+      data: { user },
       error,
-    } = await supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken || "",
-    });
+    } = await supabase.auth.getUser();
 
-    if (error || !session?.user) {
+    if (error || !user) {
       return NextResponse.json(
-        { success: false, error: "Usuário não autenticado (sessão inválida)" },
-        { status: 401 }
+        { success: false, error: "Usuário não autenticado" },
+        { status: 401 },
       );
     }
 
     // Cancelar assinatura
     const success = await UserSubscriptionService.cancelUserSubscription(
-      session.user.id,
-      false // cancelar imediatamente
+      user.id,
+      false, // cancelar imediatamente
     );
 
     if (success) {
@@ -67,7 +39,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Falha ao cancelar assinatura",
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
   } catch (error) {
@@ -81,7 +53,7 @@ export async function POST(request: NextRequest) {
             success: false,
             error: "Você não possui uma assinatura ativa para cancelar",
           },
-          { status: 409 }
+          { status: 409 },
         );
       }
     }
@@ -91,7 +63,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: "Erro interno ao cancelar assinatura",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

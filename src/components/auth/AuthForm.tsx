@@ -32,7 +32,7 @@ export function LoginForm({
   isBusy?: boolean;
 }) {
   const [formError, setFormError] = useState<string | null>(
-    serverError ?? null
+    serverError ?? null,
   );
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
@@ -241,7 +241,7 @@ export function RegisterForm({
   isBusy?: boolean;
 }) {
   const [formError, setFormError] = useState<string | null>(
-    serverError ?? null
+    serverError ?? null,
   );
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 

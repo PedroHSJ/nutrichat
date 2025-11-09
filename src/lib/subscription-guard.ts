@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { UserSubscriptionService } from "@/lib/subscription";
-import { authService } from "@/lib/auth";
+import { getSupabaseBearerClient } from "@/lib/supabase-server";
 
 // =====================================================
 // INTERFACES E TIPOS
@@ -51,7 +51,7 @@ export class SubscriptionGuard {
    */
   static async validateSubscription(
     request: NextRequest,
-    config: SubscriptionGuardConfig = {}
+    config: SubscriptionGuardConfig = {},
   ): Promise<NextResponse | null> {
     const {
       requireSubscription = true,
@@ -64,7 +64,7 @@ export class SubscriptionGuard {
       // BYPASS PARA DESENVOLVIMENTO
       if (bypassInDevelopment && process.env.NODE_ENV === "development") {
         console.log(
-          "[SUBSCRIPTION GUARD] Bypassing validation in development mode"
+          "[SUBSCRIPTION GUARD] Bypassing validation in development mode",
         );
         return null; // Permite continuar
       }
@@ -74,7 +74,7 @@ export class SubscriptionGuard {
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return this.createErrorResponse(
           "Token de autenticação necessário",
-          401
+          401,
         );
       }
 
@@ -104,7 +104,7 @@ export class SubscriptionGuard {
       if (checkInteractionLimit && status.remainingInteractions <= 0) {
         return this.createErrorResponse(
           "Limite diário de interações atingido",
-          429 // Too Many Requests
+          429, // Too Many Requests
         );
       }
 
@@ -118,7 +118,7 @@ export class SubscriptionGuard {
       console.error("[SUBSCRIPTION GUARD] Erro na validação:", error);
       return this.createErrorResponse(
         "Erro interno na validação de assinatura",
-        500
+        500,
       );
     }
   }
@@ -127,7 +127,7 @@ export class SubscriptionGuard {
    * Guard específico para rotas de chat (consome interação)
    */
   static async validateChatInteraction(
-    request: NextRequest
+    request: NextRequest,
   ): Promise<NextResponse | null> {
     return this.validateSubscription(request, {
       requireSubscription: true,
@@ -140,7 +140,7 @@ export class SubscriptionGuard {
    * Guard específico para rotas administrativas (sem consumir interação)
    */
   static async validateUserAccess(
-    request: NextRequest
+    request: NextRequest,
   ): Promise<NextResponse | null> {
     return this.validateSubscription(request, {
       requireSubscription: false,
@@ -153,13 +153,13 @@ export class SubscriptionGuard {
    * Incrementar uso após interação bem-sucedida
    */
   static async incrementUsageAfterInteraction(
-    userId: string
+    userId: string,
   ): Promise<boolean> {
     try {
       // BYPASS PARA DESENVOLVIMENTO
       if (process.env.NODE_ENV === "development") {
         console.log(
-          "[SUBSCRIPTION GUARD] Bypassing usage increment in development"
+          "[SUBSCRIPTION GUARD] Bypassing usage increment in development",
         );
         return true;
       }
@@ -169,7 +169,7 @@ export class SubscriptionGuard {
       if (!result.success) {
         console.error(
           "[SUBSCRIPTION GUARD] Falha ao incrementar uso:",
-          result.error
+          result.error,
         );
       }
       return result.success;
@@ -184,10 +184,12 @@ export class SubscriptionGuard {
    */
   private static async getUserFromToken(token: string) {
     try {
-      // Implementar validação do JWT aqui
-      // Por enquanto, usar uma implementação simples
-      const user = await authService.getCurrentSession();
-      return user;
+      const supabase = getSupabaseBearerClient(token);
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) {
+        return null;
+      }
+      return data.user;
     } catch (error) {
       console.error("[SUBSCRIPTION GUARD] Erro ao validar token:", error);
       return null;
@@ -199,7 +201,7 @@ export class SubscriptionGuard {
    */
   private static createErrorResponse(
     message: string,
-    status: number
+    status: number,
   ): NextResponse {
     return NextResponse.json(
       {
@@ -207,7 +209,7 @@ export class SubscriptionGuard {
         code: status,
         timestamp: new Date().toISOString(),
       },
-      { status }
+      { status },
     );
   }
 
@@ -216,7 +218,7 @@ export class SubscriptionGuard {
    */
   private static getErrorMessage(
     status: InteractionStatus,
-    customMessage?: string
+    customMessage?: string,
   ): string {
     if (customMessage) return customMessage;
 
@@ -249,13 +251,13 @@ export class SubscriptionGuard {
  */
 export function withSubscriptionGuard(
   handler: (req: NextRequest) => Promise<NextResponse>,
-  config?: SubscriptionGuardConfig
+  config?: SubscriptionGuardConfig,
 ) {
   return async (req: NextRequest): Promise<NextResponse> => {
     // Aplicar validação
     const guardResult = await SubscriptionGuard.validateSubscription(
       req,
-      config
+      config,
     );
 
     // Se guard retornou erro, retornar erro
@@ -272,7 +274,7 @@ export function withSubscriptionGuard(
  * Wrapper específico para rotas de chat
  */
 export function withChatGuard(
-  handler: (req: NextRequest) => Promise<NextResponse>
+  handler: (req: NextRequest) => Promise<NextResponse>,
 ) {
   return withSubscriptionGuard(handler, {
     requireSubscription: true,
@@ -285,9 +287,8 @@ export function withChatGuard(
  * Hook para usar dentro de API routes para incrementar uso
  */
 export async function incrementInteractionUsage(userId: string): Promise<void> {
-  const success = await SubscriptionGuard.incrementUsageAfterInteraction(
-    userId
-  );
+  const success =
+    await SubscriptionGuard.incrementUsageAfterInteraction(userId);
   if (!success && process.env.NODE_ENV !== "development") {
     throw new Error("Falha ao registrar uso da interação");
   }
@@ -301,7 +302,7 @@ export function createSubscriptionMiddleware(config?: SubscriptionGuardConfig) {
     // Aplicar apenas em rotas específicas
     const protectedRoutes = ["/api/chat", "/api/subscription"];
     const isProtectedRoute = protectedRoutes.some((route) =>
-      request.nextUrl.pathname.startsWith(route)
+      request.nextUrl.pathname.startsWith(route),
     );
 
     if (!isProtectedRoute) {
@@ -311,7 +312,7 @@ export function createSubscriptionMiddleware(config?: SubscriptionGuardConfig) {
     // Aplicar guard
     const guardResult = await SubscriptionGuard.validateSubscription(
       request,
-      config
+      config,
     );
 
     if (guardResult) {

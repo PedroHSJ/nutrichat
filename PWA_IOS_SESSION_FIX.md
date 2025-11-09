@@ -335,7 +335,7 @@ const urlsToCache = [
 // Instalação
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache)),
   );
   self.skipWaiting();
 });
@@ -349,9 +349,9 @@ self.addEventListener("activate", (event) => {
           if (cacheName !== CACHE_NAME) {
             return caches.delete(cacheName);
           }
-        })
+        }),
       );
-    })
+    }),
   );
   self.clients.claim();
 });
@@ -378,7 +378,7 @@ self.addEventListener("fetch", (event) => {
       .catch(() => {
         // Se network falhar, tentar cache
         return caches.match(event.request);
-      })
+      }),
   );
 });
 ```
@@ -489,7 +489,6 @@ useEffect(() => {
    ```
 
 2. **No iPhone:**
-
    - Abra o Safari e acesse o app
    - Clique em "Compartilhar" → "Adicionar à Tela de Início"
    - Abra o app instalado

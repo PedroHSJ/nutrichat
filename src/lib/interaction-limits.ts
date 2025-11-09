@@ -1,10 +1,10 @@
-import { supabase } from './supabase';
+import { supabase } from "./supabase";
 
 export interface UserInteractionStatus {
   canInteract: boolean;
   remainingInteractions: number;
   dailyLimit: number;
-  planType: 'free' | 'premium' | 'enterprise';
+  planType: "free" | "premium" | "enterprise";
   resetTime: Date;
 }
 
@@ -19,7 +19,7 @@ export class InteractionLimitService {
   private static readonly PLAN_LIMITS: PlanLimits = {
     free: 100,
     premium: 1000,
-    enterprise: -1 // ilimitado
+    enterprise: -1, // ilimitado
   };
 
   // Verificar se Supabase está configurado
@@ -35,47 +35,56 @@ export class InteractionLimitService {
         canInteract: true,
         remainingInteractions: -1,
         dailyLimit: -1,
-        planType: 'free',
-        resetTime: new Date()
+        planType: "free",
+        resetTime: new Date(),
       };
     }
 
     try {
       // Usar função do banco para verificar se pode interagir
-      const { data: canInteract, error: canInteractError } = await supabase!
-        .rpc('can_user_interact', { user_id: userId });
+      const { data: canInteract, error: canInteractError } =
+        await supabase!.rpc("can_user_interact", { user_id: userId });
 
       if (canInteractError) {
-        console.error('Erro ao verificar se usuário pode interagir:', canInteractError);
+        console.error(
+          "Erro ao verificar se usuário pode interagir:",
+          canInteractError,
+        );
         // Em caso de erro, permitir a interação
         return {
           canInteract: true,
           remainingInteractions: -1,
           dailyLimit: -1,
-          planType: 'free',
-          resetTime: new Date()
+          planType: "free",
+          resetTime: new Date(),
         };
       }
 
       // Buscar detalhes do usuário
       const { data: userProfile, error: profileError } = await supabase!
-        .from('user_profiles')
-        .select('daily_interactions_count, daily_interactions_limit, plan_type, daily_interactions_reset_date')
-        .eq('id', userId)
+        .from("user_profiles")
+        .select(
+          "daily_interactions_count, daily_interactions_limit, plan_type, daily_interactions_reset_date",
+        )
+        .eq("id", userId)
         .single();
 
       if (profileError || !userProfile) {
-        console.error('Erro ao buscar perfil do usuário:', profileError);
+        console.error("Erro ao buscar perfil do usuário:", profileError);
         return {
           canInteract: true,
           remainingInteractions: -1,
           dailyLimit: -1,
-          planType: 'free',
-          resetTime: new Date()
+          planType: "free",
+          resetTime: new Date(),
         };
       }
 
-      const remainingInteractions = Math.max(0, userProfile.daily_interactions_limit - userProfile.daily_interactions_count);
+      const remainingInteractions = Math.max(
+        0,
+        userProfile.daily_interactions_limit -
+          userProfile.daily_interactions_count,
+      );
       const resetTime = new Date(userProfile.daily_interactions_reset_date);
       resetTime.setDate(resetTime.getDate() + 1); // Reset no próximo dia
 
@@ -83,18 +92,18 @@ export class InteractionLimitService {
         canInteract: canInteract as boolean,
         remainingInteractions,
         dailyLimit: userProfile.daily_interactions_limit,
-        planType: userProfile.plan_type as 'free' | 'premium' | 'enterprise',
-        resetTime
+        planType: userProfile.plan_type as "free" | "premium" | "enterprise",
+        resetTime,
       };
     } catch (error) {
-      console.error('Erro ao verificar limitação de interações:', error);
+      console.error("Erro ao verificar limitação de interações:", error);
       // Em caso de erro, permitir a interação
       return {
         canInteract: true,
         remainingInteractions: -1,
         dailyLimit: -1,
-        planType: 'free',
-        resetTime: new Date()
+        planType: "free",
+        resetTime: new Date(),
       };
     }
   }
@@ -107,46 +116,50 @@ export class InteractionLimitService {
     }
 
     try {
-      const { data: success, error } = await supabase!
-        .rpc('increment_user_interactions', { user_id: userId });
+      const { data: success, error } = await supabase!.rpc(
+        "increment_user_interactions",
+        { user_id: userId },
+      );
 
       if (error) {
-        console.error('Erro ao incrementar interações do usuário:', error);
+        console.error("Erro ao incrementar interações do usuário:", error);
         return false;
       }
 
       return success as boolean;
     } catch (error) {
-      console.error('Erro ao incrementar interações:', error);
+      console.error("Erro ao incrementar interações:", error);
       return false;
     }
   }
 
   // Atualizar plano do usuário
-  static async updateUserPlan(userId: string, planType: keyof PlanLimits): Promise<boolean> {
+  static async updateUserPlan(
+    userId: string,
+    planType: keyof PlanLimits,
+  ): Promise<boolean> {
     if (!this.isSupabaseConfigured()) {
-      console.warn('Supabase não configurado - não é possível atualizar plano');
+      console.warn("Supabase não configurado - não é possível atualizar plano");
       return false;
     }
 
     const newLimit = this.PLAN_LIMITS[planType];
-    
+
     try {
-      const { data: success, error } = await supabase!
-        .rpc('update_user_plan', { 
-          user_id: userId, 
-          new_plan_type: planType,
-          new_limit: newLimit
-        });
+      const { data: success, error } = await supabase!.rpc("update_user_plan", {
+        user_id: userId,
+        new_plan_type: planType,
+        new_limit: newLimit,
+      });
 
       if (error) {
-        console.error('Erro ao atualizar plano do usuário:', error);
+        console.error("Erro ao atualizar plano do usuário:", error);
         return false;
       }
 
       return success as boolean;
     } catch (error) {
-      console.error('Erro ao atualizar plano:', error);
+      console.error("Erro ao atualizar plano:", error);
       return false;
     }
   }
@@ -163,16 +176,16 @@ export class InteractionLimitService {
     }
 
     try {
-      const { error } = await supabase!.rpc('reset_daily_interactions');
+      const { error } = await supabase!.rpc("reset_daily_interactions");
 
       if (error) {
-        console.error('Erro ao resetar interações diárias:', error);
+        console.error("Erro ao resetar interações diárias:", error);
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Erro ao resetar interações:', error);
+      console.error("Erro ao resetar interações:", error);
       return false;
     }
   }
@@ -190,13 +203,15 @@ export class InteractionLimitService {
 
     try {
       const { data: userProfile, error } = await supabase!
-        .from('user_profiles')
-        .select('daily_interactions_count, daily_interactions_limit, plan_type, login_count')
-        .eq('id', userId)
+        .from("user_profiles")
+        .select(
+          "daily_interactions_count, daily_interactions_limit, plan_type, login_count",
+        )
+        .eq("id", userId)
         .single();
 
       if (error || !userProfile) {
-        console.error('Erro ao buscar estatísticas do usuário:', error);
+        console.error("Erro ao buscar estatísticas do usuário:", error);
         return null;
       }
 
@@ -204,10 +219,10 @@ export class InteractionLimitService {
         totalInteractions: userProfile.login_count || 0,
         dailyInteractions: userProfile.daily_interactions_count,
         dailyLimit: userProfile.daily_interactions_limit,
-        planType: userProfile.plan_type
+        planType: userProfile.plan_type,
       };
     } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
+      console.error("Erro ao buscar estatísticas:", error);
       return null;
     }
   }

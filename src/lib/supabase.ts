@@ -1,42 +1,31 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./database";
 
-// Verificar se as variáveis de ambiente estão configuradas
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_PUB_KEY!;
 
-// Criar cliente Supabase apenas se as variáveis estiverem configuradas
-export const supabase = supabaseUrl && supabaseAnonKey 
-  ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        // Habilitar autenticação tradicional
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true
-      },
-      db: {
-        schema: 'public',
-      },
-      global: {
-        headers: {
-          'x-application': 'nutrichat',
-        },
-      },
-    })
-  : null;
-
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true, // ✅ Persiste sessão no localStorage
+    autoRefreshToken: true, // ✅ Renova token automaticamente
+    detectSessionInUrl: true, // ✅ Detecta sessão na URL (útil para OAuth)
+  },
+});
 // Função para definir sessão atual (para RLS)
 export async function setCurrentSession(sessionId: string) {
   if (!supabase) {
-    console.warn('Supabase não configurado - funcionando apenas em memória');
+    console.warn("Supabase não configurado - funcionando apenas em memória");
     return;
   }
 
-  const { error } = await supabase.rpc('set_session_context', {
-    session_id: sessionId
+  const { error } = await supabase.rpc("set_session_context", {
+    session_id: sessionId,
   });
-  
+
   if (error) {
-    console.warn('Erro ao definir contexto de sessão:', error);
+    console.warn("Erro ao definir contexto de sessão:", error);
   }
 }
 
@@ -46,19 +35,21 @@ export function generateSessionId(): string {
 }
 
 // Função para criptografar dados sensíveis
-export async function encryptSensitiveData(data: string): Promise<{ encrypted: string; hash: string }> {
+export async function encryptSensitiveData(
+  data: string,
+): Promise<{ encrypted: string; hash: string }> {
   // Em produção, use uma chave de criptografia mais robusta
   const encoder = new TextEncoder();
   const dataBuffer = encoder.encode(data);
-  
+
   // Gerar hash para busca (não reversível)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", dataBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  
+  const hash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+
   // Para simplicidade, usamos base64. Em produção, use crypto.subtle com chave secreta
   const encrypted = btoa(data);
-  
+
   return { encrypted, hash };
 }
 
@@ -67,8 +58,8 @@ export function decryptSensitiveData(encryptedData: string): string {
   try {
     return atob(encryptedData);
   } catch (error) {
-    console.error('Erro ao descriptografar dados:', error);
-    return '[Dados não disponíveis]';
+    console.error("Erro ao descriptografar dados:", error);
+    return "[Dados não disponíveis]";
   }
 }
 
