@@ -197,6 +197,9 @@ export function ChatKitPanel({
           },
           body: JSON.stringify({
             workflow: { id: WORKFLOW_ID },
+            scope: { 
+              user_id: user?.id ?? null  // <- envia ID do usuário autenticado
+            },
             chatkit_configuration: {
               // enable attachments
               file_upload: {
@@ -263,7 +266,7 @@ export function ChatKitPanel({
         }
       }
     },
-    [isWorkflowConfigured, setErrorState],
+    [isWorkflowConfigured, setErrorState, isBlocked, user?.id],
   );
 
   const chatkit = useChatKit({
@@ -274,11 +277,18 @@ export function ChatKitPanel({
     composer: {
       attachments: {
         enabled: true,
+        maxSize: 5 * 1024 * 1024, // 5 MB
+        accept: {
+          "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
+          "application/pdf": [".pdf"],
+        },
+        maxCount: 2,
       },
     },
     threadItemActions: {
-      feedback: false,
+      feedback: true
     },
+    locale: "pt-BR",
     onClientTool: async (invocation: {
       name: string;
       params: Record<string, unknown>;
