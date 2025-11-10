@@ -197,8 +197,8 @@ export function ChatKitPanel({
           },
           body: JSON.stringify({
             workflow: { id: WORKFLOW_ID },
-            scope: { 
-              user_id: user?.id ?? null  // <- envia ID do usuário autenticado
+            scope: {
+              user_id: user?.id ?? null, // <- envia ID do usuário autenticado
             },
             chatkit_configuration: {
               // enable attachments
@@ -286,7 +286,7 @@ export function ChatKitPanel({
       },
     },
     threadItemActions: {
-      feedback: true
+      feedback: true,
     },
     locale: "pt-BR",
     onClientTool: async (invocation: {
