@@ -24,13 +24,11 @@ export function useSubscription() {
         setError(null);
         const response = await apiClient.getSubscriptionStatus();
         const status = response.data;
-        console.log("useSubscription - status:", status);
         setSubscriptionStatus(status);
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Erro ao verificar assinatura";
         setError(errorMessage);
-        console.error("Erro ao verificar status da assinatura:", err);
       } finally {
         setLoading(false);
       }
@@ -54,19 +52,10 @@ export function useSubscription() {
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao atualizar assinatura";
       setError(errorMessage);
-      console.error("Erro ao atualizar status da assinatura:", err);
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (!subscriptionStatus) return;
-    console.log(
-      "useSubscription - subscriptionStatus changed:",
-      subscriptionStatus,
-    );
-  }, [subscriptionStatus]);
 
   return {
     subscriptionStatus,

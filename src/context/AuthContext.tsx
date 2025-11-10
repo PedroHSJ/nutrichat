@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [authLoading, setAuthLoading] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true); // ✅ Iniciar como true
   const [interactionStatus, setInteractionStatus] =
     useState<UserInteractionStatus | null>(null);
 
@@ -195,49 +195,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session: Session | null) => {
+      console.log("[AuthContext] onAuthStateChange - event:", event, "hasSession:", !!session, "hasUser:", !!session?.user);
+      
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       setIsAuthenticated(!!currentUser);
-
-      // ✅ Só redirecionar se vier do OAuth (não em navegação normal)
-      if (
-        event === "SIGNED_IN" &&
-        session &&
-        window.location.pathname !== "/subscription/success"
-      ) {
-        router.replace("/auth/callback");
-        return;
-      }
-
-      // NÃO redirecionar automaticamente para login
-      // Deixar o RouteGuard/ProtectedLayout controlar isso
-      // if (!session) {
-      //   router.push("/login");
-      // }
+      setAuthLoading(false); // ✅ Marcar loading como false após mudança de estado
     });
 
     // Check initial auth state
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("[AuthContext] Sessão inicial carregada:", {
-        hasSession: !!session,
-        hasUser: !!session?.user,
-        userId: session?.user?.id,
-        userEmail: session?.user?.email,
-      });
-
+      console.log("[AuthContext] getSession inicial - hasSession:", !!session, "hasUser:", !!session?.user, "email:", session?.user?.email);
+      
       const currentUser = session?.user ?? null;
       setSession(session);
       setUser(currentUser);
       setIsAuthenticated(!!currentUser);
-
-      if (!currentUser) {
-        console.warn(
-          "[AuthContext] ⚠️ Nenhum usuário autenticado encontrado na sessão inicial",
-        );
-      } else {
-        console.log("[AuthContext] ✅ Usuário autenticado:", currentUser.email);
-      }
+      setAuthLoading(false); // ✅ Marcar loading como false após carregar sessão inicial
     });
 
     return () => {
