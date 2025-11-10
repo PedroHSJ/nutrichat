@@ -199,12 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session: Session | null) => {
-      console.log("[AuthContext] 🔔 onAuthStateChange:", {
-        event,
-        hasSession: !!session,
-        hasUser: !!session?.user,
-        email: session?.user?.email,
-      });
+
 
       setSession(session);
       const currentUser = session?.user ?? null;
@@ -219,11 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Check initial auth state
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("[AuthContext] 📥 getSession inicial:", {
-        hasSession: !!session,
-        hasUser: !!session?.user,
-        email: session?.user?.email,
-      });
+
 
       const currentUser = session?.user ?? null;
       setSession(session);

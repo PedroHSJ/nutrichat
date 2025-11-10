@@ -35,10 +35,10 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     const parsedBody = await safeParseJson<CreateSessionRequestBody>(request);
-    
+
     // Exigir user_id autenticado - aplicação sempre requer login
     const userId = parsedBody?.scope?.user_id;
-    
+
     if (!userId) {
       return new Response(
         JSON.stringify({
@@ -50,7 +50,7 @@ export async function POST(request: Request): Promise<Response> {
         },
       );
     }
-    
+
     const resolvedWorkflowId =
       parsedBody?.workflow?.id ?? parsedBody?.workflowId ?? WORKFLOW_ID;
 
@@ -125,13 +125,10 @@ export async function POST(request: Request): Promise<Response> {
     });
   } catch (error) {
     console.error("Create session error", error);
-    return new Response(
-      JSON.stringify({ error: "Unexpected error" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    return new Response(JSON.stringify({ error: "Unexpected error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
 

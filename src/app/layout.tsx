@@ -5,9 +5,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import Script from "next/script";
 import {
   QueryClient,
-  QueryClientProvider,
 } from '@tanstack/react-query';
-import { Toaster } from "sonner";
+import { ReactQueryProvider } from "@/components/ReactQueryProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,11 +48,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Toaster />
-        <AuthProvider>{children}</AuthProvider>
-        <QueryClientProvider client={queryClient}>
+        <ReactQueryProvider>
           <AuthProvider>{children}</AuthProvider>
-        </QueryClientProvider>
+        </ReactQueryProvider>
       </body>
     </html>
   );

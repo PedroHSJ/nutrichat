@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
@@ -25,24 +26,18 @@ interface PlanOption {
 }
 
 async function getPlans(): Promise<PlanOption[]> {
-  try {
-    const response = await apiClient.getPlans();
-    const data = response.data;
-    const sortedPlans = (a: PlanOption, b: PlanOption) => {
-      if (a.priceCents < b.priceCents) return -1;
-      if (a.priceCents > b.priceCents) return 1;
-      return 0;
-    };
-
-    return data.plans.sort(sortedPlans);
-  } catch {
-    return [];
-  }
+  const response = await apiClient.getPlans();
+  const data = response.data;
+  const sortedPlans = (a: PlanOption, b: PlanOption) => {
+    if (a.priceCents < b.priceCents) return -1;
+    if (a.priceCents > b.priceCents) return 1;
+    return 0;
+  };
+  return data.plans.sort(sortedPlans);
 }
 
+
 export default function PlansPage() {
-  const [plans, setPlans] = useState<PlanOption[]>([]);
-  const [loading, setLoading] = useState(true);
   const [checkoutPlanId, setCheckoutPlanId] = useState<string | null>(null);
   const { logout, authLoading, isAuthenticated, session, user } = useAuth();
   const displayName =
@@ -58,34 +53,35 @@ export default function PlansPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      setPlans(await getPlans());
-      setLoading(false);
-    })();
-  }, []);
+  const {
+    data: plans = [],
+    isLoading,
+    error,
+  } = useQuery<PlanOption[]>({
+    queryKey: ["plans"],
+    queryFn: getPlans,
+    staleTime: Infinity,
+  });
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 flex flex-col items-center justify-center">
+    <main className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 flex flex-col items-center justify-center">
       <div className="mx-auto w-full max-w-4xl px-4 py-16 flex flex-col gap-12 items-center">
         {authLoading && (
           <div className="text-slate-300">Verificando sua sessão...</div>
         )}
-        <h1 className="text-4xl font-semibold text-white mb-2">
-          Escolha seu plano
-        </h1>
-        {session ? (
-          <p className="text-sm text-emerald-300">Oi, {displayName}!</p>
-        ) : (
-          <p className="text-sm text-amber-300">Nenhuma sessão ativa.</p>
+        {error && (
+          <div className="text-red-400">Erro ao carregar planos.</div>
         )}
+        <h1 className="text-4xl font-semibold text-white">
+          Escolha seu plano {displayName}...
+        </h1>
+        
         <p className="mb-8 text-base text-slate-300 text-center max-w-2xl">
           Compare as opções e selecione o plano ideal para sua jornada no
           NutriChat.
         </p>
         <div className="grid gap-8 sm:grid-cols-2 w-full">
-          {loading ? (
+          {isLoading ? (
             <div className="text-slate-400">Carregando planos...</div>
           ) : plans.length === 0 ? (
             <div className="text-slate-400">
@@ -173,7 +169,7 @@ export default function PlansPage() {
         </div>
         <Button
           variant="outline"
-          className="mt-8 border-emerald-400/50 bg-slate-900/60 text-emerald-200 transition hover:bg-slate-900/80"
+          className="mt-8 border-emerald-400/50 bg-slate-900/60 text-emerald-200 hover:bg-slate-900/60 hover:text-emerald-200"
           onClick={async () => {
             await logout();
           }}
