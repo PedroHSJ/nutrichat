@@ -199,6 +199,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session: Session | null) => {
+      console.log("[AuthContext] 🔔 onAuthStateChange:", {
+        event,
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        email: session?.user?.email,
+      });
+
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
@@ -211,7 +218,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     // Check initial auth state
-    supabase.auth.getSession().then(({ data: { session } }) => {      
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("[AuthContext] 📥 getSession inicial:", {
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        email: session?.user?.email,
+      });
+
       const currentUser = session?.user ?? null;
       setSession(session);
       setUser(currentUser);
@@ -230,7 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if(!user) return;
+    if (!user) return;
     refreshInteractionStatus();
   }, [user, refreshInteractionStatus]);
 
