@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [authLoading, setAuthLoading] = useState(true); // ✅ Iniciar como true
+  const [authLoading, setAuthLoading] = useState(false); // ✅ Iniciar como true
   const [interactionStatus, setInteractionStatus] =
     useState<UserInteractionStatus | null>(null);
 
@@ -76,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (error) {
       setAuthError(translateAuthError(error.message));
+      setAuthLoading(false);
     } else {
       setAuthError(null);
     }
@@ -195,8 +196,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session: Session | null) => {
-      console.log("[AuthContext] onAuthStateChange - event:", event, "hasSession:", !!session, "hasUser:", !!session?.user);
-      
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
@@ -205,9 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     // Check initial auth state
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("[AuthContext] getSession inicial - hasSession:", !!session, "hasUser:", !!session?.user, "email:", session?.user?.email);
-      
+    supabase.auth.getSession().then(({ data: { session } }) => {      
       const currentUser = session?.user ?? null;
       setSession(session);
       setUser(currentUser);
@@ -221,6 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if(!user) return;
     refreshInteractionStatus();
   }, [user, refreshInteractionStatus]);
 
