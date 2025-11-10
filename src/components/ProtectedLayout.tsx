@@ -11,7 +11,6 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
 
   // Redirecionar apenas quando NÃO estiver autenticado E não estiver carregando
   useEffect(() => {
-
     if (!authLoading && !isAuthenticated) {
       router.replace("/login");
     }

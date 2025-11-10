@@ -4,9 +4,6 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import Script from "next/script";
 import {
-  useQuery,
-  useMutation,
-  useQueryClient,
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query';
@@ -24,8 +21,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "NutriChat - Assistente Nutricional",
-  description:
-    "Assistente especializado em nutrição para nutricionistas",
+  description: "Assistente especializado em nutrição para nutricionistas",
 };
 
 const queryClient = new QueryClient({
@@ -36,7 +32,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
 
 export default function RootLayout({
   children,
@@ -55,8 +50,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Toaster />
-
         <AuthProvider>{children}</AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>{children}</AuthProvider>
+        </QueryClientProvider>
       </body>
     </html>
   );
