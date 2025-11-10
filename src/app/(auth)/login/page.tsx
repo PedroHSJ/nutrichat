@@ -18,8 +18,6 @@ export default function LoginPage() {
   // Usa o hook de assinatura corretamente
   const { hasActivePlan, loading: subscriptionLoading } = useSubscription();
 
-
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 px-4 py-12">
       <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-8 text-center">

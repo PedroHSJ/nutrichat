@@ -12,6 +12,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 // ================= LOGIN FORM =================
 import { set, z } from "zod";
 import { useAuth } from "@/context/AuthContext";
+import { useSubscription } from "@/hooks/use-subscription";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const loginSchema = z.object({
   email: z.email({ error: "Informe seu email." }).min(1, "Informe seu email."),
@@ -22,13 +25,16 @@ const loginSchema = z.object({
 export type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
-  const { login, loginWithGoogle, authLoading } = useAuth();
+  const { login, loginWithGoogle, authLoading, isAuthenticated, authError } =
+    useAuth();
+  const { hasActivePlan } = useSubscription();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const { 
+  const router = useRouter();
+  const {
     handleSubmit,
     formState: { errors, isSubmitting },
-    register
-   } = useForm<LoginFormValues>({
+    register,
+  } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
     mode: "onBlur",
@@ -53,8 +59,24 @@ export function LoginForm() {
     }
   };
 
+  // useEffect(() => {
+  //   if(isAuthenticated && hasActivePlan){
+  //     router.push("/agentt-chat");
+  //   }
+  //   if(isAuthenticated && !hasActivePlan){
+  //     router.push("/plans");
+  //   }
+  // }, [isAuthenticated, hasActivePlan]);
+
+  useEffect(() => {
+    if (authError) {
+      console.log("Auth error:", authError);
+      toast.error(authError);
+    }
+  }, [authError]);
+
   return (
-     <form onSubmit={handleSubmit(handleLogin)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleLogin)} className="space-y-6">
       {/* Email */}
       <div>
         <Label htmlFor="email">Email</Label>
@@ -65,15 +87,11 @@ export function LoginForm() {
           {...register("email")}
           disabled={isSubmitting || authLoading}
           className={`${
-            errors.email
-              ? "border-rose-500"
-              : "border-transparent"
+            errors.email ? "border-rose-500" : "border-transparent"
           } bg-slate-950/40 text-slate-100 placeholder:text-slate-500 focus-visible:border-emerald-400/60 focus-visible:ring focus-visible:ring-emerald-400/30`}
         />
         {errors.email && (
-          <span className="text-xs text-rose-500">
-            {errors.email.message}
-          </span>
+          <span className="text-xs text-rose-500">{errors.email.message}</span>
         )}
       </div>
 
@@ -84,12 +102,10 @@ export function LoginForm() {
           id="password"
           type="password"
           autoComplete="current-password"
-          {... register("password")}
+          {...register("password")}
           disabled={isSubmitting || authLoading}
           className={`${
-            errors.password
-              ? "border-rose-500"
-              : "border-transparent"
+            errors.password ? "border-rose-500" : "border-transparent"
           } bg-slate-950/40 text-slate-100 placeholder:text-slate-500 focus-visible:border-emerald-400/60 focus-visible:ring focus-visible:ring-emerald-400/30`}
         />
         {errors.password && (
@@ -108,7 +124,11 @@ export function LoginForm() {
       }} */}
 
       {/* Botão de submit */}
-      <Button type="submit" className="w-full" disabled={isSubmitting || authLoading}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isSubmitting || authLoading}
+      >
         {isSubmitting ? (
           <span className="flex items-center justify-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />

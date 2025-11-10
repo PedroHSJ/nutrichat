@@ -379,7 +379,7 @@ self.addEventListener("fetch", (event) => {
         // Se network falhar, tentar cache
         return caches.match(event.request);
       })
-    
+
 });
 ```
 
@@ -489,18 +489,19 @@ useEffect(() => {
    ```
 
 2. **No iPhone:**
-<<<<<<< HEAD
-=======
+   <<<<<<< HEAD
+   =======
 
->>>>>>> 493665b (feat: add initial SQL seed data for subscription plans and prices)
-   - Abra o Safari e acesse o app
-   - Clique em "Compartilhar" → "Adicionar à Tela de Início"
-   - Abra o app instalado
-   - Faça login
-   - Minimize o app (apertar o botão home)
-   - Espere 10-30 segundos
-   - Reabra o app
-   - ✅ Sessão deve ser mantida
+> > > > > > > 493665b (feat: add initial SQL seed data for subscription plans and prices)
+
+- Abra o Safari e acesse o app
+- Clique em "Compartilhar" → "Adicionar à Tela de Início"
+- Abra o app instalado
+- Faça login
+- Minimize o app (apertar o botão home)
+- Espere 10-30 segundos
+- Reabra o app
+- ✅ Sessão deve ser mantida
 
 3. **Debug:**
    - Conectar iPhone ao Mac

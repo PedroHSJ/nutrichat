@@ -70,11 +70,6 @@ export function ChatKitPanel({
   );
   const [widgetInstanceKey] = useState(0);
 
-  useEffect(() => {
-    if (!errors) return;
-    if (errors) toast.error("Erro ao iniciar sessão");
-  }, [errors]);
-
   const setErrorState = useCallback((updates: Partial<ErrorState>) => {
     setErrors((current) => ({ ...current, ...updates }));
   }, []);
