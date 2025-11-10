@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // ================= LOGIN FORM =================
-import { z } from "zod";
+import { set, z } from "zod";
+import { useAuth } from "@/context/AuthContext";
 
 const loginSchema = z.object({
   email: z.email({ error: "Informe seu email." }).min(1, "Informe seu email."),
@@ -20,66 +21,40 @@ const loginSchema = z.object({
 });
 export type LoginFormValues = z.infer<typeof loginSchema>;
 
-export function LoginForm({
-  onSubmit,
-  onGoogle,
-  serverError,
-  isBusy,
-}: {
-  onSubmit: (values: LoginFormValues) => Promise<void>;
-  onGoogle: () => Promise<void>;
-  serverError?: string | null;
-  isBusy?: boolean;
-}) {
-  const [formError, setFormError] = useState<string | null>(
-    serverError ?? null,
-  );
+export function LoginForm() {
+  const { login, loginWithGoogle, authLoading } = useAuth();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-
-  useEffect(() => {
-    setFormError(serverError ?? null);
-  }, [serverError]);
-
-  const form = useForm<LoginFormValues>({
+  const { 
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    register
+   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
     mode: "onBlur",
   });
 
-  const handleSubmit = form.handleSubmit(async (values) => {
+  const handleLogin = async (values: LoginFormValues) => {
     try {
-      setFormError(null);
-      await onSubmit(values);
+      await login(values.email, values.password);
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Não foi possível processar sua solicitação.";
-      setFormError(message);
-      form.setError("root", { message });
+      throw error;
     }
-  });
+  };
 
   const handleGoogle = async () => {
     try {
-      setFormError(null);
       setIsGoogleLoading(true);
-      await onGoogle();
+      await loginWithGoogle();
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Não foi possível iniciar o login com o Google.";
-      setFormError(message);
+      throw error;
     } finally {
       setIsGoogleLoading(false);
     }
   };
 
-  const submitting = form.formState.isSubmitting || Boolean(isBusy);
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+     <form onSubmit={handleSubmit(handleLogin)} className="space-y-6">
       {/* Email */}
       <div>
         <Label htmlFor="email">Email</Label>
@@ -87,17 +62,17 @@ export function LoginForm({
           id="email"
           type="email"
           autoComplete="email"
-          {...form.register("email")}
-          disabled={submitting}
+          {...register("email")}
+          disabled={isSubmitting || authLoading}
           className={`${
-            form.formState.errors.email
+            errors.email
               ? "border-rose-500"
               : "border-transparent"
           } bg-slate-950/40 text-slate-100 placeholder:text-slate-500 focus-visible:border-emerald-400/60 focus-visible:ring focus-visible:ring-emerald-400/30`}
         />
-        {form.formState.errors.email && (
+        {errors.email && (
           <span className="text-xs text-rose-500">
-            {form.formState.errors.email.message}
+            {errors.email.message}
           </span>
         )}
       </div>
@@ -109,32 +84,32 @@ export function LoginForm({
           id="password"
           type="password"
           autoComplete="current-password"
-          {...form.register("password")}
-          disabled={submitting}
+          {... register("password")}
+          disabled={isSubmitting || authLoading}
           className={`${
-            form.formState.errors.password
+            errors.password
               ? "border-rose-500"
               : "border-transparent"
           } bg-slate-950/40 text-slate-100 placeholder:text-slate-500 focus-visible:border-emerald-400/60 focus-visible:ring focus-visible:ring-emerald-400/30`}
         />
-        {form.formState.errors.password && (
+        {errors.password && (
           <span className="text-xs text-rose-500">
-            {form.formState.errors.password.message}
+            {errors.password.message}
           </span>
         )}
       </div>
 
       {/* Erro geral */}
-      {formError && (
+      {/* {() => {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{formError}</AlertDescription>
         </Alert>
-      )}
+      }} */}
 
       {/* Botão de submit */}
-      <Button type="submit" className="w-full" disabled={submitting}>
-        {submitting ? (
+      <Button type="submit" className="w-full" disabled={isSubmitting || authLoading}>
+        {isSubmitting ? (
           <span className="flex items-center justify-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
             Entrando...
@@ -148,7 +123,7 @@ export function LoginForm({
         variant="outline"
         className="w-full mt-2 flex items-center justify-center gap-2"
         onClick={handleGoogle}
-        disabled={isGoogleLoading || submitting}
+        disabled={isGoogleLoading || isSubmitting || authLoading}
       >
         <GoogleIcon className="h-6 w-6" />
         {isGoogleLoading ? (

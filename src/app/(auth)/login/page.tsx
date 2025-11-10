@@ -18,26 +18,7 @@ export default function LoginPage() {
   // Usa o hook de assinatura corretamente
   const { hasActivePlan, loading: subscriptionLoading } = useSubscription();
 
-  const handleLogin = async (values: LoginFormValues) => {
-    try {
-      await login(values.email, values.password);
-      setIsRedirecting(true);
-      // O redirecionamento será feito pelo useEffect acima, que depende do estado de autenticação e assinatura
-    } catch (error) {
-      setIsRedirecting(false);
-      throw error;
-    }
-  };
 
-  const handleGoogle = async () => {
-    try {
-      setIsRedirecting(true);
-      await loginWithGoogle();
-    } catch (error) {
-      setIsRedirecting(false);
-      throw error;
-    }
-  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 px-4 py-12">
@@ -70,12 +51,7 @@ export default function LoginPage() {
           footer={<span>Não tem conta?</span>}
           footerLink={{ href: "/register", label: "Criar conta" }}
         >
-          <LoginForm
-            onSubmit={handleLogin}
-            onGoogle={handleGoogle}
-            serverError={authError}
-            isBusy={authLoading || isRedirecting}
-          />
+          <LoginForm />
         </AuthCard>
       </div>
     </div>
