@@ -36,7 +36,6 @@ async function getPlans(): Promise<PlanOption[]> {
   return data.plans.sort(sortedPlans);
 }
 
-
 export default function PlansPage() {
   const [checkoutPlanId, setCheckoutPlanId] = useState<string | null>(null);
   const { logout, authLoading, isAuthenticated, session, user } = useAuth();
@@ -69,13 +68,11 @@ export default function PlansPage() {
         {authLoading && (
           <div className="text-slate-300">Verificando sua sessão...</div>
         )}
-        {error && (
-          <div className="text-red-400">Erro ao carregar planos.</div>
-        )}
+        {error && <div className="text-red-400">Erro ao carregar planos.</div>}
         <h1 className="text-4xl font-semibold text-white">
           Escolha seu plano {displayName}...
         </h1>
-        
+
         <p className="mb-8 text-base text-slate-300 text-center max-w-2xl">
           Compare as opções e selecione o plano ideal para sua jornada no
           NutriChat.
