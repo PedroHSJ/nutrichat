@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { AuthProvider } from "@/context/AuthContext";
 import Script from "next/script";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,8 +24,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "NutriChat - Assistente Nutricional",
   description:
-    "Assistente especializado em nutrição para nutricionistas de produção",
+    "Assistente especializado em nutrição para nutricionistas",
 };
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
 
 export default function RootLayout({
   children,
@@ -36,7 +53,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>{children}</AuthProvider>
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>{children}</AuthProvider>
+          </QueryClientProvider>
       </body>
     </html>
   );
