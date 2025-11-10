@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [authLoading, setAuthLoading] = useState(false); // ✅ Iniciar como true
+  const [authLoading, setAuthLoading] = useState(true); // ✅ DEVE iniciar como true!
   const [interactionStatus, setInteractionStatus] =
     useState<UserInteractionStatus | null>(null);
 
@@ -73,12 +73,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
     });
     setUser(data?.user ?? null);
-
+    setIsAuthenticated(!!data?.user);
     if (error) {
       setAuthError(translateAuthError(error.message));
       setAuthLoading(false);
     } else {
       setAuthError(null);
+      router.push("/auth/callback");
     }
 
     setAuthLoading(false);
@@ -193,32 +194,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
+    console.log("[AuthContext] 🚀 Iniciando setup de autenticação...");
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session: Session | null) => {
+      console.log("[AuthContext] 🔔 onAuthStateChange:", {
+        event,
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        email: session?.user?.email,
+      });
+
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       setIsAuthenticated(!!currentUser);
-      setAuthLoading(false); // ✅ Marcar loading como false após mudança de estado
+      setAuthLoading(false);
+
+      console.log(
+        "[AuthContext] ✅ Estado atualizado - authLoading agora é FALSE",
+      );
     });
 
     // Check initial auth state
-    supabase.auth.getSession().then(({ data: { session } }) => {      
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("[AuthContext] 📥 getSession inicial:", {
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        email: session?.user?.email,
+      });
+
       const currentUser = session?.user ?? null;
       setSession(session);
       setUser(currentUser);
       setIsAuthenticated(!!currentUser);
-      setAuthLoading(false); // ✅ Marcar loading como false após carregar sessão inicial
+      setAuthLoading(false);
+
+      console.log(
+        "[AuthContext] ✅ Sessão inicial carregada - authLoading agora é FALSE",
+      );
     });
 
     return () => {
+      console.log("[AuthContext] 🧹 Limpando subscription");
       subscription.unsubscribe();
     };
   }, []);
 
   useEffect(() => {
-    if(!user) return;
+    if (!user) return;
     refreshInteractionStatus();
   }, [user, refreshInteractionStatus]);
 

@@ -10,6 +10,7 @@ import {
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query';
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,9 +54,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-          <QueryClientProvider client={queryClient}>
-            <AuthProvider>{children}</AuthProvider>
-          </QueryClientProvider>
+        <Toaster />
+
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
