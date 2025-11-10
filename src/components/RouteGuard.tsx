@@ -44,12 +44,6 @@ export function RouteGuard({
       router.push("/login");
       return;
     }
-    console.log("RouteGuard: ", {
-      requiresPlan,
-      hasActivePlan,
-      redirectToPlans,
-      redirectToLogin,
-    });
     // Se não tem plano ativo, só pode acessar /plans
     if (requiresPlan && !hasActivePlan && redirectToPlans) {
       router.push("/plans");
@@ -68,23 +62,10 @@ export function RouteGuard({
     user,
   ]);
 
-  // Mostrar loading enquanto verifica autenticação
+  // Renderiza o conteúdo imediatamente para manter transparente
+  // As verificações de redirecionamento acontecem em background via useEffect
   if (authLoading || (requiresPlan && subscriptionLoading)) {
-    return (
-      <Dialog open>
-        <DialogContent
-          className="text-center select-none"
-          showCloseButton={false}
-        >
-          <DialogHeader>
-            <DialogTitle>
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-emerald-500" />
-              Verificando acesso...
-            </DialogTitle>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
-    );
+    return <>{children}</>;
   }
 
   // Se não passou nas verificações, não renderizar o conteúdo

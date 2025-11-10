@@ -18,13 +18,11 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
   // Redirecionar apenas quando NÃO estiver autenticado E não estiver carregando
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      console.log("[ProtectedLayout] ❌ Redirecionando para login");
       router.replace("/login"); // ✅ replace em vez de push (não adiciona ao histórico)
     }
   }, [authLoading, isAuthenticated, router]);
 
   if (authLoading) {
-    console.log("[ProtectedLayout] Aguardando carregamento da autenticação...");
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -38,15 +36,8 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    console.log(
-      "[ProtectedLayout] ❌ Usuário NÃO autenticado - bloqueando renderização",
-    );
     return null; // ✅ Bloqueia renderização enquanto redireciona
   }
-
-  console.log(
-    "[ProtectedLayout] ✅ Usuário autenticado - renderizando conteúdo",
-  );
 
   return (
     <>
