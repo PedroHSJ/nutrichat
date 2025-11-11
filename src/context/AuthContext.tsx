@@ -159,7 +159,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await apiClient.getSubscriptionStatus();
       setInteractionStatus(response.data.status as UserInteractionStatus);
     } catch (error) {
-      console.warn("[AuthContext] Erro ao buscar status da assinatura:", error);
       setInteractionStatus(null);
     }
   }, [user, session]); // ✅ Adicionar session nas dependências
@@ -194,50 +193,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    console.log("[AuthContext] 🚀 Iniciando setup de autenticação...");
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session: Session | null) => {
-      console.log("[AuthContext] 🔔 onAuthStateChange:", {
-        event,
-        hasSession: !!session,
-        hasUser: !!session?.user,
-        email: session?.user?.email,
-      });
 
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       setIsAuthenticated(!!currentUser);
       setAuthLoading(false);
-
-      console.log(
-        "[AuthContext] ✅ Estado atualizado - authLoading agora é FALSE",
-      );
     });
 
     // Check initial auth state
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("[AuthContext] 📥 getSession inicial:", {
-        hasSession: !!session,
-        hasUser: !!session?.user,
-        email: session?.user?.email,
-      });
-
       const currentUser = session?.user ?? null;
       setSession(session);
       setUser(currentUser);
       setIsAuthenticated(!!currentUser);
       setAuthLoading(false);
-
-      console.log(
-        "[AuthContext] ✅ Sessão inicial carregada - authLoading agora é FALSE",
-      );
     });
 
     return () => {
-      console.log("[AuthContext] 🧹 Limpando subscription");
       subscription.unsubscribe();
     };
   }, []);

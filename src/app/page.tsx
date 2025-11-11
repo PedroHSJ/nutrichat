@@ -75,7 +75,7 @@ export default async function LandingPage() {
                   size="lg"
                 >
                   <Link href="/register">
-                    Comecar agora
+                    Começar agora
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -85,10 +85,10 @@ export default async function LandingPage() {
                   size="lg"
                   className="border-slate-700 bg-slate-900/50 text-slate-200 transition hover:border-emerald-400/50 hover:text-emerald-200"
                 >
-                  <Link href="/plans">
+                  <a href="#planos">
                     Ver planos
                     <Crown className="h-4 w-4" />
-                  </Link>
+                  </a>
                 </Button>
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
@@ -242,7 +242,7 @@ export default async function LandingPage() {
             </div>
           </section>
 
-          <section className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <section id="planos" className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <Card className="border border-slate-800/70 bg-slate-900/70 shadow-lg shadow-emerald-500/10">
               <CardHeader>
                 <CardTitle className="text-2xl text-white">
@@ -328,13 +328,6 @@ export default async function LandingPage() {
                   </Card>
                 ))}
               </div>
-              <Button
-                asChild
-                variant="outline"
-                className="w-fit border-emerald-400/50 bg-slate-900/60 text-emerald-200 transition hover:bg-slate-900/80"
-              >
-                <Link href="/plans">Consultar todos os planos</Link>
-              </Button>
             </div>
           </section>
 
@@ -348,9 +341,8 @@ export default async function LandingPage() {
                   Comece a usar o NutriChat hoje mesmo
                 </h2>
                 <p className="mx-auto max-w-2xl text-sm text-slate-200 sm:text-base">
-                  Em poucos minutos voce cria sua conta, conecta com o Supabase
-                  Auth e acessa o mesmo ambiente do agent-chat para atender seus
-                  pacientes com consistencia visual.
+                  Em poucos minutos voce cria sua conta e acessa nosso agente de IA
+                  especialista em nutrição.
                 </p>
                 <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
                   <Button

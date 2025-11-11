@@ -14,24 +14,7 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
     if (!authLoading && !isAuthenticated) {
       router.replace("/login");
     }
-  }, [authLoading, isAuthenticated, router]); // ✅ Dependências corretas
-
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto"></div>
-          <p className="mt-4 text-sm text-slate-600">
-            Verificando autenticação...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return null; // ✅ Bloqueia renderização enquanto redireciona
-  }
+  }, [authLoading, isAuthenticated, router]);
 
   return (
     <>

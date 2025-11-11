@@ -719,7 +719,7 @@ export default function PlansManagementPage() {
   const isLoading = statusLoading || subscriptionLoading;
 
   return (
-    <div className="w-full h-screen flex flex-col">
+    <div className="flex flex-col w-full">
       <header className="flex h-16 shrink-0 items-center gap-2 border-b">
         <div className="flex items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
@@ -736,7 +736,7 @@ export default function PlansManagementPage() {
         <Tabs
           value={activeSection}
           onValueChange={(value) => setActiveSection(value as PlanMenuSection)}
-          className="min-h-screen py-8"
+          className="py-8"
         >
           <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
             <div>

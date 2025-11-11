@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { UserSubscriptionService } from "@/lib/subscription";
-import { getSupabaseServerClient } from "@/lib/supabase-server";
+import { SubscriptionService } from "@/lib/stripe";
+import { getSupabaseBearerClient, getSupabaseServerClient } from "@/lib/supabase-server";
 
 /**
  * POST /api/subscription/cancel
@@ -8,9 +9,19 @@ import { getSupabaseServerClient } from "@/lib/supabase-server";
  */
 export async function POST(request: NextRequest) {
   try {
-    const res = new NextResponse();
-    const supabase = getSupabaseServerClient(request, res);
-    const {
+    const authHeader = request.headers.get("Authorization");
+        const token = authHeader?.replace("Bearer ", "");
+    
+        if (!token) {
+          return NextResponse.json(
+            { success: false, error: "Token de acesso não fornecido" },
+            { status: 401 },
+          );
+        }
+    
+        const supabase = getSupabaseBearerClient(token);
+
+        const {
       data: { user },
       error,
     } = await supabase.auth.getUser();
@@ -25,13 +36,30 @@ export async function POST(request: NextRequest) {
     // Cancelar assinatura
     const success = await UserSubscriptionService.cancelUserSubscription(
       user.id,
-      false, // cancelar imediatamente
+      true, // cancelar imediatamente
     );
 
     if (success) {
+      // Atualizar o banco de dados imediatamente, sem depender apenas do webhook
+      const subscription = await UserSubscriptionService.getUserActiveSubscription(user.id);
+      if (subscription) {
+        // Buscar dados atualizados da subscription no Stripe
+        const stripeSubscription = await SubscriptionService.getSubscription(
+          subscription.stripe_subscription_id
+        );
+        
+        // Atualizar no banco com os dados do Stripe
+        await UserSubscriptionService.updateSubscription(
+          subscription.stripe_subscription_id,
+          stripeSubscription
+        );
+        
+        console.log("[API] Assinatura marcada como cancelada no banco de dados");
+      }
+
       return NextResponse.json({
         success: true,
-        message: "Assinatura será cancelada no final do período atual",
+        message: "Assinatura cancelada com sucesso",
       });
     } else {
       return NextResponse.json(

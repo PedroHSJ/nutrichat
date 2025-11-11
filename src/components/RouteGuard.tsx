@@ -46,7 +46,8 @@ export function RouteGuard({
     }
     // Se não tem plano ativo, só pode acessar /plans
     if (requiresPlan && !hasActivePlan && redirectToPlans) {
-      router.push("/plans");
+      console.log("Redirecting to plans...");
+      //router.push("/plans");
       return;
     }
     if (requiresPlan && subscriptionLoading) return;

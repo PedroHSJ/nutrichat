@@ -57,7 +57,7 @@ export function SiteHeader() {
           {/* CTA Button */}
           <div className="hidden md:flex">
             <Button asChild>
-              <Link href="/login">Entrar Agora</Link>
+              <Link href="/login">Entrar</Link>
             </Button>
           </div>
 
@@ -83,7 +83,7 @@ export function SiteHeader() {
               <div className="pt-2">
                 <Button asChild className="w-full">
                   <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                    Assinar Agora
+                    Entrar
                   </Link>
                 </Button>
               </div>
