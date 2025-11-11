@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { UserSubscriptionService } from "@/lib/subscription";
 import { SubscriptionService } from "@/lib/stripe";
-import { getSupabaseBearerClient, getSupabaseServerClient } from "@/lib/supabase-server";
+import {
+  getSupabaseBearerClient,
+  getSupabaseServerClient,
+} from "@/lib/supabase-server";
 
 /**
  * POST /api/subscription/cancel
@@ -10,18 +13,18 @@ import { getSupabaseBearerClient, getSupabaseServerClient } from "@/lib/supabase
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get("Authorization");
-        const token = authHeader?.replace("Bearer ", "");
-    
-        if (!token) {
-          return NextResponse.json(
-            { success: false, error: "Token de acesso não fornecido" },
-            { status: 401 },
-          );
-        }
-    
-        const supabase = getSupabaseBearerClient(token);
+    const token = authHeader?.replace("Bearer ", "");
 
-        const {
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: "Token de acesso não fornecido" },
+        { status: 401 },
+      );
+    }
+
+    const supabase = getSupabaseBearerClient(token);
+
+    const {
       data: { user },
       error,
     } = await supabase.auth.getUser();
@@ -41,20 +44,23 @@ export async function POST(request: NextRequest) {
 
     if (success) {
       // Atualizar o banco de dados imediatamente, sem depender apenas do webhook
-      const subscription = await UserSubscriptionService.getUserActiveSubscription(user.id);
+      const subscription =
+        await UserSubscriptionService.getUserActiveSubscription(user.id);
       if (subscription) {
         // Buscar dados atualizados da subscription no Stripe
         const stripeSubscription = await SubscriptionService.getSubscription(
-          subscription.stripe_subscription_id
+          subscription.stripe_subscription_id,
         );
-        
+
         // Atualizar no banco com os dados do Stripe
         await UserSubscriptionService.updateSubscription(
           subscription.stripe_subscription_id,
-          stripeSubscription
+          stripeSubscription,
         );
-        
-        console.log("[API] Assinatura marcada como cancelada no banco de dados");
+
+        console.log(
+          "[API] Assinatura marcada como cancelada no banco de dados",
+        );
       }
 
       return NextResponse.json({

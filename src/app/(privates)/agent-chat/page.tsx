@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { RouteGuard } from "@/components/RouteGuard";
 import { Button } from "@/components/ui/button";
 import { fetchWithAuth } from "@/lib/fetchWIthAuth";
+import { ModeToggle } from "@/components/DarkModeToggle";
+import { useTheme } from "next-themes";
 export type FactAction = {
   type: "save";
   factId: string;
@@ -381,18 +383,8 @@ export function ChatKitPanel({
     );
   }
   return (
-    <div className=" flex w-full flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900 rounded-b-2xl md:pb-8 pb-[95px]">
-      {/* {isInitializingSession && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-slate-900/80">
-          <div className="flex flex-col items-center gap-2">
-            <Spinner />
-            <span className="text-sm text-slate-600 dark:text-slate-300">
-              Carregando assistente...
-            </span>
-          </div>
-        </div>
-      )} */}
-      {/* {process.env.NODE_ENV !== "production" && (
+    <div className=" flex w-full flex-col overflow-hidden bg-background shadow-sm transition-colors rounded-b-2xl">
+      {process.env.NODE_ENV !== "production" && (
         <Button
           onClick={async () => {
             await fetchWithAuth("/api/user-subscription/increment", {
@@ -402,7 +394,7 @@ export function ChatKitPanel({
         >
           Incrementar uso
         </Button>
-      )} */}
+      )}
       <ChatKit key={widgetInstanceKey} control={chatkit.control} />
     </div>
   );
@@ -459,9 +451,9 @@ function extractErrorDetail(
 
 export default function AgentChatPage() {
   const { user } = useAuth();
-  const [theme, setTheme] = useState<ColorScheme>("light");
-  const handleThemeChange = (scheme: ColorScheme) => {
-    setTheme(scheme);
+  const { theme } = useTheme() as {
+    theme: ColorScheme;
+    setTheme: (theme: ColorScheme) => void;
   };
   const fetchingRef = useRef(false);
   const { subscriptionStatus, loading, refreshSubscription } =
@@ -503,76 +495,41 @@ export default function AgentChatPage() {
 
   return (
     <RouteGuard requiresPlan>
-      <div className="w-full h-screen flex flex-col overflow-hidden">
-        {/* <header className="flex flex-col gap-4 px-6 py-4 shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between border-b">
-        <div className="flex items-start gap-3 sm:items-center">
-          <SidebarTrigger className="" />
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
-            <Sparkles className="h-5 w-5 text-emerald-400" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold text-primary">
-              Agente Inteligente
-            </h1>
-            <p className="text-sm text-slate-300">
-              Interface oficial do ChatKit disponivel para o seu plano.
-            </p>
-            {process.env.NODE_ENV !== "production" && (
-              <Badge className="mt-2 w-fit border-emerald-400 bg-emerald-500/10 text-emerald-300">
-                Workflow{" "}
-                <span className="font-mono text-xs">{workflowLabel}</span>
-              </Badge>
-            )}
-            {trialRemainingText && (
-              <Badge className="mt-2 flex w-fit items-center gap-2 border-violet-400 bg-violet-500/10 text-violet-200">
-                <Clock className="h-3.5 w-3.5" />
-                {trialRemainingText}
-              </Badge>
-            )}
-          </div>
-        </div>
-        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-4">
-          {user?.name && (
-            <div className="flex flex-col text-right text-xs">
-              <span className="text-slate-400">Autenticado como</span>
-              <span className="text-sm font-medium text-primary">
-                {user.name}
-              </span>
-            </div>
-          )}
-        </div>
-      </header> */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b">
+      <div className="w-full h-screen flex flex-col overflow-hidden bg-background rounded-2xl">
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background">
           <div className="flex flex-row items-center gap-2 px-4 justify-between w-full">
             <div>
               <SidebarTrigger className="" />
             </div>
-            <div>
-           {user?.id &&
-              (dailyUsage === null ? (
-                <Badge className="rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none bg-gray flex items-center gap-2">
-                  <Spinner className="w-4 h-4" />
-                  Carregando uso...
-                </Badge>
-              ) : (
-                <Badge
-                  className={`rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none ${dailyInteractionBadgeColor}`}
-                >
-                  Uso diário: {`${dailyUsage}/${dailyLimit}`}
-                </Badge>
-              ))}
+            <div className="items-center flex-row flex">
+              {user?.id &&
+                (dailyUsage === null ? (
+                  <Badge className="mr-2 rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none bg-gray flex items-center gap-2">
+                    <Spinner className="w-4 h-4" />
+                    Carregando uso...
+                  </Badge>
+                ) : (
+                  <Badge
+                    className={`mr-2 rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none ${dailyInteractionBadgeColor}`}
+                  >
+                    Uso diário: {`${dailyUsage}/${dailyLimit}`}
+                  </Badge>
+                ))}
+
+              <ModeToggle />
             </div>
-           
           </div>
         </header>
 
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden bg-background">
           <ChatKitPanel
             theme={theme}
             onWidgetAction={() => Promise.resolve()}
             onResponseEnd={refreshSubscription}
-            onThemeRequest={handleThemeChange}
             isBlocked={isBlocked}
+            onThemeRequest={function (scheme: ColorScheme): void {
+              throw new Error("Function not implemented.");
+            }}
           />
         </div>
       </div>

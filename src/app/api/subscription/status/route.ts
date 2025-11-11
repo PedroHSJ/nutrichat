@@ -32,7 +32,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-
     // Obter status completo do usuário
     const interactionStatus = await UserSubscriptionService.canUserInteract(
       user.id,

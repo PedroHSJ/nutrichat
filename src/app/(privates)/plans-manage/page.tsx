@@ -37,6 +37,7 @@ import { useAuth } from "@/context/AuthContext";
 import { apiClient } from "@/lib/api";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { ModeToggle } from "@/components/DarkModeToggle";
 
 type PlanMenuSection = "overview" | "change" | "billing" | "cancel";
 
@@ -721,9 +722,9 @@ export default function PlansManagementPage() {
   return (
     <div className="flex flex-col w-full">
       <header className="flex h-16 shrink-0 items-center gap-2 border-b">
-        <div className="flex items-center gap-2 px-4">
+        <div className="flex items-center gap-2 px-4 justify-between w-full">
           <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="h-6" />
+          <ModeToggle />
         </div>
       </header>
       <CancelSubscriptionModal
@@ -754,25 +755,25 @@ export default function PlansManagementPage() {
                     key={item.id}
                     value={item.id}
                     className={cn(
-                      "group flex min-w-[220px] flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left text-sm font-medium shadow-sm transition hover:border-emerald-300 hover:bg-emerald-500/10",
+                      "group flex min-w-[220px] flex-1 items-center gap-3 rounded-xl border  bg-background px-4 py-3 text-left text-sm font-medium shadow-sm transition hover:border-emerald-300 hover:bg-emerald-500/10",
                       "data-[state=active]:border-emerald-400 data-[state=active]:bg-emerald-500/15 data-[state=active]:shadow-md data-[state=active]:shadow-emerald-500/20",
                     )}
                   >
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition group-data-[state=active]:bg-emerald-500/20 group-data-[state=active]:text-emerald-600">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg  text-foreground transition group-data-[state=active]:bg-emerald-500/20 group-data-[state=active]:text-emerald-600">
                       <Icon className="h-4 w-4" />
                     </span>
-                    <div className="flex flex-1 flex-col justify-center">
-                      <span>{item.label}</span>
-                      <span className="text-xs text-slate-500">
-                        {item.description}
+                    <div className="flex flex-1 flex-col justify-center text-foreground">
+                      <span className="text-sm font-semibold">
+                        {item.label}
                       </span>
+                      <span className="text-xs">{item.description}</span>
                     </div>
                   </TabsTrigger>
                 );
               })}
             </TabsList>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border  bg-background p-6 shadow-sm">
               {actionMessage && (
                 <Alert className="mb-4 border border-emerald-500/30 bg-emerald-500/10">
                   <AlertTitle>Processo concluido</AlertTitle>

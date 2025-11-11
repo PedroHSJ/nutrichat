@@ -3,10 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import Script from "next/script";
-import {
-  QueryClient,
-} from '@tanstack/react-query';
+import { QueryClient } from "@tanstack/react-query";
 import { ReactQueryProvider } from "@/components/ReactQueryProvider";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,11 +33,12 @@ const queryClient = new QueryClient({
 
 export default function RootLayout({
   children,
+  ...props
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
         <Script
           src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
@@ -48,9 +48,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ReactQueryProvider>
-          <AuthProvider>{children}</AuthProvider>
-        </ReactQueryProvider>
+        <NextThemesProvider
+          {...props}
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+          attribute={"class"}
+        >
+          <ReactQueryProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </ReactQueryProvider>
+        </NextThemesProvider>
       </body>
     </html>
   );

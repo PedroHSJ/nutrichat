@@ -242,7 +242,10 @@ export default async function LandingPage() {
             </div>
           </section>
 
-          <section id="planos" className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <section
+            id="planos"
+            className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center"
+          >
             <Card className="border border-slate-800/70 bg-slate-900/70 shadow-lg shadow-emerald-500/10">
               <CardHeader>
                 <CardTitle className="text-2xl text-white">
@@ -341,8 +344,8 @@ export default async function LandingPage() {
                   Comece a usar o NutriChat hoje mesmo
                 </h2>
                 <p className="mx-auto max-w-2xl text-sm text-slate-200 sm:text-base">
-                  Em poucos minutos voce cria sua conta e acessa nosso agente de IA
-                  especialista em nutrição.
+                  Em poucos minutos voce cria sua conta e acessa nosso agente de
+                  IA especialista em nutrição.
                 </p>
                 <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
                   <Button
