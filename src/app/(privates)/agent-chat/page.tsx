@@ -492,7 +492,7 @@ export default function AgentChatPage() {
     if (dailyLimit > 0 && dailyUsage / dailyLimit >= 0.8) {
       return "bg-yellow-200 text-foreground border-yellow-400";
     }
-    return "bg-gray";
+    return "bg-green-100";
   }, [dailyUsage, dailyLimit]);
 
   return (
