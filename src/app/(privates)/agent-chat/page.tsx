@@ -54,6 +54,10 @@ export function ChatKitPanel({
 }: ChatKitPanelProps & {
   isBlocked: boolean;
 }) {
+  // Garantir que theme seja válido (fallback para "light")
+  const validTheme: ColorScheme =
+    theme === "light" || theme === "dark" ? theme : "light";
+
   const processedFacts = useRef(new Set<string>());
   // Flags to prevent multiple logs per message
   const responseStartedRef = useRef(false);
@@ -267,7 +271,7 @@ export function ChatKitPanel({
   const chatkit = useChatKit({
     api: { getClientSecret },
     theme: {
-      colorScheme: theme,
+      colorScheme: validTheme,
     },
     composer: {
       attachments: {
@@ -449,10 +453,15 @@ function extractErrorDetail(
 
 export default function AgentChatPage() {
   const { user } = useAuth();
-  const { theme } = useTheme() as {
-    theme: ColorScheme;
+  const { theme: rawTheme } = useTheme() as {
+    theme: ColorScheme | undefined;
     setTheme: (theme: ColorScheme) => void;
   };
+
+  // Garantir que theme seja sempre "light" ou "dark"
+  const theme: ColorScheme =
+    rawTheme === "light" || rawTheme === "dark" ? rawTheme : "light";
+
   const fetchingRef = useRef(false);
   const { subscriptionStatus, loading, refreshSubscription } =
     useSubscription();
