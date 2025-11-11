@@ -11,17 +11,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Crown, MessageCircleMore } from "lucide-react";
-import { Button } from "./ui/button";
 import { useAuth } from "@/context/AuthContext";
 import {
-  BadgeCheck,
-  Bell,
   ChevronsUpDown,
-  CreditCard,
   LogOut,
   Sparkles,
 } from "lucide-react";
@@ -36,7 +31,6 @@ import {
 } from "./ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import Link from "next/link";
-import { Badge } from "./ui/badge";
 import { usePathname } from "next/navigation";
 // const sidebarBgClass =
 //   "bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 text-white border-none hover:text-white";

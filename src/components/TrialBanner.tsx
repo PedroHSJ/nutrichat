@@ -1,17 +1,17 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Crown, Clock } from "lucide-react";
 
 export default function TrialBanner() {
-  const { interactionStatus } = useAuth();
+  const { subscriptionStatus } = useSubscription();
 
-  if (!interactionStatus?.isTrialing) return null;
+  if (!subscriptionStatus?.isTrialing) return null;
 
   // Calcular dias restantes se possível
   const getDaysRemaining = () => {
-    if (interactionStatus?.trialEndsAt) {
-      const endDate = new Date(interactionStatus.trialEndsAt);
+    if (subscriptionStatus?.trialEndsAt) {
+      const endDate = new Date(subscriptionStatus.trialEndsAt);
       const today = new Date();
       const diffTime = endDate.getTime() - today.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

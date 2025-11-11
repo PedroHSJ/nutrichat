@@ -1,5 +1,4 @@
 import { createClient } from "@supabase/supabase-js";
-import { Database } from "./database";
 
 // Cliente normal com anon key (para usuários)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

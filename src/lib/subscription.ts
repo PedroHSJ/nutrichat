@@ -8,9 +8,6 @@ import {
   SubscriptionStatus,
 } from "@/types/subscription";
 import Stripe from "stripe";
-import supabase from "./supabase";
-import { SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "./database";
 
 // =====================================================
 // INTERFACES PARA DADOS DO STRIPE

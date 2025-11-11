@@ -17,7 +17,6 @@ import {
   CreditCard,
   Crown,
   Loader2,
-  LogOutIcon,
   RefreshCcw,
   ShieldCheck,
   Sparkles,
@@ -36,7 +35,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
 import { apiClient } from "@/lib/api";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 import { ModeToggle } from "@/components/DarkModeToggle";
 
 type PlanMenuSection = "overview" | "change" | "billing" | "cancel";
