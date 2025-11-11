@@ -23,11 +23,8 @@ import Link from "next/link";
 import { apiClient } from "@/lib/api";
 
 export default function ManageSubscriptionPage() {
-  const {
-    subscriptionStatus,
-    loading,
-    refreshSubscription,
-  } = useSubscription();
+  const { subscriptionStatus, loading, refreshSubscription } =
+    useSubscription();
   const [showCancelModal, setShowCancelModal] = useState(false);
 
   const handleCancelSubscription = () => {

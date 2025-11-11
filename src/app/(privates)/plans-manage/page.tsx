@@ -696,109 +696,111 @@ export default function PlansManagementPage() {
 
   return (
     <RouteGuard requiresPlan requiresAuth>
-    <div className="flex flex-col w-full">
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b">
-        <div className="flex items-center gap-2 px-4 justify-between w-full">
-          <SidebarTrigger className="-ml-1" />
-          <ModeToggle />
-        </div>
-      </header>
-      <CancelSubscriptionModal
-        open={showCancelModal}
-        onClose={() => setShowCancelModal(false)}
-        onCancel={() => handleCancelSubscription("immediate")}
-        loadingCancel={loadingCancel}
-      />
-      <div className="px-8 py-4">
-        <Tabs
-          value={activeSection}
-          onValueChange={(value) => setActiveSection(value as PlanMenuSection)}
-          className="py-8"
-        >
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-            <div>
-              <h1 className="text-3xl font-semibold">Central de planos</h1>
-              <p className="mt-2 text-sm text-slate-500">
-                Gerencie assinatura, cobrancas e upgrade em um so lugar.
-              </p>
-            </div>
-
-            <TabsList className="flex flex-wrap gap-3 bg-transparent p-0">
-              {menuItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <TabsTrigger
-                    key={item.id}
-                    value={item.id}
-                    className={cn(
-                      "group flex min-w-[220px] flex-1 items-center gap-3 rounded-xl border  bg-background px-4 py-3 text-left text-sm font-medium shadow-sm transition hover:border-emerald-300 hover:bg-emerald-500/10",
-                      "data-[state=active]:border-emerald-400 data-[state=active]:bg-emerald-500/15 data-[state=active]:shadow-md data-[state=active]:shadow-emerald-500/20",
-                    )}
-                  >
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg  text-foreground transition group-data-[state=active]:bg-emerald-500/20 group-data-[state=active]:text-emerald-600">
-                      <Icon className="h-4 w-4" />
-                    </span>
-                    <div className="flex flex-1 flex-col justify-center text-foreground">
-                      <span className="text-sm font-semibold">
-                        {item.label}
-                      </span>
-                      <span className="text-xs">{item.description}</span>
-                    </div>
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
-
-            <div className="rounded-2xl border  bg-background p-6 shadow-sm">
-              {actionMessage && (
-                <Alert className="mb-4 border border-emerald-500/30 bg-emerald-500/10">
-                  <AlertTitle>Processo concluido</AlertTitle>
-                  <AlertDescription>{actionMessage}</AlertDescription>
-                </Alert>
-              )}
-              {actionError && (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertTitle>Ops! Algo nao saiu como esperado</AlertTitle>
-                  <AlertDescription>{actionError}</AlertDescription>
-                </Alert>
-              )}
-              {statusError && (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertTitle>
-                    Nao foi possivel carregar sua assinatura
-                  </AlertTitle>
-                  <AlertDescription>{statusError}</AlertDescription>
-                </Alert>
-              )}
-
-              {isLoading ? (
-                <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50">
-                  <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
-                  <p className="text-sm text-slate-600">
-                    Carregando dados da assinatura...
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <TabsContent value="overview" className="mt-0">
-                    {renderOverview()}
-                  </TabsContent>
-                  <TabsContent value="change" className="mt-0">
-                    {renderChange()}
-                  </TabsContent>
-                  <TabsContent value="billing" className="mt-0">
-                    {renderBilling()}
-                  </TabsContent>
-                  <TabsContent value="cancel" className="mt-0">
-                    {renderCancel()}
-                  </TabsContent>
-                </>
-              )}
-            </div>
+      <div className="flex flex-col w-full">
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b">
+          <div className="flex items-center gap-2 px-4 justify-between w-full">
+            <SidebarTrigger className="-ml-1" />
+            <ModeToggle />
           </div>
-        </Tabs>
+        </header>
+        <CancelSubscriptionModal
+          open={showCancelModal}
+          onClose={() => setShowCancelModal(false)}
+          onCancel={() => handleCancelSubscription("immediate")}
+          loadingCancel={loadingCancel}
+        />
+        <div className="px-8 py-4">
+          <Tabs
+            value={activeSection}
+            onValueChange={(value) =>
+              setActiveSection(value as PlanMenuSection)
+            }
+            className="py-8"
+          >
+            <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+              <div>
+                <h1 className="text-3xl font-semibold">Central de planos</h1>
+                <p className="mt-2 text-sm text-slate-500">
+                  Gerencie assinatura, cobrancas e upgrade em um so lugar.
+                </p>
+              </div>
+
+              <TabsList className="flex flex-wrap gap-3 bg-transparent p-0">
+                {menuItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <TabsTrigger
+                      key={item.id}
+                      value={item.id}
+                      className={cn(
+                        "group flex min-w-[220px] flex-1 items-center gap-3 rounded-xl border  bg-background px-4 py-3 text-left text-sm font-medium shadow-sm transition hover:border-emerald-300 hover:bg-emerald-500/10",
+                        "data-[state=active]:border-emerald-400 data-[state=active]:bg-emerald-500/15 data-[state=active]:shadow-md data-[state=active]:shadow-emerald-500/20",
+                      )}
+                    >
+                      <span className="flex h-9 w-9 items-center justify-center rounded-lg  text-foreground transition group-data-[state=active]:bg-emerald-500/20 group-data-[state=active]:text-emerald-600">
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <div className="flex flex-1 flex-col justify-center text-foreground">
+                        <span className="text-sm font-semibold">
+                          {item.label}
+                        </span>
+                        <span className="text-xs">{item.description}</span>
+                      </div>
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+
+              <div className="rounded-2xl border  bg-background p-6 shadow-sm">
+                {actionMessage && (
+                  <Alert className="mb-4 border border-emerald-500/30 bg-emerald-500/10">
+                    <AlertTitle>Processo concluido</AlertTitle>
+                    <AlertDescription>{actionMessage}</AlertDescription>
+                  </Alert>
+                )}
+                {actionError && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertTitle>Ops! Algo nao saiu como esperado</AlertTitle>
+                    <AlertDescription>{actionError}</AlertDescription>
+                  </Alert>
+                )}
+                {statusError && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertTitle>
+                      Nao foi possivel carregar sua assinatura
+                    </AlertTitle>
+                    <AlertDescription>{statusError}</AlertDescription>
+                  </Alert>
+                )}
+
+                {isLoading ? (
+                  <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50">
+                    <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+                    <p className="text-sm text-slate-600">
+                      Carregando dados da assinatura...
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <TabsContent value="overview" className="mt-0">
+                      {renderOverview()}
+                    </TabsContent>
+                    <TabsContent value="change" className="mt-0">
+                      {renderChange()}
+                    </TabsContent>
+                    <TabsContent value="billing" className="mt-0">
+                      {renderBilling()}
+                    </TabsContent>
+                    <TabsContent value="cancel" className="mt-0">
+                      {renderCancel()}
+                    </TabsContent>
+                  </>
+                )}
+              </div>
+            </div>
+          </Tabs>
+        </div>
       </div>
-    </div>
     </RouteGuard>
   );
 }
