@@ -15,11 +15,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Crown, MessageCircleMore } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import {
-  ChevronsUpDown,
-  LogOut,
-  Sparkles,
-} from "lucide-react";
+import { ChevronsUpDown, LogOut, Sparkles } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
