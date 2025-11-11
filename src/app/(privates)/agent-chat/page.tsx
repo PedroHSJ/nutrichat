@@ -392,7 +392,7 @@ export function ChatKitPanel({
           </div>
         </div>
       )} */}
-      {process.env.NODE_ENV !== "production" && (
+      {/* {process.env.NODE_ENV !== "production" && (
         <Button
           onClick={async () => {
             await fetchWithAuth("/api/user-subscription/increment", {
@@ -402,7 +402,7 @@ export function ChatKitPanel({
         >
           Incrementar uso
         </Button>
-      )}
+      )} */}
       <ChatKit key={widgetInstanceKey} control={chatkit.control} />
     </div>
   );
@@ -490,7 +490,7 @@ export default function AgentChatPage() {
   const dailyInteractionBadgeColor = useMemo(() => {
     if (dailyUsage === null) return "bg-gray";
     if (dailyUsage === 0) {
-      return "bg-emerald";
+      return "bg-green-100";
     }
     if (dailyLimit > 0 && dailyUsage === dailyLimit) {
       return "bg-red-100";
@@ -543,10 +543,12 @@ export default function AgentChatPage() {
         </div>
       </header> */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="h-6" />
-            {user?.id &&
+          <div className="flex flex-row items-center gap-2 px-4 justify-between w-full">
+            <div>
+              <SidebarTrigger className="" />
+            </div>
+            <div>
+           {user?.id &&
               (dailyUsage === null ? (
                 <Badge className="rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none bg-gray flex items-center gap-2">
                   <Spinner className="w-4 h-4" />
@@ -559,6 +561,8 @@ export default function AgentChatPage() {
                   Uso diário: {`${dailyUsage}/${dailyLimit}`}
                 </Badge>
               ))}
+            </div>
+           
           </div>
         </header>
 
