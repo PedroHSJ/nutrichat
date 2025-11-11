@@ -2,7 +2,6 @@
 
 import React, {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -12,8 +11,6 @@ import React, {
 import { useRouter } from "next/navigation";
 import type { Session, User } from "@supabase/supabase-js";
 import supabase from "@/lib/supabase";
-import { apiClient } from "@/lib/api";
-import { UserInteractionStatus } from "@/types/subscription";
 
 interface AuthContextType {
   user: User | null;
@@ -21,12 +18,10 @@ interface AuthContextType {
   isAuthenticated: boolean;
   authLoading: boolean;
   authError: string | null;
-  interactionStatus: UserInteractionStatus | null;
   login: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
   loginWithGoogle: (redirectPath?: string) => Promise<void>;
   logout: () => Promise<void>;
-  refreshInteractionStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -62,8 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [interactionStatus, setInteractionStatus] =
-    useState<UserInteractionStatus | null>(null);
 
   const login = async (email: string, password: string) => {
     setAuthLoading(true);
@@ -136,7 +129,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signOut();
     setUser(null);
     setIsAuthenticated(false);
-    setInteractionStatus(null);
 
     if (error) {
       setAuthError(translateAuthError(error.message));
@@ -148,21 +140,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push("/login");
   };
 
-  const refreshInteractionStatus = useCallback(async () => {
-    if (!user || !session) {
-      setInteractionStatus(null);
-      return;
-    }
-
-    try {
-      // ✅ Usando Axios com token automático
-      const response = await apiClient.getSubscriptionStatus();
-      setInteractionStatus(response.data.status as UserInteractionStatus);
-    } catch (error) {
-      setInteractionStatus(null);
-    }
-  }, [user, session]); // ✅ Adicionar session nas dependências
-
   const value = useMemo<AuthContextType>(
     () => ({
       authError,
@@ -170,12 +147,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       session,
       isAuthenticated,
-      interactionStatus,
       login,
       signUp,
       loginWithGoogle,
       logout,
-      refreshInteractionStatus,
     }),
     [
       authError,
@@ -183,12 +158,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       session,
       isAuthenticated,
-      interactionStatus,
       login,
       signUp,
       loginWithGoogle,
       logout,
-      refreshInteractionStatus,
     ],
   );
 
@@ -216,11 +189,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
-
-  useEffect(() => {
-    if (!user) return;
-    refreshInteractionStatus();
-  }, [user, refreshInteractionStatus]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

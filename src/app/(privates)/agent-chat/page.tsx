@@ -458,6 +458,7 @@ export default function AgentChatPage() {
   const fetchingRef = useRef(false);
   const { subscriptionStatus, loading, refreshSubscription } =
     useSubscription();
+
   // Replicando padrão da tela de planos: dailyLimit e remainingInteractions direto do subscriptionStatus
   const dailyLimit = subscriptionStatus?.dailyLimit ?? 0;
   const remainingInteractions = subscriptionStatus?.remainingInteractions ?? 0;
@@ -472,12 +473,6 @@ export default function AgentChatPage() {
       setIsBlocked(false);
     }
   }, [dailyLimit, dailyUsage]);
-
-  useEffect(() => {
-    if (user?.id) {
-      refreshSubscription();
-    }
-  }, [user?.id]);
 
   const dailyInteractionBadgeColor = useMemo(() => {
     if (dailyUsage === null) return "bg-gray";
@@ -494,7 +489,7 @@ export default function AgentChatPage() {
   }, [dailyUsage, dailyLimit]);
 
   return (
-    <RouteGuard requiresPlan>
+    <RouteGuard requiresAuth requiresPlan>
       <div className="w-full h-screen flex flex-col overflow-hidden bg-background rounded-2xl">
         <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background">
           <div className="flex flex-row items-center gap-2 px-4 justify-between w-full">

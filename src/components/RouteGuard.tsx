@@ -1,125 +1,87 @@
 "use client";
 
-import { useEffect, ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { ReactNode, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import { useSubscription } from "@/hooks/use-subscription";
-import { Loader2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Spinner } from "./ui/spinner";
 
 interface RouteGuardProps {
   children: ReactNode;
-  requiresPlan?: boolean; // Se true, requer um plano ativo
-  redirectToPlans?: boolean; // Se true, redireciona para planos se não tiver
-  redirectToLogin?: boolean; // Se true, redireciona para login se não autenticado
+  requiresAuth?: boolean; // Se true, requer autenticação
+  requiresPlan?: boolean; // Se true, requer plano ativo
 }
 
 export function RouteGuard({
   children,
+  requiresAuth = true,
   requiresPlan = false,
-  redirectToPlans = true,
-  redirectToLogin = true,
 }: RouteGuardProps) {
-  const { isAuthenticated, authLoading, user } = useAuth();
-  const {
-    loading: subscriptionLoading,
-    hasActivePlan,
-    subscriptionStatus,
-  } = useSubscription();
+  const { isAuthenticated, authLoading } = useAuth();
+  const { subscriptionStatus, loading: subscriptionLoading } =
+    useSubscription();
   const router = useRouter();
 
+  // Redirecionar para login se não autenticado
   useEffect(() => {
+    if (!authLoading && requiresAuth && !isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [authLoading, requiresAuth, isAuthenticated, router]);
+
+  // Redirecionar para plans se não tem plano ativo
+  useEffect(() => {
+    if(process.env.NODE_ENV === 'development'){
+    console.log({
+      requiresPlan,
+      subscriptionLoading,
+      subscriptionStatus,
+    })
+    }
+    if (!requiresPlan) return;
     if (subscriptionLoading) return;
-    // Aguardar carregamento da autenticação
-    if (authLoading) return;
+    
+    // Aguardar até ter dados válidos (não apenas loading = false)
+    if (!subscriptionStatus) return;
 
-    // Se requer autenticação e não está autenticado
-    if (redirectToLogin && !isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-    // Se não tem plano ativo, só pode acessar /plans
-    if (requiresPlan && !hasActivePlan && redirectToPlans) {
-      console.log("Redirecting to plans...");
-      //router.push("/plans");
-      return;
-    }
-    if (requiresPlan && subscriptionLoading) return;
-  }, [
-    authLoading,
-    isAuthenticated,
-    subscriptionLoading,
-    hasActivePlan,
-    requiresPlan,
-    redirectToPlans,
-    redirectToLogin,
-    router,
-    user,
-  ]);
+    const hasActivePlan =
+      subscriptionStatus.subscriptionStatus === "active" ||
+      subscriptionStatus.subscriptionStatus === "trialing";
 
-  // Renderiza o conteúdo imediatamente para manter transparente
-  // As verificações de redirecionamento acontecem em background via useEffect
-  if (authLoading || (requiresPlan && subscriptionLoading)) {
-    return <>{children}</>;
+    if (!hasActivePlan) {
+      router.replace("/plans");
+    }
+  }, [requiresPlan, subscriptionLoading, subscriptionStatus, router]);
+
+  // Aguardar carregamento da autenticação
+  if (authLoading) {
+    return null;
   }
 
-  // Se não passou nas verificações, não renderizar o conteúdo
-  if (redirectToLogin && !isAuthenticated) {
-    return (
-      <Dialog open>
-        <DialogContent
-          className="text-center select-none"
-          showCloseButton={false}
-        >
-          <DialogHeader>
-            <DialogTitle className="text-red-600">
-              Autenticação necessária
-            </DialogTitle>
-            <DialogDescription className="mb-4">
-              Você precisa estar autenticado para acessar esta página.
-            </DialogDescription>
-          </DialogHeader>
-          <button
-            className="mt-2 px-4 py-2 rounded bg-emerald-500 text-white font-semibold hover:bg-emerald-600 transition"
-            onClick={() => router.push("/login")}
-          >
-            Ir para login
-          </button>
-        </DialogContent>
-      </Dialog>
-    );
+  // Se requer autenticação e não está autenticado, não renderizar
+  if (requiresAuth && !isAuthenticated) {
+    return null;
   }
 
-  if (requiresPlan && !hasActivePlan && redirectToPlans) {
-    return (
-      <Dialog open>
-        <DialogContent
-          className="text-center select-none"
-          showCloseButton={false}
-        >
-          <DialogHeader>
-            <DialogTitle className="text-amber-700">
-              Plano necessário
-            </DialogTitle>
-            <DialogDescription className="mb-4">
-              Você precisa de um plano ativo para acessar esta funcionalidade.
-            </DialogDescription>
-          </DialogHeader>
-          <button
-            className="mt-2 px-4 py-2 rounded bg-emerald-500 text-white font-semibold hover:bg-emerald-600 transition"
-            onClick={() => router.push("/plans")}
-          >
-            Ver planos disponíveis
-          </button>
-        </DialogContent>
-      </Dialog>
-    );
+  // Se requer plano, aguardar carregamento e verificar
+  if (requiresPlan) {
+    // Aguardar carregamento da assinatura OU dados inválidos
+    if (subscriptionLoading || !subscriptionStatus) {
+      return (
+        <div className="w-full h-screen flex items-center justify-center bg-background">
+          <Spinner className="h-8 w-8" />
+        </div>
+      );
+    }
+
+    const hasActivePlan =
+      subscriptionStatus.subscriptionStatus === "active" ||
+      subscriptionStatus.subscriptionStatus === "trialing";
+
+    // Se não tem plano ativo, não renderizar (vai redirecionar)
+    if (!hasActivePlan) {
+      return null;
+    }
   }
 
   return <>{children}</>;

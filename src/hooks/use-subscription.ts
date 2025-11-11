@@ -1,66 +1,45 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { UserInteractionStatus } from "@/types/subscription";
 import { useAuth } from "@/context/AuthContext";
 import { apiClient } from "@/lib/api";
 
 export function useSubscription() {
   const { user, isAuthenticated } = useAuth();
-  const [subscriptionStatus, setSubscriptionStatus] =
-    useState<UserInteractionStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const checkSubscription = async () => {
-      if (!isAuthenticated || !user) {
-        setSubscriptionStatus(null);
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await apiClient.getSubscriptionStatus();
-        const status = response.data;
-        setSubscriptionStatus(status);
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Erro ao verificar assinatura";
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkSubscription();
-  }, [isAuthenticated, user]);
+  const {
+    data: subscriptionStatus,
+    isLoading: loading,
+    error,
+  } = useQuery({
+    queryKey: ["subscription-status", user?.id],
+    queryFn: async (): Promise<UserInteractionStatus> => {
+      const response = await apiClient.getSubscriptionStatus();
+      return response.data;
+    },
+    enabled: isAuthenticated && !!user,
+    staleTime: 60 * 1000, // 1 minuto - dados considerados frescos
+    gcTime: 10 * 60 * 1000, // 10 minutos - tempo no cache
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    retry: 1,
+    // Deduplica automaticamente requisições simultâneas
+    networkMode: "online",
+  });
 
   const refreshSubscription = async () => {
-    if (!isAuthenticated || !user) {
-      setSubscriptionStatus(null);
-      setLoading(false);
-      return;
-    }
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await apiClient.getSubscriptionStatus();
-      const status = response.data;
-      setSubscriptionStatus(status);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Erro ao atualizar assinatura";
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
+    await queryClient.invalidateQueries({
+      queryKey: ["subscription-status", user?.id],
+    });
   };
 
   return {
-    subscriptionStatus,
+    subscriptionStatus: subscriptionStatus || null,
     loading,
-    error,
+    error: error instanceof Error ? error.message : null,
     refreshSubscription,
     hasActivePlan:
       subscriptionStatus?.planType !== "free" &&

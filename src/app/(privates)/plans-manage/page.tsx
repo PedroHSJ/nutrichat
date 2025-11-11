@@ -173,9 +173,7 @@ const FallbackMessage =
 export default function PlansManagementPage() {
   const [activeSection, setActiveSection] =
     useState<PlanMenuSection>("overview");
-  const [subscriptionDetails, setSubscriptionDetails] =
-    useState<SubscriptionDetails | null>(null);
-  const [statusLoading, setStatusLoading] = useState(true);
+  const [statusLoading, setStatusLoading] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
 
   const [plans, setPlans] = useState<PlanOption[]>([]);
@@ -194,8 +192,8 @@ export default function PlansManagementPage() {
   } = useSubscription();
 
   const effectiveStatus = useMemo(
-    () => subscriptionDetails ?? normalizeStatus(subscriptionStatus ?? null),
-    [subscriptionDetails, subscriptionStatus],
+    () => normalizeStatus(subscriptionStatus ?? null),
+    [subscriptionStatus],
   );
 
   const trialLabel = useMemo(() => {
@@ -219,22 +217,6 @@ export default function PlansManagementPage() {
     return `${diffDays} dia${diffDays === 1 ? "" : "s"} restantes no teste`;
   }, [effectiveStatus?.isTrialing, effectiveStatus?.trialEndsAt]);
 
-  const fetchSubscriptionStatus = useCallback(async () => {
-    try {
-      setStatusLoading(true);
-      setStatusError(null);
-
-      const response = await apiClient.getSubscriptionStatus();
-      const data = response.data;
-
-      setSubscriptionDetails(normalizeStatus(data));
-    } catch (error) {
-      setStatusError(error instanceof Error ? error.message : FallbackMessage);
-    } finally {
-      setStatusLoading(false);
-    }
-  }, []);
-
   const fetchPlans = useCallback(async () => {
     try {
       setPlansLoading(true);
@@ -250,10 +232,6 @@ export default function PlansManagementPage() {
       setPlansLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    fetchSubscriptionStatus();
-  }, [fetchSubscriptionStatus]);
 
   useEffect(() => {
     fetchPlans();
@@ -276,9 +254,7 @@ export default function PlansManagementPage() {
     effectiveStatus?.resetTime instanceof Date
       ? effectiveStatus.resetTime
       : undefined;
-  const isCancelScheduled = Boolean(
-    (subscriptionDetails as SubscriptionDetails | null)?.cancelAtPeriodEnd,
-  );
+  const isCancelScheduled = Boolean(effectiveStatus?.cancelAtPeriodEnd);
   const isPaidPlan = planType !== "free";
 
   const handlePlanSelection = async (plan: PlanOption) => {
@@ -340,7 +316,6 @@ export default function PlansManagementPage() {
         data?.message ??
           "Sua assinatura foi cancelada. Voce pode reativa-la quando quiser.",
       );
-      await fetchSubscriptionStatus();
       await refreshSubscription();
 
       // Aguarda 2 segundos, faz logout e redireciona para a raiz
@@ -720,6 +695,7 @@ export default function PlansManagementPage() {
   const isLoading = statusLoading || subscriptionLoading;
 
   return (
+    <RouteGuard requiresPlan requiresAuth>
     <div className="flex flex-col w-full">
       <header className="flex h-16 shrink-0 items-center gap-2 border-b">
         <div className="flex items-center gap-2 px-4 justify-between w-full">
@@ -823,5 +799,6 @@ export default function PlansManagementPage() {
         </Tabs>
       </div>
     </div>
+    </RouteGuard>
   );
 }

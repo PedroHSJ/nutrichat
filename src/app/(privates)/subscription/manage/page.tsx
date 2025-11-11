@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useSubscription } from "@/hooks/use-subscription";
 import { CancelSubscriptionModal } from "@/components/CancelSubscriptionModal";
 import {
   Card,
@@ -21,23 +22,12 @@ import {
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
 
-interface SubscriptionInfo {
-  hasSubscription: boolean;
-  planName?: string;
-  planType?: string;
-  status?: string;
-  currentPeriodEnd?: string;
-  dailyLimit?: number;
-  remainingInteractions?: number;
-  cancelAtPeriodEnd?: boolean;
-}
-
 export default function ManageSubscriptionPage() {
-  const [loading, setLoading] = useState(true);
-  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(
-    null,
-  );
-  const [error, setError] = useState<string | null>(null);
+  const {
+    subscriptionStatus,
+    loading,
+    refreshSubscription,
+  } = useSubscription();
   const [showCancelModal, setShowCancelModal] = useState(false);
 
   const handleCancelSubscription = () => {
@@ -47,34 +37,7 @@ export default function ManageSubscriptionPage() {
   const handleModalCancel = async (type: "immediate" | "period") => {
     setShowCancelModal(false);
     await apiClient.cancelSubscription();
-    fetchSubscriptionInfo();
-  };
-
-  useEffect(() => {
-    fetchSubscriptionInfo();
-  }, []);
-
-  const fetchSubscriptionInfo = async () => {
-    try {
-      const response = await apiClient.getSubscriptionStatus();
-      const data = response.data;
-      console.log("Subscription data fetched:", data);
-      setSubscription({
-        hasSubscription: data.subscriptionStatus === "active",
-        planName: data.planName,
-        planType: data.planType,
-        status: data.subscriptionStatus,
-        currentPeriodEnd: data.currentPeriodEnd,
-        dailyLimit: data.dailyLimit,
-        remainingInteractions: data.remainingInteractions,
-        cancelAtPeriodEnd: data.cancelAtPeriodEnd,
-      });
-    } catch (error) {
-      console.error("Error fetching subscription:", error);
-      setError("Erro ao carregar informações da assinatura");
-    } finally {
-      setLoading(false);
-    }
+    await refreshSubscription();
   };
 
   const getStatusBadge = (status?: string) => {
@@ -92,10 +55,6 @@ export default function ManageSubscriptionPage() {
     }
   };
 
-  useEffect(() => {
-    console.log("subscription", subscription);
-  }, [subscription]);
-
   if (loading) {
     return (
       <div className="container mx-auto py-12 px-4 max-w-2xl">
@@ -106,28 +65,9 @@ export default function ManageSubscriptionPage() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="container mx-auto py-12 px-4 max-w-2xl">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
-              <CardTitle className="text-red-600">Erro</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">{error}</p>
-            <Button onClick={() => window.location.reload()}>
-              Tentar Novamente
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const hasActivePlan = subscriptionStatus?.subscriptionStatus === "active";
 
-  if (!subscription?.hasSubscription) {
+  if (!hasActivePlan) {
     return (
       <div className="container mx-auto py-12 px-4 max-w-2xl">
         <Card>
@@ -174,9 +114,9 @@ export default function ManageSubscriptionPage() {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
-              {subscription.planName}
+              {subscriptionStatus?.planName}
             </CardTitle>
-            {getStatusBadge(subscription.status)}
+            {getStatusBadge(subscriptionStatus?.subscriptionStatus)}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -185,7 +125,9 @@ export default function ManageSubscriptionPage() {
               <p className="text-sm font-medium text-muted-foreground">
                 Limite Diário
               </p>
-              <p className="text-2xl font-bold">{subscription.dailyLimit}</p>
+              <p className="text-2xl font-bold">
+                {subscriptionStatus?.dailyLimit}
+              </p>
               <p className="text-sm text-muted-foreground">
                 interações por dia
               </p>
@@ -195,13 +137,13 @@ export default function ManageSubscriptionPage() {
                 Restantes Hoje
               </p>
               <p className="text-2xl font-bold">
-                {subscription.remainingInteractions}
+                {subscriptionStatus?.remainingInteractions}
               </p>
               <p className="text-sm text-muted-foreground">até à meia-noite</p>
             </div>
           </div>
 
-          {subscription.currentPeriodEnd && (
+          {subscriptionStatus?.currentPeriodEnd && (
             <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
               <Calendar className="h-4 w-4 text-blue-600" />
               <div>
@@ -209,23 +151,9 @@ export default function ManageSubscriptionPage() {
                   Próxima cobrança
                 </p>
                 <p className="text-sm text-blue-700">
-                  {new Date(subscription.currentPeriodEnd).toLocaleDateString(
-                    "pt-BR",
-                  )}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {subscription.cancelAtPeriodEnd && (
-            <div className="flex items-center gap-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-              <AlertTriangle className="h-4 w-4 text-yellow-600" />
-              <div>
-                <p className="text-sm font-medium text-yellow-900">
-                  Cancelamento programado
-                </p>
-                <p className="text-sm text-yellow-700">
-                  Sua assinatura será cancelada no final do período atual
+                  {new Date(
+                    subscriptionStatus.currentPeriodEnd,
+                  ).toLocaleDateString("pt-BR")}
                 </p>
               </div>
             </div>
@@ -252,20 +180,13 @@ export default function ManageSubscriptionPage() {
             Histórico de Cobranças
           </Button>
 
-          {!subscription.cancelAtPeriodEnd ? (
-            <Button
-              variant="destructive"
-              className="w-full"
-              onClick={handleCancelSubscription}
-            >
-              Cancelar Assinatura
-            </Button>
-          ) : (
-            <Button variant="default" className="w-full">
-              <CheckCircle className="mr-2 h-4 w-4" />
-              Reativar Assinatura
-            </Button>
-          )}
+          <Button
+            variant="destructive"
+            className="w-full"
+            onClick={handleCancelSubscription}
+          >
+            Cancelar Assinatura
+          </Button>
         </CardContent>
       </Card>
 
