@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -113,6 +114,15 @@ export function LoginForm() {
             {errors.password.message}
           </span>
         )}
+      </div>
+
+      <div className="flex justify-end">
+        <Link
+          href="/forgot-password"
+          className="text-sm font-medium text-emerald-300 transition hover:text-emerald-200"
+        >
+          Esqueceu sua senha?
+        </Link>
       </div>
 
       {/* Erro geral */}

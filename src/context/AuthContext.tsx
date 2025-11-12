@@ -21,6 +21,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
   loginWithGoogle: (redirectPath?: string) => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -60,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     setAuthLoading(true);
+    setAuthError(null);
 
     const { error, data } = await supabase.auth.signInWithPassword({
       email,
@@ -123,6 +126,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthLoading(false);
   };
 
+  const requestPasswordReset = async (email: string) => {
+    setAuthLoading(true);
+    const redirectTo =
+      (typeof window !== "undefined"
+        ? `${window.location.origin}/auth/update-password`
+        : undefined) ??
+      (process.env.NEXT_PUBLIC_APP_URL
+        ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/update-password`
+        : undefined);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      email,
+      redirectTo ? { redirectTo } : undefined,
+    );
+
+    if (error) {
+      setAuthError(translateAuthError(error.message));
+    } else {
+      setAuthError(null);
+    }
+
+    setAuthLoading(false);
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    setAuthLoading(true);
+
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      setAuthError(translateAuthError(error.message));
+    } else {
+      setAuthError(null);
+      setUser(data?.user ?? null);
+      setIsAuthenticated(!!data?.user);
+    }
+
+    setAuthLoading(false);
+  };
+
   const logout = async () => {
     setAuthLoading(true);
 
@@ -150,6 +195,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       signUp,
       loginWithGoogle,
+      requestPasswordReset,
+      updatePassword,
       logout,
     }),
     [
@@ -161,6 +208,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       signUp,
       loginWithGoogle,
+      requestPasswordReset,
+      updatePassword,
       logout,
     ],
   );

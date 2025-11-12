@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Redefinição de senha • NutriChat</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #020617;
+        font-family: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #e2e8f0;
+      }
+      .wrapper {
+        width: 100%;
+        padding: 32px 16px;
+        background: radial-gradient(circle at top, #0f172a, #020617);
+      }
+      .container {
+        max-width: 520px;
+        margin: 0 auto;
+        background: linear-gradient(135deg, #0b1120 0%, #020617 100%);
+        border: 1px solid rgba(94, 234, 212, 0.2);
+        border-radius: 18px;
+        padding: 40px 32px;
+        text-align: left;
+        box-shadow: 0 20px 60px rgba(15, 118, 110, 0.25);
+      }
+      .badge {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(94, 234, 212, 0.4);
+        background: rgba(16, 185, 129, 0.15);
+        color: #5eead4;
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        margin-bottom: 18px;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 28px;
+        color: #f8fafc;
+      }
+      p {
+        margin: 0 0 18px;
+        line-height: 1.6;
+        color: #cbd5f5;
+      }
+      .card {
+        margin: 24px 0;
+        padding: 20px;
+        border-radius: 14px;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(94, 234, 212, 0.18);
+      }
+      .cta {
+        display: inline-block;
+        padding: 14px 28px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #34d399, #10b981);
+        color: #0f172a;
+        font-weight: 600;
+        text-decoration: none;
+        font-size: 16px;
+        margin: 10px 0 0;
+      }
+      .cta:hover {
+        opacity: 0.9;
+      }
+      .footer {
+        margin-top: 36px;
+        font-size: 12px;
+        color: #94a3b8;
+        text-align: center;
+      }
+      .link {
+        color: #5eead4;
+      }
+      @media (max-width: 540px) {
+        .container {
+          padding: 32px 22px;
+        }
+        h1 {
+          font-size: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <table class="wrapper" role="presentation" cellpadding="0" cellspacing="0">
+      <tr>
+        <td align="center">
+          <table
+            class="container"
+            role="presentation"
+            cellpadding="0"
+            cellspacing="0"
+          >
+            <tr>
+              <td>
+                <span class="badge">NutriChat</span>
+                <h1>Redefina sua senha</h1>
+                <p>
+                  Olá, {{ .Email }} 👋<br />
+                  Recebemos um pedido para atualizar sua senha no NutriChat.
+                  Caso tenha sido você, clique no botão abaixo para continuar.
+                </p>
+                <div class="card">
+                  <p style="margin-bottom: 12px; color: #e2e8f0">
+                    Este link é válido por tempo limitado. Se ele expirar, basta
+                    solicitar uma nova redefinição a partir da tela de login.
+                  </p>
+                  <a class="cta" href="{{ .ConfirmationURL }}" target="_blank"
+                    >Definir nova senha</a
+                  >
+                </div>
+                <p style="font-size: 13px; color: #a5b4fc">
+                  Problemas com o botão? Copie e cole este link no navegador:
+                  <br />
+                  <a
+                    href="{{ .ConfirmationURL }}"
+                    class="link"
+                    target="_blank"
+                    style="color: #5eead4"
+                    >{{ .ConfirmationURL }}</a
+                  >
+                </p>
+                <p style="font-size: 13px">
+                  Não foi você quem solicitou? Ignore esta mensagem e nenhuma
+                  alteração será feita.
+                </p>
+              </td>
+            </tr>
+          </table>
+          <div class="footer">NutriChat · Assistente nutricional com IA</div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

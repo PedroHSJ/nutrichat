@@ -6,6 +6,8 @@ import Script from "next/script";
 import { QueryClient } from "@tanstack/react-query";
 import { ReactQueryProvider } from "@/components/ReactQueryProvider";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { Toaster } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -56,7 +58,10 @@ export default function RootLayout({
           attribute={"class"}
         >
           <ReactQueryProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>
+              <Toaster />
+              {children}
+            </AuthProvider>
           </ReactQueryProvider>
         </NextThemesProvider>
       </body>
