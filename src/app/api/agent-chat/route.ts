@@ -30,7 +30,7 @@ export async function POST(request: Request): Promise<Response> {
         {
           status: 500,
           headers: { "Content-Type": "application/json" },
-        },
+        }
       );
     }
 
@@ -47,7 +47,7 @@ export async function POST(request: Request): Promise<Response> {
         {
           status: 401,
           headers: { "Content-Type": "application/json" },
-        },
+        }
       );
     }
 
@@ -62,7 +62,7 @@ export async function POST(request: Request): Promise<Response> {
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
-        },
+        }
       );
     }
 
@@ -82,7 +82,7 @@ export async function POST(request: Request): Promise<Response> {
           file_upload: {
             enabled:
               parsedBody?.chatkit_configuration?.file_upload?.enabled ?? false,
-            max_file_size: 50 * 1024 * 1024, // 50 MB
+            max_file_size: 50, // 50 MB
             max_files: 4,
           },
         },
@@ -110,7 +110,7 @@ export async function POST(request: Request): Promise<Response> {
         {
           status: upstreamResponse.status,
           headers: { "Content-Type": "application/json" },
-        },
+        }
       );
     }
 
@@ -158,7 +158,7 @@ async function safeParseJson<T>(req: Request): Promise<T | null> {
 }
 
 function extractUpstreamError(
-  payload: Record<string, unknown> | undefined,
+  payload: Record<string, unknown> | undefined
 ): string | null {
   if (!payload) {
     return null;
