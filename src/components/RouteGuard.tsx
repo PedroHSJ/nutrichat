@@ -31,13 +31,6 @@ export function RouteGuard({
 
   // Redirecionar para plans se não tem plano ativo
   useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      console.log({
-        requiresPlan,
-        subscriptionLoading,
-        subscriptionStatus,
-      });
-    }
     if (!requiresPlan) return;
     if (subscriptionLoading) return;
 

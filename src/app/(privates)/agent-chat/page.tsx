@@ -200,7 +200,6 @@ export function ChatKitPanel({
               user_id: user?.id ?? null, // <- envia ID do usuário autenticado
             },
             chatkit_configuration: {
-              // enable attachments
               file_upload: {
                 enabled: true,
               },
@@ -276,7 +275,6 @@ export function ChatKitPanel({
     composer: {
       attachments: {
         enabled: true,
-        maxSize: 5 * 1024 * 1024, // 5 MB
         accept: {
           "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
           "application/pdf": [".pdf"],

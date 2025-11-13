@@ -82,6 +82,8 @@ export async function POST(request: Request): Promise<Response> {
           file_upload: {
             enabled:
               parsedBody?.chatkit_configuration?.file_upload?.enabled ?? false,
+            max_file_size: 50 * 1024 * 1024, // 50 MB
+            max_files: 4,
           },
         },
       }),
