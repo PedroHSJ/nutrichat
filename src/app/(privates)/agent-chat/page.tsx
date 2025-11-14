@@ -542,7 +542,7 @@ export default function AgentChatPage() {
                 <SidebarTrigger className="" />
               </div>
               <div className="items-center flex-row flex gap-2">
-                {subscriptionStatus?.planType === "free" && (
+                {subscriptionStatus?.planType === "pro" && (
                   <Button
                     type="button"
                     size="sm"

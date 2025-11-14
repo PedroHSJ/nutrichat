@@ -21,29 +21,45 @@ export type PromptTemplate = {
 export const promptTemplates: PromptTemplate[] = [
   {
     id: "anamnese-rotina-diaria",
-    title: "Anamnese - Rotina diária detalhada",
+    title: "Anamnese Alimentar — Rotina Diária Detalhada",
     description:
-      "Mapeia horários, contexto das refeições e fatores emocionais que impactam escolhas alimentares.",
-    content: `Realize uma anamnese completa para entender a rotina diária do paciente. Investigue:
-- Horários em que acorda e dorme.
-- Janelas de refeições, lanches e eventual jejum.
-- Situações de maior fome emocional ou ansiedade.
-- Ambiente em que se alimenta (trabalho, casa, trânsito).
-Finalize com um resumo em tópicos destacando oportunidades de ajustes.`,
+      "Avaliação aprofundada da rotina, hábitos alimentares, fatores emocionais e contexto das refeições para mapeamento nutricional completo.",
+    content: `Realize uma anamnese alimentar completa para compreender a rotina diária do paciente. Investigue de forma estruturada:
+- Horário em que acorda e dorme, incluindo regularidade do ciclo sono–vigília.
+- Janelas de refeições, lanches, intervalos longos e possíveis períodos de jejum.
+- Situações de maior fome emocional, estresse ou impulsividade alimentar.
+- Ambientes e contextos das refeições (trabalho, casa, restaurante, trânsito).
+- Sintomas gastrointestinais: empachamento, refluxo, gases, constipação, diarreia ou desconfortos específicos.
+- Alergias ou intolerâncias alimentares — relatadas, suspeitas ou em investigação.
+- Ingestão hídrica: quantidade total estimada, distribuição ao longo do dia e tipo de água.
+- Suplementação atual: tipos, dosagens, horários, adesão e propósito de uso.
+- Atividade física: modalidade, intensidade, frequência, duração e horários.
+Finalize com:
+- Um resumo em tópicos, destacando padrões e oportunidades claras de ajuste.
+- Uma estimativa da distribuição atual de macronutrientes e fibras (em % e g, quando possível).
+`,
     category: "anamnese",
     keywords: ["rotina", "hábitos", "comportamento"],
   },
   {
     id: "anamnese-recordatorio-24h",
-    title: "Recordatório alimentar de 24h",
+    title: "Recordatório Alimentar de 24h",
     description:
-      "Coleta estruturada para entender qualidade e quantidade ingerida no último dia.",
-    content: `Conduza um recordatório alimentar de 24h, começando pelo primeiro alimento ingerido ontem até o último item antes de dormir. Para cada refeição colete:
+      "Coleta estruturada e detalhada da alimentação realizada no último dia para avaliação qualitativa e quantitativa.",
+    content: `Conduza um recordatório alimentar completo das últimas 24 horas, iniciando pelo primeiro alimento consumido ontem até o último item antes de dormir. Para cada refeição, colete:
 - Horário aproximado.
 - Local e companhia.
-- Preparos e porções estimadas.
-- Sensação física/emocional antes e após comer.
-Use o formato de tabela com colunas: Horário | Refeição | Itens consumidos | Observações.`,
+- Preparos, métodos de cocção e porções estimadas.
+- Sensações físicas e emocionais antes e após comer.
+Além disso, registre:
+- Horário em que acordou e dormiu.
+- Sintomas gastrointestinais: empachamento, refluxo, gases, constipação ou diarreia.
+- Alergias/intolerâncias relatadas ou suspeitas.
+- Ingestão hídrica (volume total, distribuição e tipo).
+- Suplementação atual (tipos, horários, adesão).
+- Atividade física (modalidade, intensidade, frequência, duração e horários).
+Organize as informações em tabela com colunas:
+Horário | Refeição | Itens consumidos | Observações`,
     category: "anamnese",
     keywords: ["recordatório", "quantidade", "porções"],
   },
@@ -101,14 +117,24 @@ Finalize com recomendações de monitoramento de sinais clínicos.`,
   },
   {
     id: "protocolo-resistencia-insulina",
-    title: "Protocolo - Resistência à insulina",
+    title: "Protocolo — Resistência à Insulina",
     description:
-      "Fluxo com orientações de alimentação, sono e suplementação basais.",
-    content: `Monte um protocolo para paciente com resistência à insulina contendo:
-- Ajustes alimentares prioritários (índice glicêmico, fibras, proteínas).
-- Tarefas semanais de atividade física e higiene do sono.
-- Sugestões de suplementação com doses de referência (ex: magnésio, berberina) com ressalvas de avaliação médica.
-Apresente em formato de checklist semanal.`,
+      "Roteiro estruturado com diretrizes de alimentação, sono, atividade física e suplementação para manejo inicial da resistência à insulina.",
+    content: `Monte um protocolo claro e objetivo para pacientes com resistência à insulina, contendo:
+Ajustes alimentares prioritários
+- Redução de carga glicêmica e priorização de alimentos de baixo índice glicêmico.
+- Aumento de fibras (solúveis e insolúveis), proteínas de boa qualidade e gorduras adequadas.
+- Estratégias práticas para controle de picos glicêmicos (ordem dos alimentos, combinações, timing das refeições).
+Tarefas semanais
+- Atividade física: metas de intensidade, frequência e tipos de treino (resistido + aeróbico).
+- Higiene do sono: rotina pré-sono, horários recomendados, exposição à luz e práticas relaxantes.
+Sugestões de suplementação (com doses de referência)
+- Magnésio
+- Berberina
+- Outros suplementos pertinentes
+Inclua observações importantes destacando a necessidade de avaliação e liberação médica.
+Apresente o plano final em formato de checklist semanal, organizado por categorias (alimentação, sono, atividade física, suplementação).
+`,
     category: "protocolos",
     keywords: ["resistência à insulina", "checklist"],
   },

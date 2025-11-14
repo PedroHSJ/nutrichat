@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     if (!token) {
       return NextResponse.json(
         { success: false, error: "Token de acesso não fornecido" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Token inválido ou expirado",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
           error:
             "É necessário possuir uma assinatura ativa para gerenciar o método de pagamento.",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     const portalSession = await SubscriptionService.createBillingPortalSession(
       userSubscription.stripe_customer_id,
-      returnUrl
+      returnUrl,
     );
 
     if (!portalSession.url) {
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Não foi possível iniciar o portal de cobrança.",
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: "Erro interno ao criar sessão do portal de cobrança",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
