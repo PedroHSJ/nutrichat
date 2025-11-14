@@ -21,6 +21,7 @@ export function RouteGuard({
   const { subscriptionStatus, loading: subscriptionLoading } =
     useSubscription();
   const router = useRouter();
+  if (process.env.NODE_ENV === "development") return <>{children}</>;
 
   // Redirecionar para login se não autenticado
   useEffect(() => {

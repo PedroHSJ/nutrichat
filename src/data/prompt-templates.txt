@@ -1,0 +1,46 @@
+PROMPT 1
+
+TITULO: Anamnese - Rotina diária detalhada
+DESCRICAO: Mapeia horários, contexto das refeições e fatores emocionais que impactam escolhas alimentares.
+CONTEUDO:
+Realize uma anamnese completa para entender a rotina diária do paciente. Investigue:
+- Horários em que acorda e dorme.
+- Janelas de refeições, lanches e eventual jejum.
+- Situações de maior fome emocional ou ansiedade.
+- Ambiente em que se alimenta (trabalho, casa, trânsito).
+Finalize com um resumo em tópicos destacando oportunidades de ajustes.
+
+CATEGORIA: anamnese
+
+-------------------------------------------------------------------------
+
+PROMPT 2
+
+TITULO: Recordatório alimentar de 24h
+
+DESCRICAO: Coleta estruturada para entender qualidade e quantidade ingerida no último dia.
+
+CONTEUDO: Conduza um recordatório alimentar de 24h, começando pelo primeiro alimento ingerido ontem até o último item antes de dormir. Para cada refeição colete:
+- Horário aproximado.
+- Local e companhia.
+- Preparos e porções estimadas.
+- Sensação física/emocional antes e após comer.
+Use o formato de tabela com colunas: Horário | Refeição | Itens consumidos | Observações.
+
+CATEGORIA: anamnese
+
+-------------------------------------------------------------------------
+PROMPT 3
+
+TITULO: Protocolo - Resistência à insulina
+
+DESCRICAO: Fluxo com orientações de alimentação, sono e suplementação basais.
+
+CONTEUDO: Fluxo com orientações de alimentação, sono e suplementação basais.",
+    content: Monte um protocolo para paciente com resistência à insulina contendo:
+- Ajustes alimentares prioritários (índice glicêmico, fibras, proteínas).
+- Tarefas semanais de atividade física e higiene do sono.
+- Sugestões de suplementação com doses de referência (ex: magnésio, berberina) com ressalvas de avaliação médica.
+Apresente em formato de checklist semanal.
+
+CATEGORIA: protocolos

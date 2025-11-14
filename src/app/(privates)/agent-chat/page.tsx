@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { fetchWithAuth } from "@/lib/fetchWIthAuth";
 import { ModeToggle } from "@/components/DarkModeToggle";
 import { useTheme } from "next-themes";
+import { PromptTemplatesDialog } from "@/components/agent-chat/PromptTemplatesDialog";
+import { BookMarkedIcon, Sparkles } from "lucide-react";
 export type FactAction = {
   type: "save";
   factId: string;
@@ -383,7 +385,13 @@ export function ChatKitPanel({
     );
   }
   return (
-    <div className=" flex w-full flex-col overflow-hidden bg-background shadow-sm transition-colors rounded-b-2xl">
+    <div
+      className="flex w-full flex-col overflow-hidden 
+    bg-background shadow-sm transition-colors rounded-b-2xl
+    items-center
+    justify-center
+    "
+    >
       {process.env.NODE_ENV !== "production" && (
         <Button
           onClick={async () => {
@@ -396,6 +404,10 @@ export function ChatKitPanel({
         </Button>
       )}
       <ChatKit key={widgetInstanceKey} control={chatkit.control} />
+      <span className="text-sm leading-tight text-muted-foreground p-4 pt-2">
+        O Nutrichat pode cometer erros. Verifique sempre as informações
+        fornecidas antes de utilizá-las.
+      </span>
     </div>
   );
 }
@@ -451,7 +463,7 @@ function extractErrorDetail(
 
 export default function AgentChatPage() {
   const { user } = useAuth();
-  const { theme: rawTheme } = useTheme() as {
+  const { theme: rawTheme, setTheme } = useTheme() as {
     theme: ColorScheme | undefined;
     setTheme: (theme: ColorScheme) => void;
   };
@@ -471,6 +483,8 @@ export default function AgentChatPage() {
   const dailyUsage = dailyLimit > 0 ? dailyLimit - remainingInteractions : 0;
   // Controle de bloqueio no componente pai
   const [isBlocked, setIsBlocked] = useState(false);
+  const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
+
   useEffect(() => {
     if (dailyLimit > 0 && dailyUsage >= dailyLimit) {
       setIsBlocked(true);
@@ -478,6 +492,18 @@ export default function AgentChatPage() {
       setIsBlocked(false);
     }
   }, [dailyLimit, dailyUsage]);
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setIsTemplatesDialogOpen(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
 
   const dailyInteractionBadgeColor = useMemo(() => {
     if (dailyUsage === null) return "bg-gray";
@@ -493,46 +519,71 @@ export default function AgentChatPage() {
     return "bg-green-100";
   }, [dailyUsage, dailyLimit]);
 
+  const handleThemeRequest = useCallback(
+    (scheme: ColorScheme) => {
+      if (scheme === "light" || scheme === "dark") {
+        setTheme(scheme);
+      }
+    },
+    [setTheme]
+  );
+
   return (
     <RouteGuard requiresAuth requiresPlan>
-      <div className="w-full h-screen flex flex-col overflow-hidden bg-background rounded-2xl">
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background">
-          <div className="flex flex-row items-center gap-2 px-4 justify-between w-full">
-            <div>
-              <SidebarTrigger className="" />
-            </div>
-            <div className="items-center flex-row flex">
-              {user?.id &&
-                (dailyUsage === null ? (
-                  <Badge className="mr-2 rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none bg-gray flex items-center gap-2">
-                    <Spinner className="w-4 h-4" />
-                    Carregando uso...
-                  </Badge>
-                ) : (
-                  <Badge
-                    className={`mr-2 rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none ${dailyInteractionBadgeColor}`}
+      <>
+        <PromptTemplatesDialog
+          open={isTemplatesDialogOpen}
+          onOpenChange={setIsTemplatesDialogOpen}
+        />
+        <div className="w-full h-screen flex flex-col overflow-hidden bg-background rounded-2xl">
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background">
+            <div className="flex flex-row items-center gap-2 px-4 justify-between w-full">
+              <div>
+                <SidebarTrigger className="" />
+              </div>
+              <div className="items-center flex-row flex gap-2">
+                {subscriptionStatus?.planType === "free" && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="default"
+                    onClick={() => setIsTemplatesDialogOpen(true)}
+                    className="whitespace-nowrap"
                   >
-                    Uso diário: {`${dailyUsage}/${dailyLimit}`}
-                  </Badge>
-                ))}
+                    <BookMarkedIcon className="mr-2 size-4" />
+                    Prompts
+                  </Button>
+                )}
 
-              <ModeToggle />
+                {user?.id &&
+                  (dailyUsage === null ? (
+                    <Badge className="rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none bg-gray flex items-center gap-2">
+                      <Spinner className="w-4 h-4" />
+                      Carregando uso...
+                    </Badge>
+                  ) : (
+                    <Badge
+                      className={`rounded-md px-2 py-1 text-sm font-medium text-emerald-800 text-center pointer-events-none ${dailyInteractionBadgeColor}`}
+                    >
+                      Uso diário: {`${dailyUsage}/${dailyLimit}`}
+                    </Badge>
+                  ))}
+
+                <ModeToggle />
+              </div>
             </div>
+          </header>
+          <div className="flex-1 flex overflow-hidden bg-background">
+            <ChatKitPanel
+              theme={theme}
+              onWidgetAction={() => Promise.resolve()}
+              onResponseEnd={refreshSubscription}
+              isBlocked={isBlocked}
+              onThemeRequest={handleThemeRequest}
+            />
           </div>
-        </header>
-
-        <div className="flex-1 flex overflow-hidden bg-background">
-          <ChatKitPanel
-            theme={theme}
-            onWidgetAction={() => Promise.resolve()}
-            onResponseEnd={refreshSubscription}
-            isBlocked={isBlocked}
-            onThemeRequest={function (scheme: ColorScheme): void {
-              throw new Error("Function not implemented.");
-            }}
-          />
         </div>
-      </div>
+      </>
     </RouteGuard>
   );
 }
