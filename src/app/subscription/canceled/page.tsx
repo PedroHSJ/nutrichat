@@ -53,7 +53,7 @@ export default function SubscriptionCanceledPage() {
               </Button>
             </div>
 
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            {/* <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <h4 className="font-semibold text-blue-800 mb-2">
                 💡 Por que assinar?
               </h4>
@@ -63,7 +63,7 @@ export default function SubscriptionCanceledPage() {
                 <li>• Acesso a recursos premium</li>
                 <li>• Cancele a qualquer momento</li>
               </ul>
-            </div>
+            </div> */}
 
             <div className="text-center">
               <p className="text-xs text-muted-foreground">

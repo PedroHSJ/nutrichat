@@ -50,7 +50,7 @@ export class SubscriptionService {
   static subscriptionBypass(): boolean {
     if (this.isSubscriptionBypassEnabled()) {
       console.warn(
-        "[BYPASS MODE] Bypassing subscription validation - SUBSCRIPTION_BYPASS=true",
+        "[BYPASS MODE] Bypassing subscription validation - SUBSCRIPTION_BYPASS=true"
       );
       return true;
     }
@@ -67,7 +67,7 @@ export class SubscriptionService {
    * Buscar customer por email
    */
   static async findCustomerByEmail(
-    email: string,
+    email: string
   ): Promise<Stripe.Customer | null> {
     try {
       console.log(`[Stripe] Buscando customer por email: ${email}`);
@@ -95,11 +95,11 @@ export class SubscriptionService {
    * Verificar se um customer tem assinaturas ativas na Stripe
    */
   static async hasActiveStripeSubscription(
-    customerId: string,
+    customerId: string
   ): Promise<boolean> {
     try {
       console.log(
-        `[Stripe] Verificando assinaturas ativas para customer: ${customerId}`,
+        `[Stripe] Verificando assinaturas ativas para customer: ${customerId}`
       );
 
       const subscriptions = await stripe.subscriptions.list({
@@ -120,7 +120,7 @@ export class SubscriptionService {
 
       if (hasActive) {
         console.log(
-          `[Stripe] Customer ${customerId} já possui assinatura ativa/trialing`,
+          `[Stripe] Customer ${customerId} já possui assinatura ativa/trialing`
         );
       }
 
@@ -137,11 +137,11 @@ export class SubscriptionService {
    */
   static async createStripeCustomer(
     email: string,
-    name: string,
+    name: string
   ): Promise<Stripe.Customer> {
     try {
       console.log(
-        `[Stripe] Verificando se customer já existe para email: ${email}`,
+        `[Stripe] Verificando se customer já existe para email: ${email}`
       );
 
       // Primeiro, verificar se já existe um customer com esse email
@@ -149,19 +149,19 @@ export class SubscriptionService {
 
       if (existingCustomer) {
         console.log(
-          `[Stripe] ✅ Customer já existe: ${existingCustomer.id} para ${email}`,
+          `[Stripe] ✅ Customer já existe: ${existingCustomer.id} para ${email}`
         );
 
         // Atualizar o nome se necessário
         if (existingCustomer.name !== name) {
           console.log(
-            `[Stripe] Atualizando nome do customer de "${existingCustomer.name}" para "${name}"`,
+            `[Stripe] Atualizando nome do customer de "${existingCustomer.name}" para "${name}"`
           );
           const updatedCustomer = await stripe.customers.update(
             existingCustomer.id,
             {
               name: name,
-            },
+            }
           );
           return updatedCustomer;
         }
@@ -171,7 +171,7 @@ export class SubscriptionService {
 
       // Se não existe, criar novo customer
       console.log(
-        `[Stripe] Customer não existe, criando novo para email: ${email}`,
+        `[Stripe] Customer não existe, criando novo para email: ${email}`
       );
       const customer = await stripe.customers.create({
         email,
@@ -182,7 +182,7 @@ export class SubscriptionService {
       });
 
       console.log(
-        `[Stripe] ✅ Novo customer criado: ${customer.id} para ${email}`,
+        `[Stripe] ✅ Novo customer criado: ${customer.id} para ${email}`
       );
       return customer;
     } catch (error) {
@@ -198,7 +198,7 @@ export class SubscriptionService {
     customerId: string,
     priceId: string,
     successUrl: string,
-    cancelUrl: string,
+    cancelUrl: string
   ): Promise<Stripe.Checkout.Session> {
     try {
       const session = await stripe.checkout.sessions.create({
@@ -214,6 +214,7 @@ export class SubscriptionService {
         mode: "subscription",
         success_url: successUrl,
         cancel_url: cancelUrl,
+        allow_promotion_codes: true,
         subscription_data: {
           metadata: {
             source: "nutrichat",
@@ -236,7 +237,7 @@ export class SubscriptionService {
    * Buscar assinatura no Stripe
    */
   static async getSubscription(
-    subscriptionId: string,
+    subscriptionId: string
   ): Promise<Stripe.Subscription> {
     try {
       console.log(`[Stripe] Buscando subscription completa: ${subscriptionId}`);
@@ -252,7 +253,7 @@ export class SubscriptionService {
       //   customer: subscription.customer,
       // });
       console.log(
-        `[Stripe] Subscription completa: ${JSON.stringify(subscription)}`,
+        `[Stripe] Subscription completa: ${JSON.stringify(subscription)}`
       );
       return subscription;
     } catch (error) {
@@ -266,7 +267,7 @@ export class SubscriptionService {
    */
   static async cancelSubscription(
     subscriptionId: string,
-    immediately = false,
+    immediately = false
   ): Promise<Stripe.Subscription> {
     try {
       let subscription: Stripe.Subscription;
@@ -293,7 +294,7 @@ export class SubscriptionService {
    * Reativar assinatura cancelada
    */
   static async reactivateSubscription(
-    subscriptionId: string,
+    subscriptionId: string
   ): Promise<Stripe.Subscription> {
     try {
       const subscription = await stripe.subscriptions.update(subscriptionId, {
@@ -313,7 +314,7 @@ export class SubscriptionService {
    */
   static async createBillingPortalSession(
     customerId: string,
-    returnUrl: string,
+    returnUrl: string
   ): Promise<Stripe.BillingPortal.Session> {
     try {
       const session = await stripe.billingPortal.sessions.create({
@@ -322,7 +323,7 @@ export class SubscriptionService {
       });
 
       console.log(
-        `[Stripe] Portal session criada para customer: ${customerId}`,
+        `[Stripe] Portal session criada para customer: ${customerId}`
       );
       return session;
     } catch (error) {
@@ -339,7 +340,7 @@ export class SubscriptionService {
       const event = stripe.webhooks.constructEvent(
         payload,
         signature,
-        subscriptionConfig.stripeWebhookSecret,
+        subscriptionConfig.stripeWebhookSecret
       );
 
       console.log(`[Stripe] Webhook verificado: ${event.type}`);
@@ -377,7 +378,7 @@ export class SubscriptionService {
     // Procurar plano que tenha algum price com o stripe_price_id igual ao informado
     return (
       plans.find((plan) =>
-        plan.prices?.some((price) => price.stripe_price_id === priceId),
+        plan.prices?.some((price) => price.stripe_price_id === priceId)
       ) || null
     );
   }
@@ -399,7 +400,7 @@ export class SubscriptionService {
       // Se em desenvolvimento e sem chave Stripe válida, usar preços do banco
       if (this.isDevelopment() && !stripeSecretKey) {
         console.warn(
-          "[DEV MODE] Usando preços do banco (Stripe não configurado)",
+          "[DEV MODE] Usando preços do banco (Stripe não configurado)"
         );
         // Retornar todos os preços atuais de cada plano
         const result = dbPlans.flatMap((plan) =>
@@ -415,7 +416,7 @@ export class SubscriptionService {
               currency: price.currency || "brl",
               features: plan.features || [],
               interval: price.billing_interval,
-            })),
+            }))
         );
         console.log("[Stripe] Resultado final dos planos (DEV):", result);
         return result;
@@ -423,7 +424,7 @@ export class SubscriptionService {
 
       // Buscar preços reais da Stripe para cada preço atual de cada plano
       console.log(
-        "[Stripe] Buscando preços reais da Stripe para cada plano...",
+        "[Stripe] Buscando preços reais da Stripe para cada plano..."
       );
       const plansWithStripeData = await Promise.all(
         dbPlans.flatMap((plan) =>
@@ -432,10 +433,10 @@ export class SubscriptionService {
             .map(async (price) => {
               try {
                 console.log(
-                  `[Stripe] Buscando preço: ${price.stripe_price_id} do plano ${plan.name}`,
+                  `[Stripe] Buscando preço: ${price.stripe_price_id} do plano ${plan.name}`
                 );
                 const stripePrice = await stripe.prices.retrieve(
-                  price.stripe_price_id,
+                  price.stripe_price_id
                 );
                 console.log(`[Stripe] Dados do preço Stripe:`, stripePrice);
                 return {
@@ -457,7 +458,7 @@ export class SubscriptionService {
               } catch (error) {
                 console.warn(
                   `[Stripe] Erro ao buscar preço ${price.stripe_price_id} do plano ${plan.name}, usando dados do banco:`,
-                  error,
+                  error
                 );
                 // Fallback para dados do banco em caso de erro
                 return {
@@ -472,8 +473,8 @@ export class SubscriptionService {
                   interval: price.billing_interval,
                 };
               }
-            }),
-        ),
+            })
+        )
       );
 
       console.log("[Stripe] Resultado final dos planos:", plansWithStripeData);
@@ -484,7 +485,7 @@ export class SubscriptionService {
       // Fallback para dados mockados em desenvolvimento
       if (this.isDevelopment()) {
         console.warn(
-          "[DEV MODE] Usando preços mockados como fallback completo",
+          "[DEV MODE] Usando preços mockados como fallback completo"
         );
         const result = [
           {

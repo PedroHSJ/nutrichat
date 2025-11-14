@@ -44,8 +44,7 @@ export function CancelSubscriptionModal({
           {/* <DialogClose onClick={onClose}>Voltar</DialogClose> */}
         </DialogFooter>
         <p style={{ marginTop: 16, fontSize: 12, color: "#888" }}>
-          O acesso será mantido até o fim do ciclo já pago. Não há reembolso
-          para esta opção.
+          Seu acesso será revogado. Não há reembolso para esta opção.
         </p>
       </DialogContent>
     </Dialog>
