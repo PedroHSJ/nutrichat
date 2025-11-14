@@ -21,7 +21,6 @@ export function RouteGuard({
   const { subscriptionStatus, loading: subscriptionLoading } =
     useSubscription();
   const router = useRouter();
-  if (process.env.NODE_ENV === "development") return <>{children}</>;
 
   // Redirecionar para login se não autenticado
   useEffect(() => {
@@ -32,6 +31,7 @@ export function RouteGuard({
 
   // Redirecionar para plans se não tem plano ativo
   useEffect(() => {
+    if (process.env.NODE_ENV === "development") return;
     if (!requiresPlan) return;
     if (subscriptionLoading) return;
 
@@ -46,6 +46,8 @@ export function RouteGuard({
       router.replace("/plans");
     }
   }, [requiresPlan, subscriptionLoading, subscriptionStatus, router]);
+
+  if (process.env.NODE_ENV === "development") return <>{children}</>;
 
   // Aguardar carregamento da autenticação
   if (authLoading) {
