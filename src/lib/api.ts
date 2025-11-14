@@ -28,6 +28,11 @@ interface SubscriptionStatusResponse {
   remainingInteractions: number;
   currentPeriodEnd?: string;
 }
+interface BillingPortalResponse {
+  success: boolean;
+  url?: string;
+  error?: string;
+}
 
 // Criar instância do Axios
 const api = axios.create({
@@ -86,6 +91,8 @@ export const apiClient = {
   createCheckoutSession: (data: CheckoutSessionData) =>
     api.post("/api/subscription/checkout", data),
   cancelSubscription: () => api.post("/api/subscription/cancel"),
+  createBillingPortalSession: () =>
+    api.post<BillingPortalResponse>("/api/subscription/billing-portal"),
   verifyPayment: (sessionId: string) =>
     api.post("/api/subscription/verify-payment", {
       sessionId,

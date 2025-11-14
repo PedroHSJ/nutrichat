@@ -41,14 +41,14 @@ const data = {
       url: "/plans-manage",
       items: [
         {
-          title: "Gerenciar plano",
-          url: "/plans-manage",
-          icon: <Crown className="h-4 w-4" />,
-        },
-        {
           title: "Chat",
           url: "/agent-chat",
           icon: <MessageCircleMore className="h-4 w-4" />,
+        },
+        {
+          title: "Gerenciar plano",
+          url: "/plans-manage",
+          icon: <Crown className="h-4 w-4" />,
         },
       ],
     },

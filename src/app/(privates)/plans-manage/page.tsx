@@ -145,7 +145,7 @@ function formatResetTime(value?: Date) {
 }
 
 export function normalizeStatus(
-  status: UserInteractionStatus | null,
+  status: UserInteractionStatus | null
 ): SubscriptionDetails | null {
   if (!status) {
     return null;
@@ -181,6 +181,7 @@ export default function PlansManagementPage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [processingAction, setProcessingAction] = useState(false);
+  const [processingBillingPortal, setProcessingBillingPortal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const { logout } = useAuth();
   const {
@@ -191,7 +192,7 @@ export default function PlansManagementPage() {
 
   const effectiveStatus = useMemo(
     () => normalizeStatus(subscriptionStatus ?? null),
-    [subscriptionStatus],
+    [subscriptionStatus]
   );
 
   const trialLabel = useMemo(() => {
@@ -258,7 +259,7 @@ export default function PlansManagementPage() {
   const handlePlanSelection = async (plan: PlanOption) => {
     if (!plan.priceId) {
       setActionError(
-        "Este plano ainda nao esta habilitado para checkout. Tente outra opcao ou fale com o suporte.",
+        "Este plano ainda nao esta habilitado para checkout. Tente outra opcao ou fale com o suporte."
       );
       return;
     }
@@ -269,7 +270,7 @@ export default function PlansManagementPage() {
 
     if (isPaidPlan && subscriptionState === "active") {
       setActionError(
-        "Para migrar de plano, encerre a assinatura atual e depois selecione o novo plano desejado.",
+        "Para migrar de plano, encerre a assinatura atual e depois selecione o novo plano desejado."
       );
       setActiveSection("cancel");
       return;
@@ -288,7 +289,7 @@ export default function PlansManagementPage() {
       if (!data.checkoutUrl) {
         throw new Error(
           data?.error ??
-            "Nao foi possivel iniciar o processo de alteracao de plano.",
+            "Nao foi possivel iniciar o processo de alteracao de plano."
         );
       }
 
@@ -312,7 +313,7 @@ export default function PlansManagementPage() {
 
       setActionMessage(
         data?.message ??
-          "Sua assinatura foi cancelada. Voce pode reativa-la quando quiser.",
+          "Sua assinatura foi cancelada. Voce pode reativa-la quando quiser."
       );
       await refreshSubscription();
 
@@ -418,7 +419,7 @@ export default function PlansManagementPage() {
                       ? "bg-rose-500"
                       : usagePercentage >= 75
                         ? "bg-amber-400"
-                        : "bg-emerald-400",
+                        : "bg-emerald-400"
                   )}
                   style={{ width: `${usagePercentage}%` }}
                 />
@@ -452,7 +453,7 @@ export default function PlansManagementPage() {
         key={`${plan.type}-${plan.priceId}`}
         className={cn(
           "flex flex-col justify-between border",
-          isCurrentPlan && "border-emerald-500/50 shadow-emerald-500/10",
+          isCurrentPlan && "border-emerald-500/50 shadow-emerald-500/10"
         )}
       >
         <CardHeader>
@@ -495,7 +496,7 @@ export default function PlansManagementPage() {
             variant={"default"}
             className={cn(
               "w-full",
-              (!hasPriceId || isCurrentPlan) && "cursor-not-allowed",
+              (!hasPriceId || isCurrentPlan) && "cursor-not-allowed"
             )}
             disabled={isCurrentPlan || !hasPriceId || processingAction}
             onClick={() => handlePlanSelection(plan)}
@@ -631,17 +632,52 @@ export default function PlansManagementPage() {
           <Button
             variant="outline"
             className="w-full justify-start"
-            disabled={processingAction}
+            disabled={processingAction || processingBillingPortal}
+            onClick={async () => {
+              try {
+                setProcessingBillingPortal(true);
+                setActionError(null);
+                setActionMessage(null);
+
+                const response = await apiClient.createBillingPortalSession();
+                const data = response.data;
+
+                if (!data.success || !data.url) {
+                  throw new Error(
+                    data.error ??
+                      "Nao foi possivel abrir o portal de pagamento no momento."
+                  );
+                }
+
+                setActionMessage(
+                  "Redirecionando para o portal seguro do Stripe para atualizar seu cartao."
+                );
+                window.location.href = data.url;
+              } catch (error) {
+                setActionError(
+                  error instanceof Error ? error.message : FallbackMessage
+                );
+              } finally {
+                setProcessingBillingPortal(false);
+              }
+            }}
           >
-            Atualizar metodo de pagamento
+            {processingBillingPortal ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Atualizando forma de pagamento...
+              </span>
+            ) : (
+              "Alterar forma de pagamento"
+            )}
           </Button>
-          <Button
+          {/* <Button
             variant="outline"
             className="w-full justify-start"
             disabled={processingAction}
           >
             Consultar historico de cobrancas
-          </Button>
+          </Button> */}
         </CardContent>
       </Card>
     </div>
@@ -732,7 +768,7 @@ export default function PlansManagementPage() {
                       value={item.id}
                       className={cn(
                         "group flex min-w-[220px] flex-1 items-center gap-3 rounded-xl border  bg-background px-4 py-3 text-left text-sm font-medium shadow-sm transition hover:border-emerald-300 hover:bg-emerald-500/10",
-                        "data-[state=active]:border-emerald-400 data-[state=active]:bg-emerald-500/15 data-[state=active]:shadow-md data-[state=active]:shadow-emerald-500/20",
+                        "data-[state=active]:border-emerald-400 data-[state=active]:bg-emerald-500/15 data-[state=active]:shadow-md data-[state=active]:shadow-emerald-500/20"
                       )}
                     >
                       <span className="flex h-9 w-9 items-center justify-center rounded-lg  text-foreground transition group-data-[state=active]:bg-emerald-500/20 group-data-[state=active]:text-emerald-600">
