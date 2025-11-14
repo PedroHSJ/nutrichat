@@ -142,8 +142,7 @@ Inclua recomendações de hidratação e sinais para ajustar a individualizaçã
   {
     id: "acompanhamento-checkin",
     title: "Check-in semanal automatizado",
-    description:
-      "Mensagem para enviar via WhatsApp pedindo feedback objetivo.",
+    description: "Mensagem para enviar via WhatsApp pedindo feedback objetivo.",
     content: `Redija um check-in semanal amigável pedindo:
 - Adesão média (%) ao plano.
 - Dificuldade principal da semana.
@@ -198,8 +197,7 @@ Tema sugerido: Como organizar marmitas em 40 minutos.`,
   {
     id: "educacao-email",
     title: "E-mail educacional sobre fibras",
-    description:
-      "Template para newsletter leve conectando ciência e prática.",
+    description: "Template para newsletter leve conectando ciência e prática.",
     content: `Escreva um e-mail curto falando da importância das fibras para controle glicêmico. Estruture em:
 - Introdução com história de paciente fictício.
 - Explicação simples sobre fibras solúveis vs insolúveis.

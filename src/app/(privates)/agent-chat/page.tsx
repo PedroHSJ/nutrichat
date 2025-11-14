@@ -72,7 +72,7 @@ export function ChatKitPanel({
   >(() =>
     isBrowser && window.customElements?.get("openai-chatkit")
       ? "ready"
-      : "pending"
+      : "pending",
   );
   const [widgetInstanceKey] = useState(0);
 
@@ -116,7 +116,7 @@ export function ChatKitPanel({
     window.addEventListener("chatkit-script-loaded", handleLoaded);
     window.addEventListener(
       "chatkit-script-error",
-      handleError as EventListener
+      handleError as EventListener,
     );
 
     if (window.customElements?.get("openai-chatkit")) {
@@ -128,7 +128,7 @@ export function ChatKitPanel({
             new CustomEvent("chatkit-script-error", {
               detail:
                 "ChatKit web component is unavailable. Verify that the script URL is reachable.",
-            })
+            }),
           );
         }
       }, 5000);
@@ -138,7 +138,7 @@ export function ChatKitPanel({
       window.removeEventListener("chatkit-script-loaded", handleLoaded);
       window.removeEventListener(
         "chatkit-script-error",
-        handleError as EventListener
+        handleError as EventListener,
       );
       if (timeoutId) {
         window.clearTimeout(timeoutId);
@@ -147,7 +147,7 @@ export function ChatKitPanel({
   }, [scriptStatus, setErrorState]);
 
   const isWorkflowConfigured = Boolean(
-    WORKFLOW_ID && !WORKFLOW_ID.startsWith("wf_replace")
+    WORKFLOW_ID && !WORKFLOW_ID.startsWith("wf_replace"),
   );
 
   useEffect(() => {
@@ -226,7 +226,7 @@ export function ChatKitPanel({
           } catch (parseError) {
             console.error(
               "Failed to parse create-session response",
-              parseError
+              parseError,
             );
           }
         }
@@ -266,7 +266,7 @@ export function ChatKitPanel({
         }
       }
     },
-    [isWorkflowConfigured, setErrorState, isBlocked, user?.id]
+    [isWorkflowConfigured, setErrorState, isBlocked, user?.id],
   );
 
   const chatkit = useChatKit({
@@ -324,7 +324,7 @@ export function ChatKitPanel({
     onResponseStart: () => {
       responseEndedRef.current = false;
       console.log(
-        "Mensagem sendo enviada: operação customizada antes do envio"
+        "Mensagem sendo enviada: operação customizada antes do envio",
       );
       responseStartedRef.current = true;
       setErrorState({ integration: null, retryable: false });
@@ -340,12 +340,12 @@ export function ChatKitPanel({
         try {
           console.log(
             "responseStartedRef.current:",
-            responseStartedRef.current
+            responseStartedRef.current,
           );
           // Sempre incrementa, sem depender do flag
           console.log(
             "[ChatKitPanel] Incrementando uso para usuário:",
-            user.id
+            user.id,
           );
           await fetchWithAuth("/api/user-subscription/increment", {
             method: "POST",
@@ -414,7 +414,7 @@ export function ChatKitPanel({
 
 function extractErrorDetail(
   payload: Record<string, unknown> | undefined,
-  fallback: string
+  fallback: string,
 ): string {
   if (!payload) {
     return fallback;
@@ -525,7 +525,7 @@ export default function AgentChatPage() {
         setTheme(scheme);
       }
     },
-    [setTheme]
+    [setTheme],
   );
 
   return (
