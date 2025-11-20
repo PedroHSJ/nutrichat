@@ -1,0 +1,1012 @@
+<!doctype html>
+<html lang="pt-br" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NutriBrain - A IA Especialista em Nutrição</title>
+
+    <!-- React & ReactDOM -->
+    <script
+      crossorigin
+      src="https://unpkg.com/react@18/umd/react.development.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+    ></script>
+
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #0f172a; /* Slate 900 */
+        color: #f8fafc; /* Slate 50 */
+      }
+      .gradient-text {
+        background: linear-gradient(to right, #34d399, #60a5fa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .tech-grid {
+        background-size: 50px 50px;
+        background-image:
+          linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0.05) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.05) 1px,
+            transparent 1px
+          );
+        mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+      }
+
+      /* Custom Animations */
+      @keyframes float {
+        0% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-20px);
+        }
+        100% {
+          transform: translateY(0px);
+        }
+      }
+      @keyframes float-delayed {
+        0% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-15px);
+        }
+        100% {
+          transform: translateY(0px);
+        }
+      }
+      .animate-float {
+        animation: float 6s ease-in-out infinite;
+      }
+      .animate-float-delayed {
+        animation: float-delayed 7s ease-in-out infinite 2s;
+      }
+
+      @keyframes blob {
+        0% {
+          transform: translate(0px, 0px) scale(1);
+        }
+        33% {
+          transform: translate(30px, -50px) scale(1.1);
+        }
+        66% {
+          transform: translate(-20px, 20px) scale(0.9);
+        }
+        100% {
+          transform: translate(0px, 0px) scale(1);
+        }
+      }
+      .animate-blob {
+        animation: blob 10s infinite;
+      }
+
+      /* Text Rotation Animation */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-text-change {
+        animation: fadeInUp 0.5s ease-out forwards;
+      }
+
+      /* Scroll Reveal Classes */
+      .reveal {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+      }
+      .reveal.active {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+
+      const Icon = ({ name, size = 24, className }) => {
+        useEffect(() => {
+          lucide.createIcons();
+        }, [name]);
+        return (
+          <i
+            data-lucide={name}
+            width={size}
+            height={size}
+            className={className}
+          ></i>
+        );
+      };
+
+      // --- Utility Component for Scroll Animations ---
+      const Reveal = ({ children, delay = 0 }) => {
+        const ref = useRef(null);
+
+        useEffect(() => {
+          const observer = new IntersectionObserver(
+            ([entry]) => {
+              if (entry.isIntersecting) {
+                ref.current.classList.add("active");
+                observer.unobserve(ref.current); // Only animate once
+              }
+            },
+            { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+          );
+          if (ref.current) observer.observe(ref.current);
+          return () => observer.disconnect();
+        }, []);
+
+        return (
+          <div
+            ref={ref}
+            className="reveal"
+            style={{ transitionDelay: `${delay}ms` }}
+          >
+            {children}
+          </div>
+        );
+      };
+
+      // --- Background Component with Motion ---
+      const BackgroundEffects = () => (
+        <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 bg-slate-900"></div>
+          <div className="absolute inset-0 tech-grid opacity-20"></div>
+
+          {/* Animated Blobs */}
+          <div className="absolute top-0 -left-4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl mix-blend-screen animate-blob opacity-70"></div>
+          <div className="absolute top-0 -right-4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl mix-blend-screen animate-blob animation-delay-2000 opacity-70"></div>
+          <div className="absolute -bottom-32 left-20 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl mix-blend-screen animate-blob animation-delay-4000 opacity-70"></div>
+        </div>
+      );
+
+      const Navbar = () => {
+        const [isOpen, setIsOpen] = useState(false);
+        const [scrolled, setScrolled] = useState(false);
+
+        useEffect(() => {
+          const handleScroll = () => setScrolled(window.scrollY > 20);
+          window.addEventListener("scroll", handleScroll);
+          return () => window.removeEventListener("scroll", handleScroll);
+        }, []);
+
+        return (
+          <nav
+            className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? "bg-slate-900/90 backdrop-blur-md border-b border-slate-800 py-2" : "bg-transparent py-4"}`}
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between h-16 items-center">
+                <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer group">
+                  <div className="bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20 transition-all group-hover:bg-emerald-500/20 group-hover:scale-105">
+                    <Icon name="leaf" className="text-emerald-400" size={24} />
+                  </div>
+                  <span className="font-bold text-xl text-white tracking-tight">
+                    NutriBrain
+                  </span>
+                </div>
+
+                <div className="hidden md:flex items-center space-x-8">
+                  {["Funcionalidades", "Nossa Base Científica", "Planos"].map(
+                    (item, idx) => (
+                      <a
+                        key={idx}
+                        href={`#${item.split(" ")[0].toLowerCase()}`}
+                        className="text-slate-300 hover:text-emerald-400 transition text-sm font-medium hover:-translate-y-0.5 inline-block"
+                      >
+                        {item}
+                      </a>
+                    )
+                  )}
+                  <button className="bg-emerald-600 text-white px-5 py-2 rounded-full font-medium hover:bg-emerald-500 transition shadow-lg shadow-emerald-900/20 border border-emerald-500/50 hover:shadow-emerald-500/30 hover:scale-105 active:scale-95">
+                    Começar Agora
+                  </button>
+                </div>
+
+                <div className="md:hidden">
+                  <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="text-slate-300 hover:text-white"
+                  >
+                    <Icon name={isOpen ? "x" : "menu"} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {isOpen && (
+              <div className="md:hidden bg-slate-900 border-b border-slate-800 p-4 animate-fade-in-down">
+                <div className="flex flex-col space-y-4">
+                  <a
+                    href="#funcionalidades"
+                    className="text-slate-300 hover:text-white"
+                  >
+                    Funcionalidades
+                  </a>
+                  <a
+                    href="#tecnologia"
+                    className="text-slate-300 hover:text-white"
+                  >
+                    Tecnologia
+                  </a>
+                  <a href="#planos" className="text-slate-300 hover:text-white">
+                    Planos
+                  </a>
+                  <button className="w-full bg-emerald-600 text-white px-5 py-2 rounded-lg">
+                    Começar Agora
+                  </button>
+                </div>
+              </div>
+            )}
+          </nav>
+        );
+      };
+
+      // --- Animated Chat Component ---
+      const ChatSimulation = () => {
+        const [step, setStep] = useState(0); // 0: Blank, 1: User Msg, 2: Thinking, 3: Response
+
+        useEffect(() => {
+          // Sequence loop
+          const runSequence = () => {
+            setStep(0);
+            setTimeout(() => setStep(1), 1000); // Show User Message
+            setTimeout(() => setStep(2), 2500); // Show Thinking
+            setTimeout(() => setStep(3), 5500); // Show Response
+          };
+
+          runSequence();
+          const interval = setInterval(runSequence, 12000); // Restart every 12s
+          return () => clearInterval(interval);
+        }, []);
+
+        return (
+          <div className="relative group animate-float-delayed">
+            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+            <div className="relative bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden h-[420px] flex flex-col">
+              {/* Header */}
+              <div className="bg-slate-950/50 p-4 border-b border-slate-800 flex items-center gap-3">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 bg-red-500/80 rounded-full"></div>
+                  <div className="w-3 h-3 bg-yellow-500/80 rounded-full"></div>
+                  <div className="w-3 h-3 bg-green-500/80 rounded-full"></div>
+                </div>
+                <div className="ml-4 text-xs font-mono text-slate-500 flex items-center gap-2">
+                  <Icon name="lock" size={10} /> nutribrain_chat_v2.1
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-6 text-sm bg-slate-900/50 flex-1 overflow-hidden relative">
+                {/* User Message */}
+                <div
+                  className={`flex justify-end transition-all duration-500 transform ${step >= 1 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+                >
+                  <div className="bg-blue-600 text-white p-4 rounded-2xl rounded-tr-sm max-w-[85%] shadow-lg shadow-blue-900/20">
+                    <p>
+                      O paciente tem ferritina baixa e é vegano. Quais
+                      estratégias baseadas em evidência?
+                    </p>
+                  </div>
+                </div>
+
+                {/* Thinking (Shows only on step 2) */}
+                <div
+                  className={`transition-all duration-300 ${step === 2 ? "opacity-100 scale-100" : "opacity-0 scale-95 h-0 overflow-hidden"}`}
+                >
+                  <div className="flex items-center gap-2 text-emerald-400 text-xs font-medium bg-emerald-900/20 p-2 rounded-lg border border-emerald-500/20 w-fit animate-pulse">
+                    <Icon
+                      name="database"
+                      size={14}
+                      className="animate-spin-slow"
+                    />
+                    <span>Lendo TACO, BRASPEN, PubMed...</span>
+                  </div>
+                </div>
+
+                {/* AI Response (Shows on step 3) */}
+                <div
+                  className={`flex justify-start transition-all duration-700 transform ${step >= 3 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+                >
+                  <div className="bg-slate-800 text-slate-200 p-4 rounded-2xl rounded-tl-sm max-w-[95%] border border-slate-700 shadow-md">
+                    <p className="mb-3">
+                      Baseado na{" "}
+                      <strong className="text-white">
+                        Diretriz da BRASPEN (2023)
+                      </strong>{" "}
+                      e tabela <strong className="text-white">TBCA</strong>:
+                    </p>
+                    <ul className="list-disc pl-4 space-y-2 mb-3 text-slate-300">
+                      <li>
+                        Combinar fontes de ferro não-heme com Ácido Ascórbico.
+                      </li>
+                      <li>Evitar polifenóis (chá, café) 1h antes/depois.</li>
+                      <li>Remolho de leguminosas por 12h.</li>
+                    </ul>
+                    <div className="text-xs text-slate-500 border-t border-slate-700 pt-2 mt-2 flex items-center gap-1">
+                      <Icon name="link" size={10} />
+                      <span className="font-semibold">Fontes:</span> Am J Clin
+                      Nutr. 2022.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const Hero = () => {
+        const [termIndex, setTermIndex] = useState(0);
+        const terms = [
+          "Prescrição",
+          "Dieta",
+          "Conduta",
+          "Análise",
+          "Orientação",
+        ];
+
+        useEffect(() => {
+          const interval = setInterval(() => {
+            setTermIndex((prev) => (prev + 1) % terms.length);
+          }, 3000);
+          return () => clearInterval(interval);
+        }, []);
+
+        return (
+          <section className="relative z-10 pt-32 pb-20 overflow-hidden min-h-screen flex items-center">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                {/* Text Content */}
+                <div className="space-y-8">
+                  <Reveal delay={0}>
+                    <div className="inline-flex items-center gap-2 bg-slate-800/50 border border-slate-700 px-4 py-1.5 rounded-full backdrop-blur-sm hover:border-emerald-500/50 transition cursor-default">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                      <span className="text-sm font-medium text-emerald-400">
+                        Base de dados atualizada 2024
+                      </span>
+                    </div>
+                  </Reveal>
+
+                  <Reveal delay={200}>
+                    <h1 className="text-5xl md:text-6xl font-extrabold text-white leading-tight tracking-tight">
+                      Segurança científica absoluta para a sua{" "}
+                      <span
+                        key={termIndex}
+                        className="gradient-text inline-block animate-text-change"
+                      >
+                        {terms[termIndex]}
+                      </span>
+                      .
+                    </h1>
+                  </Reveal>
+
+                  <Reveal delay={400}>
+                    <p className="text-lg text-slate-400 max-w-xl leading-relaxed">
+                      Ao contrário de IAs genéricas, o NutriBrain consulta uma{" "}
+                      <strong>Biblioteca Científica Exclusiva</strong> (Tabelas
+                      TACO, Artigos e Diretrizes) antes de te responder.
+                    </p>
+                  </Reveal>
+
+                  <Reveal delay={600}>
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <button className="group flex items-center justify-center gap-2 bg-emerald-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-emerald-500 transition shadow-lg shadow-emerald-500/20 border border-emerald-500/50 hover:-translate-y-1 active:translate-y-0">
+                        Testar Gratuitamente
+                        <span className="group-hover:translate-x-1 transition-transform">
+                          <Icon name="arrow-right" size={20} />
+                        </span>
+                      </button>
+                      <button className="flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-semibold text-slate-300 bg-slate-800/50 border border-slate-700 hover:bg-slate-800 transition hover:text-white hover:-translate-y-1 active:translate-y-0">
+                        <Icon name="play-circle" size={20} />
+                        Ver Demo
+                      </button>
+                    </div>
+                  </Reveal>
+
+                  <Reveal delay={800}>
+                    <div className="flex items-center gap-4 text-sm text-slate-500">
+                      <div className="flex -space-x-2">
+                        {[1, 2, 3, 4].map((i) => (
+                          <div
+                            key={i}
+                            className="w-8 h-8 rounded-full bg-slate-800 border-2 border-slate-900 flex items-center justify-center text-xs overflow-hidden hover:scale-110 transition-transform z-0 hover:z-10"
+                          >
+                            <img
+                              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 20}`}
+                              alt="avatar"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-slate-400">
+                        Usado por{" "}
+                        <span className="text-white font-bold">+1.200</span>{" "}
+                        Nutricionistas
+                      </p>
+                    </div>
+                  </Reveal>
+                </div>
+
+                {/* Chat Simulation */}
+                <Reveal delay={400}>
+                  <ChatSimulation />
+                </Reveal>
+              </div>
+            </div>
+          </section>
+        );
+      };
+
+      const FeatureCard = ({ icon, title, desc, delay }) => (
+        <Reveal delay={delay}>
+          <div className="h-full p-6 rounded-xl bg-slate-800/50 backdrop-blur-sm border border-slate-700 shadow-lg hover:shadow-emerald-900/20 hover:border-emerald-500/30 transition hover:-translate-y-2 group duration-300">
+            <div className="w-12 h-12 bg-emerald-500/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-emerald-500/20 transition border border-emerald-500/10 group-hover:scale-110 duration-300">
+              <div className="text-emerald-400">
+                <Icon name={icon} size={24} />
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2 group-hover:text-emerald-300 transition">
+              {title}
+            </h3>
+            <p className="text-slate-400 leading-relaxed">{desc}</p>
+          </div>
+        </Reveal>
+      );
+
+      const Features = () => {
+        const featuresList = [
+          {
+            icon: "book-open",
+            title: "Dados Verificados",
+            desc: "Nossa IA não 'chuta'. Ela busca informações em uma base curada de guidelines, tabelas nutricionais e papers.",
+          },
+          {
+            icon: "file-spreadsheet",
+            title: "Cálculos Automáticos",
+            desc: "Peça para calcular GET, VET ou distribuição de macronutrientes de uma receita instantaneamente.",
+          },
+          {
+            icon: "carrot",
+            title: "Sugestões de Cardápio",
+            desc: "Gere ideias de substituições e receitas adaptadas a restrições (FODMAPs, Glúten, Alergias) em segundos.",
+          },
+          {
+            icon: "microscope",
+            title: "Análise de Exames",
+            desc: "Faça upload de resultados e receba correlações nutricionais baseadas em valores de referência.",
+          },
+          {
+            icon: "message-square-more",
+            title: "Suporte a Dúvidas",
+            desc: "Tire dúvidas rápidas sobre interações droga-nutriente durante a consulta sem abrir 10 abas.",
+          },
+          {
+            icon: "shield-check",
+            title: "Privacidade Total",
+            desc: "Seus dados e os dados dos seus pacientes são criptografados. Não usamos chats para treinar modelos.",
+          },
+        ];
+
+        return (
+          <section id="funcionalidades" className="relative z-10 py-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center max-w-3xl mx-auto mb-16">
+                <Reveal>
+                  <h2 className="text-emerald-400 font-semibold tracking-wide uppercase text-sm mb-2">
+                    Funcionalidades
+                  </h2>
+                  <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                    Mais que um chat, um co-piloto nutricional
+                  </h3>
+                  <p className="text-slate-400">
+                    Automatize a pesquisa técnica e foque no atendimento
+                    humanizado ao seu paciente.
+                  </p>
+                </Reveal>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {featuresList.map((f, idx) => (
+                  <FeatureCard key={idx} {...f} delay={idx * 100} />
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      };
+
+      const TechExplanation = () => {
+        return (
+          <section
+            id="tecnologia"
+            className="relative z-10 py-20 border-y border-slate-800 bg-slate-900/50 backdrop-blur-sm"
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <div>
+                  <Reveal>
+                    <h3 className="text-emerald-400 font-semibold tracking-wide uppercase text-sm mb-2">
+                      Nossa Tecnologia
+                    </h3>
+                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                      O Poder da nossa <br />
+                      Base Científica
+                    </h2>
+                  </Reveal>
+                  <div className="space-y-6 text-slate-300">
+                    <Reveal delay={100}>
+                      <p>
+                        IAs comuns respondem com base no que "acham". O
+                        NutriBrain funciona diferente: ele consulta dados
+                        oficiais em tempo real.
+                      </p>
+                    </Reveal>
+                    <ul className="space-y-4">
+                      {[
+                        {
+                          icon: "search",
+                          color: "emerald",
+                          title: "1. Busca em Fontes",
+                          text: "Ao receber sua pergunta, buscamos trechos relevantes em nossa biblioteca de nutrição.",
+                        },
+                        {
+                          icon: "database",
+                          color: "blue",
+                          title: "2. Contextualização",
+                          text: "Os dados oficiais (TACO, Diretrizes) são anexados à sua pergunta.",
+                        },
+                        {
+                          icon: "bot",
+                          color: "purple",
+                          title: "3. Resposta Fundamentada",
+                          text: "A IA gera a resposta usando APENAS a ciência fornecida, citando a fonte.",
+                        },
+                      ].map((item, idx) => (
+                        <Reveal key={idx} delay={200 + idx * 100}>
+                          <li className="flex items-start gap-3 p-3 rounded-lg hover:bg-white/5 transition duration-300">
+                            <div
+                              className={`bg-${item.color}-500/20 p-2 rounded text-${item.color}-400 mt-1 border border-${item.color}-500/20`}
+                            >
+                              <Icon name={item.icon} size={18} />
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-white">
+                                {item.title}
+                              </h4>
+                              <p className="text-sm text-slate-400">
+                                {item.text}
+                              </p>
+                            </div>
+                          </li>
+                        </Reveal>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <Reveal delay={300}>
+                  <div className="bg-slate-800/80 rounded-2xl p-2 border border-slate-700 shadow-2xl backdrop-blur-md animate-float">
+                    <div className="bg-slate-900/90 rounded-xl p-6 border border-slate-800">
+                      <div className="text-center mb-8">
+                        <span className="bg-slate-800 text-slate-300 text-xs px-3 py-1 rounded-full border border-slate-700 font-mono">
+                          Fluxo de Verificação
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className="w-full p-4 border border-emerald-500/30 bg-emerald-500/10 rounded-lg text-center transform transition hover:scale-105 duration-300">
+                          <p className="text-emerald-300 text-sm font-mono">
+                            Pergunta do Nutricionista
+                          </p>
+                        </div>
+                        <Icon
+                          name="arrow-down"
+                          className="text-slate-600 animate-bounce"
+                        />
+                        <div className="w-full flex gap-4">
+                          <div className="flex-1 p-4 border border-blue-500/30 bg-blue-500/10 rounded-lg text-center flex flex-col items-center justify-center gap-2 transform transition hover:scale-105 duration-300">
+                            <Icon name="library" className="text-blue-400" />
+                            <p className="text-blue-300 text-xs">
+                              Biblioteca Científica
+                            </p>
+                          </div>
+                          <div className="flex items-center text-slate-600">
+                            <Icon name="plus" size={16} />
+                          </div>
+                          <div className="flex-1 p-4 border border-purple-500/30 bg-purple-500/10 rounded-lg text-center flex flex-col items-center justify-center gap-2 transform transition hover:scale-105 duration-300">
+                            <Icon name="cpu" className="text-purple-400" />
+                            <p className="text-purple-300 text-xs">
+                              Inteligência Artificial
+                            </p>
+                          </div>
+                        </div>
+                        <Icon
+                          name="arrow-down"
+                          className="text-slate-600 animate-bounce"
+                        />
+                        <div className="w-full p-4 border border-slate-600/30 bg-slate-800 rounded-lg text-center transform transition hover:scale-105 duration-300">
+                          <p className="text-white text-sm font-bold">
+                            Resposta com Referências
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Reveal>
+              </div>
+            </div>
+          </section>
+        );
+      };
+
+      const Pricing = () => {
+        return (
+          <section id="planos" className="relative z-10 py-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-16">
+                <Reveal>
+                  <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                    Planos flexíveis
+                  </h2>
+                  <p className="text-slate-400">
+                    Escolha a melhor opção para sua fase de carreira.
+                  </p>
+                </Reveal>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto items-start">
+                {/* Starter */}
+                <Reveal delay={100}>
+                  <div className="bg-slate-800/40 backdrop-blur-sm p-8 rounded-2xl border border-slate-700 shadow-sm hover:bg-slate-800/60 transition flex flex-col hover:-translate-y-2 duration-300">
+                    <h3 className="text-lg font-semibold text-slate-200 mb-2">
+                      Estudante
+                    </h3>
+                    <div className="text-4xl font-bold text-white mb-4">
+                      R$ 0{" "}
+                      <span className="text-base font-normal text-slate-400">
+                        /mês
+                      </span>
+                    </div>
+                    <p className="text-slate-400 text-sm mb-6">
+                      Para quem está começando.
+                    </p>
+                    <ul className="space-y-3 mb-8 flex-1">
+                      <li className="flex items-center gap-2 text-sm text-slate-300">
+                        <Icon
+                          name="check"
+                          size={16}
+                          className="text-emerald-500"
+                        />{" "}
+                        10 Perguntas/dia
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-slate-300">
+                        <Icon
+                          name="check"
+                          size={16}
+                          className="text-emerald-500"
+                        />{" "}
+                        Acesso à Tabela TACO
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-slate-300">
+                        <Icon
+                          name="check"
+                          size={16}
+                          className="text-emerald-500"
+                        />{" "}
+                        Histórico de 3 dias
+                      </li>
+                    </ul>
+                    <button className="w-full py-2 border border-slate-600 text-slate-300 rounded-lg font-medium hover:bg-slate-700 hover:text-white transition">
+                      Criar conta grátis
+                    </button>
+                  </div>
+                </Reveal>
+
+                {/* Pro - Highlighted */}
+                <Reveal delay={0}>
+                  <div className="bg-slate-800/80 backdrop-blur-md p-8 rounded-2xl border-2 border-emerald-500 shadow-2xl shadow-emerald-900/20 relative flex flex-col transform md:-translate-y-4 hover:-translate-y-6 duration-300 z-10">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg shadow-emerald-500/50 animate-pulse">
+                      Mais Popular
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2">
+                      Profissional
+                    </h3>
+                    <div className="text-4xl font-bold text-white mb-4">
+                      R$ 49{" "}
+                      <span className="text-base font-normal text-slate-400">
+                        /mês
+                      </span>
+                    </div>
+                    <p className="text-slate-400 text-sm mb-6">
+                      O kit essencial para o consultório.
+                    </p>
+                    <ul className="space-y-3 mb-8 flex-1">
+                      <li className="flex items-center gap-2 text-sm text-slate-200">
+                        <Icon
+                          name="check"
+                          size={16}
+                          className="text-emerald-400"
+                        />{" "}
+                        Perguntas Ilimitadas
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-slate-200">
+                        <Icon
+                          name="check"
+                          size={16}
+                          className="text-emerald-400"
+                        />{" "}
+                        Base Completa (Papers)
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-slate-200">
+                        <Icon
+                          name="check"
+                          size={16}
+                          className="text-emerald-400"
+                        />{" "}
+                        Análise de PDF (Exames)
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-slate-200">
+                        <Icon
+                          name="check"
+                          size={16}
+                          className="text-emerald-400"
+                        />{" "}
+                        Exportação para PDF
+                      </li>
+                    </ul>
+                    <button className="w-full py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-500 transition shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transform hover:scale-105">
+                      Assinar Pro
+                    </button>
+                  </div>
+                </Reveal>
+
+                {/* Clinic */}
+                <Reveal delay={200}>
+                  <div className="bg-slate-800/40 backdrop-blur-sm p-8 rounded-2xl border border-slate-700 shadow-sm hover:bg-slate-800/60 transition flex flex-col hover:-translate-y-2 duration-300">
+                    <h3 className="text-lg font-semibold text-slate-200 mb-2">
+                      Clínica
+                    </h3>
+                    <div className="text-4xl font-bold text-white mb-4">
+                      R$ 129{" "}
+                      <span className="text-base font-normal text-slate-400">
+                        /mês
+                      </span>
+                    </div>
+                    <p className="text-slate-400 text-sm mb-6">
+                      Para equipes e clínicas.
+                    </p>
+                    <ul className="space-y-3 mb-8 flex-1">
+                      <li className="flex items-center gap-2 text-sm text-slate-300">
+                        <Icon
+                          name="check"
+                          size={16}
+                          className="text-emerald-500"
+                        />{" "}
+                        Até 5 Nutricionistas
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-slate-300">
+                        <Icon
+                          name="check"
+                          size={16}
+                          className="text-emerald-500"
+                        />{" "}
+                        Painel Administrativo
+                      </li>
+                      <li className="flex items-center gap-2 text-sm text-slate-300">
+                        <Icon
+                          name="check"
+                          size={16}
+                          className="text-emerald-500"
+                        />{" "}
+                        Suporte Prioritário
+                      </li>
+                    </ul>
+                    <button className="w-full py-2 border border-slate-600 text-slate-300 rounded-lg font-medium hover:bg-slate-700 hover:text-white transition">
+                      Falar com Vendas
+                    </button>
+                  </div>
+                </Reveal>
+              </div>
+            </div>
+          </section>
+        );
+      };
+
+      const FAQ = () => {
+        const faqs = [
+          {
+            q: "A IA substitui o Nutricionista?",
+            a: "De jeito nenhum. O NutriBrain é uma ferramenta de suporte à decisão clínica. Ele faz o trabalho 'pesado' de pesquisa e cálculo, permitindo que você use seu julgamento clínico com mais eficiência.",
+          },
+          {
+            q: "Quais bases de dados vocês utilizam?",
+            a: "Utilizamos bases públicas e verificadas como TACO (Unicamp), TBCA (USP), USDA, além de diretrizes da BRASPEN, SBAN e papers indexados no PubMed com alto fator de impacto.",
+          },
+          {
+            q: "Posso confiar nos cálculos?",
+            a: "Diferente de IAs que 'adivinham' números, nossa tecnologia de verificação extrai os valores exatos das tabelas nutricionais antes de realizar o cálculo matemático.",
+          },
+          {
+            q: "Tem período de teste?",
+            a: "Sim! Você tem 7 dias de garantia no plano Pro, ou pode usar o plano Estudante gratuitamente para sempre com limitações.",
+          },
+        ];
+
+        return (
+          <section className="relative z-10 py-20 bg-slate-900/50 backdrop-blur-sm border-t border-slate-800">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+              <Reveal>
+                <h2 className="text-3xl font-bold text-center mb-12 text-white">
+                  Perguntas Frequentes
+                </h2>
+              </Reveal>
+              <div className="space-y-6">
+                {faqs.map((faq, idx) => (
+                  <Reveal key={idx} delay={idx * 100}>
+                    <div className="border-b border-slate-800 pb-6 group hover:border-slate-700 transition">
+                      <h3 className="font-semibold text-lg text-slate-200 mb-2 group-hover:text-white transition">
+                        {faq.q}
+                      </h3>
+                      <p className="text-slate-400 group-hover:text-slate-300 transition">
+                        {faq.a}
+                      </p>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      };
+
+      const Footer = () => (
+        <footer className="relative z-10 bg-slate-950 text-slate-400 py-12 border-t border-slate-900">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+              <div className="col-span-1 md:col-span-1">
+                <div className="flex items-center gap-2 text-white mb-4">
+                  <Icon name="leaf" className="text-emerald-500" />
+                  <span className="font-bold text-xl">NutriBrain</span>
+                </div>
+                <p className="text-sm text-slate-500">
+                  Inteligência artificial com rigor científico para
+                  nutricionistas modernos.
+                </p>
+              </div>
+              {/* Footer Links (Static for now) */}
+              <div>
+                <h4 className="text-white font-semibold mb-4">Produto</h4>
+                <ul className="space-y-2 text-sm">
+                  <li>
+                    <a href="#" className="hover:text-emerald-400 transition">
+                      Funcionalidades
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" className="hover:text-emerald-400 transition">
+                      Base de Dados
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" className="hover:text-emerald-400 transition">
+                      Preços
+                    </a>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-white font-semibold mb-4">Legal</h4>
+                <ul className="space-y-2 text-sm">
+                  <li>
+                    <a href="#" className="hover:text-emerald-400 transition">
+                      Termos de Uso
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" className="hover:text-emerald-400 transition">
+                      Privacidade
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" className="hover:text-emerald-400 transition">
+                      LGPD
+                    </a>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-white font-semibold mb-4">Contato</h4>
+                <ul className="space-y-2 text-sm">
+                  <li>contato@nutribrain.com.br</li>
+                  <li>São Paulo, SP</li>
+                </ul>
+              </div>
+            </div>
+            <div className="border-t border-slate-900 pt-8 text-center text-sm text-slate-600">
+              &copy; 2024 NutriBrain Tecnologia Ltda. Todos os direitos
+              reservados.
+            </div>
+          </div>
+        </footer>
+      );
+
+      const App = () => {
+        return (
+          <div className="min-h-screen relative text-slate-50 selection:bg-emerald-500/30 overflow-hidden">
+            <BackgroundEffects />
+            <Navbar />
+            <Hero />
+            <Features />
+            <TechExplanation />
+            <Pricing />
+            <FAQ />
+
+            {/* CTA Final */}
+            <section className="relative z-10 py-20 border-t border-slate-800">
+              <div className="absolute inset-0 bg-emerald-900/20 backdrop-blur-sm"></div>
+              <Reveal>
+                <div className="max-w-4xl mx-auto text-center px-4 relative">
+                  <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                    Pronto para elevar o nível das suas consultas?
+                  </h2>
+                  <p className="text-emerald-100/80 mb-8 text-lg">
+                    Junte-se a milhares de nutricionistas que economizam tempo e
+                    entregam mais valor.
+                  </p>
+                  <button className="bg-emerald-500 text-white px-8 py-4 rounded-lg font-bold hover:bg-emerald-400 transition shadow-xl shadow-emerald-900/50 hover:scale-105 transform duration-300">
+                    Começar Teste Grátis
+                  </button>
+                  <p className="mt-4 text-emerald-200/60 text-sm">
+                    Sem cartão de crédito para começar.
+                  </p>
+                </div>
+              </Reveal>
+            </section>
+
+            <Footer />
+          </div>
+        );
+      };
+
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
