@@ -508,7 +508,7 @@ const TechExplanation = () => (
         </Reveal>
         <Reveal delay={100}>
           <p className="text-slate-300">
-            IAs comuns respondem com base no que "acham". O NutriChat funciona
+            IAs comuns respondem com base no que &quot;acham&quot;. O NutriChat funciona
             diferente: ele consulta dados oficiais em tempo real.
           </p>
         </Reveal>
