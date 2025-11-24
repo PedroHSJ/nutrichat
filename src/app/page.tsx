@@ -162,7 +162,7 @@ const Navbar = () => {
             href="/login"
             className="rounded-full border border-emerald-500/50 bg-emerald-600 px-5 py-2 font-medium text-white shadow-lg shadow-emerald-900/20 transition hover:scale-105 hover:bg-emerald-500 hover:shadow-emerald-500/30 active:scale-95"
           >
-            Começar Agora
+            Começar Teste Grátis
           </Link>
         </div>
 
@@ -196,7 +196,7 @@ const Navbar = () => {
               href="/login"
               className="w-full rounded-lg bg-emerald-600 px-5 py-2 text-center text-white"
             >
-              Começar Agora
+              Começar Teste Grátis
             </Link>
           </div>
         </div>
@@ -344,10 +344,10 @@ const Hero = () => {
             </Reveal>
 
             <Reveal delay={400}>
-              <p className="max-w-xl text-lg leading-relaxed text-slate-400">
-                Ao contrário de IAs genéricas, o NutriChat consulta uma{" "}
-                <strong>Biblioteca Científica Exclusiva</strong> (Tabelas TACO,
-                Artigos e Diretrizes) antes de te responder.
+              <p className="max-w-xl text-lg leading-relaxed text-slate-300">
+                O NutriChat valida cada conduta com BRASPEN, TACO e artigos
+                clínicos antes de responder, garantindo prescrições seguras para
+                consultório, esportiva e hospitalar.
               </p>
             </Reveal>
 
@@ -357,19 +357,25 @@ const Hero = () => {
                   href="/login"
                   className="group flex items-center justify-center gap-2 rounded-lg border border-emerald-500/50 bg-emerald-600 px-8 py-4 font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:-translate-y-1 hover:bg-emerald-500 hover:shadow-emerald-500/30 active:translate-y-0"
                 >
-                  Testar Gratuitamente
+                  Começar Teste Grátis
                   <span className="transition-transform group-hover:translate-x-1">
                     <Icon name="arrow-right" size={20} />
                   </span>
                 </Link>
-                <Link
-                  href="/login"
+                <a
+                  href="#demo"
                   className="flex items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800/50 px-8 py-4 font-semibold text-slate-300 transition hover:-translate-y-1 hover:bg-slate-800 hover:text-white active:translate-y-0"
                 >
                   <Icon name="play-circle" size={20} />
-                  Ver Demo
-                </Link>
+                  Assistir Demonstração
+                </a>
               </div>
+            </Reveal>
+
+            <Reveal delay={700}>
+              <p className="text-sm font-medium text-emerald-200/70">
+                Cancelamento em 1 clique
+              </p>
             </Reveal>
 
             <Reveal delay={800}>
@@ -403,6 +409,159 @@ const Hero = () => {
     </section>
   );
 };
+
+const AudienceSection = () => {
+  const audiences = [
+    {
+      title: "Nutricionistas Clínicos",
+      desc: "Monte condutas de consultório com base nas diretrizes BRASPEN e reduza o tempo de pesquisa pré-consulta.",
+      result: "Protocolos revisados em minutos.",
+    },
+    {
+      title: "Esportiva & Performance",
+      desc: "Cruze exames, TCLE e metas de periodização para sugerir ajustes precisos de macro e suplementação.",
+      result: "Ajustes rápidos por ciclo competitivo.",
+    },
+    {
+      title: "Hospitais & Ambulatórios",
+      desc: "Padronize cálculos de GET/VET e registre referências oficiais para auditorias e equipes multiprofissionais.",
+      result: "Menos retrabalho e risco jurídico.",
+    },
+  ];
+
+  return (
+    <section className="relative z-10 border-y border-slate-800 bg-slate-900/30 py-16">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto mb-12 max-w-3xl text-center">
+          <Reveal>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-400">
+              Para quem é
+            </p>
+            <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">
+              Foco diferente para cada etapa da sua carreira
+            </h2>
+            <p className="mt-3 text-slate-400">
+              Temos caminhos claros para quem está conhecendo o NutriChat, para
+              quem precisa provar valor rapidamente e para quem só quer avançar
+              com segurança.
+            </p>
+          </Reveal>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          {audiences.map((item, idx) => (
+            <Reveal key={item.title} delay={idx * 120}>
+              <div className="flex h-full flex-col rounded-xl border border-slate-800 bg-slate-900/60 p-6 shadow-lg transition hover:-translate-y-1 hover:border-emerald-500/30">
+                <div className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-emerald-300">
+                  <Icon name="check" size={18} />
+                  {item.title}
+                </div>
+                <p className="flex-1 text-slate-300">{item.desc}</p>
+                <p className="mt-6 text-sm font-semibold text-white">
+                  {item.result}
+                </p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+
+        <Reveal delay={400}>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-8 text-sm text-slate-500">
+            <span className="font-semibold text-white">Confiado por:</span>
+            <span className="rounded-full border border-slate-800 px-4 py-1 text-slate-400">
+              +1.200 nutricionistas
+            </span>
+            <span className="rounded-full border border-slate-800 px-4 py-1 text-slate-400">
+              Rede de hospitais privados
+            </span>
+            <span className="rounded-full border border-slate-800 px-4 py-1 text-slate-400">
+              Clínicas esportivas premium
+            </span>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+};
+
+const DemoSection = () => (
+  <section
+    id="demo"
+    className="relative z-10 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 py-20"
+  >
+    <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+      <Reveal>
+        <div className="group relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-black/40 shadow-2xl">
+          <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-emerald-500/20 to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
+          <video
+            className="relative aspect-video w-full rounded-2xl object-cover"
+            controls
+            poster="https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=1200&q=80"
+          >
+            <source
+              src="https://cdn.coverr.co/videos/coverr-discussing-a-strategy-in-the-meeting-room-7665/1080p.mp4"
+              type="video/mp4"
+            />
+            Seu navegador não suporta vídeo HTML5.
+          </video>
+        </div>
+      </Reveal>
+
+      <div className="space-y-6">
+        <Reveal delay={100}>
+          <span className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-400">
+            Demo guiada (2 min)
+          </span>
+          <h2 className="text-3xl font-bold text-white md:text-4xl">
+            Veja o NutriChat transformar uma pergunta real em conduta segura
+          </h2>
+          <p className="text-slate-300">
+            A demo mostra como identificamos a necessidade, explicamos o
+            processo e guiamos o próximo passo com simplicidade.
+          </p>
+        </Reveal>
+
+        <ul className="space-y-4">
+          {[
+            "Upload de exames e interpretação automática com citações.",
+            "Sugestão de cardápio aprovada pelo paciente em tempo real.",
+            "Compartilhamento da conduta com carimbo de fontes.",
+          ].map((stat, idx) => (
+            <Reveal key={stat} delay={200 + idx * 120}>
+              <li className="flex items-start gap-3 text-slate-300">
+                <span className="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-300">
+                  {idx + 1}
+                </span>
+                {stat}
+              </li>
+            </Reveal>
+          ))}
+        </ul>
+
+        <Reveal delay={500}>
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <Link
+              href="/login"
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-emerald-500/50 bg-emerald-600 px-6 py-4 font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-emerald-500"
+            >
+              Começar Teste Grátis
+              <Icon name="arrow-right" size={18} />
+            </Link>
+            <a
+              href="#planos"
+              className="flex flex-1 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 px-6 py-4 font-semibold text-slate-200 transition hover:-translate-y-0.5"
+            >
+              Ver Planos
+            </a>
+          </div>
+          <p className="mt-2 text-sm text-slate-500">
+            Período de 7 dias grátis · Suporte humano dedicado
+          </p>
+        </Reveal>
+      </div>
+    </div>
+  </section>
+);
 
 const FeatureCard = ({
   icon,
@@ -508,8 +667,8 @@ const TechExplanation = () => (
         </Reveal>
         <Reveal delay={100}>
           <p className="text-slate-300">
-            IAs comuns respondem com base no que &quot;acham&quot;. O NutriChat funciona
-            diferente: ele consulta dados oficiais em tempo real.
+            IAs comuns respondem com base no que &quot;acham&quot;. O NutriChat
+            funciona diferente: ele consulta dados oficiais em tempo real.
           </p>
         </Reveal>
         <ul className="space-y-4">
@@ -629,7 +788,8 @@ const Pricing = ({
               Planos flexíveis
             </h2>
             <p className="text-slate-400">
-              Escolha a melhor opção para sua fase de carreira.
+              Escolha a melhor opção para sua fase de carreira. 7 dias grátis,
+              sem cartão e com suporte humano em português.
             </p>
           </Reveal>
         </div>
@@ -850,7 +1010,7 @@ const Footer = () => (
         <div>
           <h4 className="mb-4 font-semibold text-white">Contato</h4>
           <ul className="space-y-2 text-sm">
-            <li>contato@nutrichat.com.br</li>
+            <li>dev@nutrichat.com.br</li>
             <li>João Pessoa, PB - Brasil</li>
           </ul>
         </div>
@@ -899,6 +1059,8 @@ export default function LandingPage() {
       <BackgroundEffects />
       <Navbar />
       <Hero />
+      <AudienceSection />
+      <DemoSection />
       <Features />
       <TechExplanation />
       <Pricing plans={plans} loading={loadingPlans} />
@@ -921,9 +1083,6 @@ export default function LandingPage() {
             >
               Começar Teste Grátis
             </Link>
-            <p className="mt-4 text-sm text-emerald-200/60">
-              Sem cartão de crédito para começar.
-            </p>
           </div>
         </Reveal>
       </section>
