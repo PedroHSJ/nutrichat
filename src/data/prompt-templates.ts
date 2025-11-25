@@ -326,9 +326,6 @@ Aguarde sempre minhas respostas antes de prosseguir.
     description:
       "Roteiro adaptado para coleta de informações em atendimentos virtuais.",
     content: `
-    PROMPT PARA CONSULTA NUTRICIONAL ONLINE RÁPIDA
-PROMPT PARA CONSULTA NUTRICIONAL ONLINE RÁPIDA (3 EM 3, SEM INSISTIR)
-
 Quero que você conduza uma anamnese rápida e objetiva para consulta online, fazendo apenas 3 perguntas por vez.
 
 Regras:
