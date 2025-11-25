@@ -42,7 +42,7 @@ type CategoryFilter = PromptTemplateCategory | "all";
 const categoryLabel: Record<PromptTemplateCategory, string> =
   promptTemplateCategories.reduce(
     (acc, category) => ({ ...acc, [category.id]: category.label }),
-    {} as Record<PromptTemplateCategory, string>,
+    {} as Record<PromptTemplateCategory, string>
   );
 
 export function PromptTemplatesDialog({
@@ -199,7 +199,7 @@ export function PromptTemplatesDialog({
                     "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-all sm:text-sm",
                     category === "all"
                       ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-muted/50 text-foreground hover:bg-muted",
+                      : "bg-muted/50 text-foreground hover:bg-muted"
                   )}
                 >
                   Todos
@@ -212,7 +212,7 @@ export function PromptTemplatesDialog({
                 </TabsTrigger>
                 {promptTemplateCategories.map((item) => {
                   const count = promptTemplates.filter(
-                    (t) => t.category === item.id,
+                    (t) => t.category === item.id
                   ).length;
                   return (
                     <TabsTrigger
@@ -222,7 +222,7 @@ export function PromptTemplatesDialog({
                         "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition-all sm:text-sm",
                         category === item.id
                           ? "bg-primary text-primary-foreground shadow-sm"
-                          : "bg-muted/50 text-foreground hover:bg-muted",
+                          : "bg-muted/50 text-foreground hover:bg-muted"
                       )}
                     >
                       {item.label}
@@ -251,7 +251,7 @@ export function PromptTemplatesDialog({
                     key={template.id}
                     className={cn(
                       "group relative flex h-full flex-col transition-all hover:shadow-md",
-                      isCopied && "ring-2 ring-primary ring-offset-2",
+                      isCopied && "ring-2 ring-primary ring-offset-2"
                     )}
                   >
                     <CardHeader
@@ -283,7 +283,7 @@ export function PromptTemplatesDialog({
                           "text-xs text-muted-foreground sm:text-sm transition-all",
                           isExpanded
                             ? "whitespace-pre-line"
-                            : "line-clamp-4 flex-1 sm:line-clamp-3",
+                            : "line-clamp-4 flex-1 sm:line-clamp-3"
                         )}
                       >
                         {template.content}
@@ -334,7 +334,7 @@ export function PromptTemplatesDialog({
                           ) : (
                             <>
                               <Copy className="mr-2 size-4" />
-                              Usar template
+                              Copiar
                             </>
                           )}
                         </Button>
