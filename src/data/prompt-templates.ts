@@ -247,4 +247,148 @@ Inclua lembrete para compartilhar evidências (foto do prato, garrafa de água e
     category: "educacao",
     keywords: ["desafio", "engajamento", "inchaço"],
   },
+  {
+    id: "anamnese-completa",
+    title: "Consulta clínica completa",
+    description: "Roteiro detalhado para avaliação nutricional abrangente.",
+
+    content: `
+Quero que você conduza uma anamnese completa de nutrição clínica fazendo somente 3 perguntas por vez.
+
+Regras:
+
+A cada resposta, envie apenas mais 3 perguntas.
+
+Se eu não responder alguma pergunta, NÃO insista, NÃO repita e NÃO tente preencher sozinho. Apenas siga para as próximas 3.
+
+Mantenha sempre a ordem abaixo:
+
+1. Dados gerais
+– Nome, idade, sexo
+– Profissão
+– Queixa principal
+
+2. Histórico clínico
+– Doenças prévias
+– Condições atuais
+– Histórico familiar
+– Alergias
+– Cirurgias
+– Medicamentos
+– Suplementos
+
+3. Estilo de vida
+– Sono
+– Estresse
+– Hidratação
+– Atividade física
+– Tabagismo/álcool
+
+4. Anamnese alimentar
+– Rotina diária
+– Café da manhã
+– Lanches
+– Almoço
+– Jantar
+– Ceia
+– Preferências e aversões
+– Comportamento alimentar
+– Sintomas gastrointestinais (refluxo, gases, constipação etc.)
+
+5. Dados antropométricos
+– Peso
+– Altura
+– Circunferências
+– Gestação/amamentação (se aplicável)
+
+6. Objetivos e dificuldades
+– Objetivo principal
+– Objetivos secundários
+– Barreiras atuais
+
+Ao terminar TODAS as perguntas, pergunte se posso fornecer mais alguma informação.
+
+Depois, entregue automaticamente:
+✔️ Um resumo completo da anamnese
+✔️ Hipóteses e raciocínio nutricional (sem diagnóstico médico)
+✔️ Pontos de atenção
+✔️ Estratégias nutricionais iniciais
+✔️ Orientações gerais
+
+Aguarde sempre minhas respostas antes de prosseguir.
+    `,
+    category: "anamnese",
+    keywords: ["anamnese", "consulta", "nutrição"],
+  },
+  {
+    id: "anamnese-online",
+    title: "Anamnese para consulta online",
+    description:
+      "Roteiro adaptado para coleta de informações em atendimentos virtuais.",
+    content: `
+    PROMPT PARA CONSULTA NUTRICIONAL ONLINE RÁPIDA
+PROMPT PARA CONSULTA NUTRICIONAL ONLINE RÁPIDA (3 EM 3, SEM INSISTIR)
+
+Quero que você conduza uma anamnese rápida e objetiva para consulta online, fazendo apenas 3 perguntas por vez.
+
+Regras:
+
+Só envie 3 perguntas por vez.
+
+Se eu não responder alguma pergunta, não insista, não repita e não tente adivinhar. Apenas continue com as próximas 3.
+
+A consulta deve ser ágil, prática e sem rodeios.
+
+Siga exatamente esta ordem de perguntas:
+
+1. Dados essenciais
+
+– Idade
+– Sexo
+– Objetivo principal
+
+2. Saúde e histórico básico
+
+– Doenças/condições atuais relevantes
+– Medicamentos e suplementos
+– Sintomas que incomodam no dia a dia
+
+3. Rotina e estilo de vida
+
+– Nível de atividade física
+– Sono
+– Estresse
+
+4. Alimentação atual (bem objetiva)
+
+– Café da manhã
+– Almoço
+– Jantar
+– Snacks/lanches
+– Hidratação
+
+5. Dados corporais (se aplicável)
+
+– Peso atual
+– Altura
+– Alguma circunferência se houver
+
+6. Barreiras e dificuldades
+
+– Maiores desafios para seguir plano
+– Preferências importantes
+
+Ao terminar TODAS as perguntas, pergunte se posso fornecer mais alguma informação.
+
+Depois, entregue automaticamente:✔️ Resumo clínico rápido
+✔️ Avaliação nutricional simplificada
+✔️ Principais pontos de atenção
+✔️ 3 estratégias nutricionais imediatas
+✔️ Sugestão de mini-plano alimentar ou ajustes simples
+
+A consulta deve ser direta, clara e objetiva — sem textos longos ou detalhamentos excessivos. Aguarde sempre minhas respostas antes de prosseguir. 
+    `,
+    category: "anamnese",
+    keywords: ["consulta online", "telemedicina", "engajamento"],
+  },
 ];
