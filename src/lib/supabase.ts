@@ -35,7 +35,7 @@ export function generateSessionId(): string {
 
 // Função para criptografar dados sensíveis
 export async function encryptSensitiveData(
-  data: string,
+  data: string
 ): Promise<{ encrypted: string; hash: string }> {
   // Em produção, use uma chave de criptografia mais robusta
   const encoder = new TextEncoder();

@@ -9,6 +9,27 @@ export const promptTemplateCategories = [
 export type PromptTemplateCategory =
   (typeof promptTemplateCategories)[number]["id"];
 
+const basePlanOptions = [
+  { id: "free", label: "Plano gratuito" },
+  { id: "basic", label: "Plano Basic" },
+  { id: "pro", label: "Plano Pro" },
+  { id: "premium", label: "Plano Premium" },
+  { id: "enterprise", label: "Plano Enterprise" },
+] as const;
+
+export const promptTemplatePlanOptions = [
+  ...basePlanOptions,
+  { id: "all", label: "Todos os planos" },
+] as const;
+
+export type PromptTemplatePlan =
+  (typeof promptTemplatePlanOptions)[number]["id"];
+
+export const promptTemplatePlanLabels = promptTemplatePlanOptions.reduce(
+  (acc, plan) => ({ ...acc, [plan.id]: plan.label }),
+  {} as Record<PromptTemplatePlan, string>
+);
+
 export type PromptTemplate = {
   id: string;
   title: string;
@@ -16,7 +37,33 @@ export type PromptTemplate = {
   content: string;
   category: PromptTemplateCategory;
   keywords?: string[];
+  /**
+   * Planos que podem visualizar este template.
+   * Se não definido, assume apenas o plano Pro (comportamento legado).
+   */
+  availableToPlans?: PromptTemplatePlan[];
+  source?: "curated" | "custom";
+  createdBy?: string | null;
 };
+
+export const DEFAULT_TEMPLATE_PLANS: PromptTemplatePlan[] = ["pro"];
+
+export function templateMatchesPlan(
+  template: PromptTemplate,
+  planType?: string | null
+) {
+  const allowedPlans = template.availableToPlans ?? DEFAULT_TEMPLATE_PLANS;
+
+  if (allowedPlans.includes("all")) {
+    return true;
+  }
+
+  if (!planType) {
+    return false;
+  }
+
+  return allowedPlans.includes(planType as PromptTemplatePlan);
+}
 
 export const promptTemplates: PromptTemplate[] = [
   {

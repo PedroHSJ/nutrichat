@@ -484,6 +484,9 @@ export default function AgentChatPage() {
   // Controle de bloqueio no componente pai
   const [isBlocked, setIsBlocked] = useState(false);
   const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
+  const templatePlanType = subscriptionStatus?.planType ?? null;
+  const canUseTemplates =
+    templatePlanType !== null && templatePlanType !== "free";
 
   useEffect(() => {
     if (dailyLimit > 0 && dailyUsage >= dailyLimit) {
@@ -534,6 +537,7 @@ export default function AgentChatPage() {
         <PromptTemplatesDialog
           open={isTemplatesDialogOpen}
           onOpenChange={setIsTemplatesDialogOpen}
+          planType={templatePlanType}
         />
         <div className="w-full h-screen flex flex-col overflow-hidden bg-background rounded-2xl">
           <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background">
@@ -542,7 +546,7 @@ export default function AgentChatPage() {
                 <SidebarTrigger className="" />
               </div>
               <div className="items-center flex-row flex gap-2">
-                {subscriptionStatus?.planType === "pro" && (
+                {canUseTemplates && (
                   <Button
                     type="button"
                     size="sm"

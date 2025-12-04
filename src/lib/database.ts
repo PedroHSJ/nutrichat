@@ -103,6 +103,47 @@ export interface Database {
           category?: string | null;
         };
       };
+      custom_prompt_templates: {
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+          title: string;
+          description: string | null;
+          content: string;
+          category: string;
+          keywords: string[] | null;
+          plan_type: string;
+          is_active: boolean;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+          title: string;
+          description?: string | null;
+          content: string;
+          category: string;
+          keywords?: string[] | null;
+          plan_type: string;
+          is_active?: boolean;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+          title?: string;
+          description?: string | null;
+          content?: string;
+          category?: string;
+          keywords?: string[] | null;
+          plan_type?: string;
+          is_active?: boolean;
+        };
+      };
     };
     Views: {
       chat_analytics: {

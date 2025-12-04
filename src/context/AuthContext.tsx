@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
     setUser(data?.user ?? null);
-
+    debugger;
     if (error) {
       setAuthError(translateAuthError(error.message));
     } else {
@@ -138,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { error } = await supabase.auth.resetPasswordForEmail(
       email,
-      redirectTo ? { redirectTo } : undefined,
+      redirectTo ? { redirectTo } : undefined
     );
 
     if (error) {
@@ -211,7 +211,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       requestPasswordReset,
       updatePassword,
       logout,
-    ],
+    ]
   );
 
   useEffect(() => {
