@@ -19,7 +19,7 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <AppSidebar />
-      <SidebarInset>{children}</SidebarInset>
+      <div className="h-full w-full overflow-hidden">{children}</div>
     </>
   );
 }

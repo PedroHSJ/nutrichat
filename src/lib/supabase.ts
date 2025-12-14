@@ -33,33 +33,18 @@ export function generateSessionId(): string {
   return `nutri_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-// Função para criptografar dados sensíveis
-export async function encryptSensitiveData(
-  data: string,
-): Promise<{ encrypted: string; hash: string }> {
-  // Em produção, use uma chave de criptografia mais robusta
-  const encoder = new TextEncoder();
-  const dataBuffer = encoder.encode(data);
-
-  // Gerar hash para busca (não reversível)
-  const hashBuffer = await crypto.subtle.digest("SHA-256", dataBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-
-  // Para simplicidade, usamos base64. Em produção, use crypto.subtle com chave secreta
-  const encrypted = btoa(data);
-
-  return { encrypted, hash };
+// Aviso: não use criptografia client-side para dados novos.
+// Os helpers foram intencionalmente desabilitados para evitar gerar dados incompatíveis.
+export async function encryptSensitiveData(): Promise<never> {
+  throw new Error(
+    "encryptSensitiveData (client) desabilitado. Use APIs server-side para persistir dados.",
+  );
 }
 
-// Função para descriptografar dados
-export function decryptSensitiveData(encryptedData: string): string {
-  try {
-    return atob(encryptedData);
-  } catch (error) {
-    console.error("Erro ao descriptografar dados:", error);
-    return "[Dados não disponíveis]";
-  }
+export function decryptSensitiveData(): never {
+  throw new Error(
+    "decryptSensitiveData (client) desabilitado. Use APIs server-side para ler dados.",
+  );
 }
 
 export default supabase;

@@ -13,22 +13,6 @@ import Stripe from "stripe";
 // INTERFACES PARA DADOS DO STRIPE
 // =====================================================
 
-/**
- * Interface para resultado da função SQL de verificação de interações
- */
-interface InteractionCheckResult {
-  canInteract: boolean;
-  remainingInteractions: number;
-  dailyLimit: number;
-  planName: string;
-  planType: string;
-  subscriptionStatus: string;
-  currentPeriodEnd: string;
-  resetTime: string;
-  isTrialing?: boolean;
-  trialEnd?: string;
-}
-
 interface IncrementUsageResult {
   success: boolean;
   status: number;
@@ -47,6 +31,25 @@ export class UserSubscriptionService {
   }
 
   /**
+   * Retorna a data atual ajustada para o fuso padrão de uso de interações
+   * Ex.: America/Sao_Paulo para evitar virar o dia em UTC antes da meia-noite local
+   */
+  private static getTodayInInteractionTZ(): string {
+    const timeZone = "America/Sao_Paulo";
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const parts = formatter.formatToParts(new Date());
+    const year = parts.find((p) => p.type === "year")?.value;
+    const month = parts.find((p) => p.type === "month")?.value;
+    const day = parts.find((p) => p.type === "day")?.value;
+    return `${year}-${month}-${day}`;
+  }
+
+  /**
    * Mapear nome do plano para tipo compatível com sistema antigo
    */
   private static mapToPlanType(
@@ -58,6 +61,14 @@ export class UserSubscriptionService {
     if (name.includes("premium")) return "premium";
     if (name.includes("enterprise")) return "enterprise";
     return "free";
+  }
+
+  /**
+   * Alguns selects do Supabase retornam relacionamento como array; normaliza para objeto único
+   */
+  private static normalizePlan(plan: unknown) {
+    if (Array.isArray(plan)) return plan[0] || null;
+    return plan || null;
   }
 
   /**
@@ -82,34 +93,75 @@ export class UserSubscriptionService {
     }
 
     try {
-      // Usar cliente público quando disponível, senão usar admin como fallback
       const client = supabaseAdmin;
+      const today = this.getTodayInInteractionTZ();
 
-      // Usar função SQL que verifica tudo
-      const { data, error } = await client!.rpc(
-        "can_user_interact_with_subscription",
-        { user_id: userId },
-      );
+      // Buscar assinatura ativa com dados do plano
+      const { data: subscription, error: subErr } = await client!
+        .from("user_subscriptions")
+        .select(
+          "id, plan_id, status, current_period_end, trial_end, plan:subscription_plans(name, daily_interactions_limit)",
+        )
+        .eq("user_id", userId)
+        .in("status", ["active", "trialing"])
+        .gt("current_period_end", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
 
-      if (error) {
-        console.error("Erro ao verificar interações:", error);
+      if (subErr && subErr.code !== "PGRST116") {
+        console.error("Erro ao buscar assinatura ativa:", subErr);
         throw new Error("Falha ao verificar limites de interação");
       }
 
-      // Converter resposta da função SQL
-      const result = data as InteractionCheckResult;
+      if (!subscription) {
+        return {
+          canInteract: false,
+          remainingInteractions: 0,
+          dailyLimit: 0,
+          planName: "Sem plano",
+          planType: "free",
+          subscriptionStatus: "inactive" as SubscriptionStatus,
+          currentPeriodEnd: new Date(),
+          resetTime: this.getNextResetTime(),
+          isTrialing: false,
+        };
+      }
+
+      const plan = this.normalizePlan(subscription.plan) as
+        | { name?: string; daily_interactions_limit?: number }
+        | null;
+      const planName = plan?.name || "Plano";
+      const planLimit = plan?.daily_interactions_limit || 0;
+
+      const { data: usage, error: usageErr } = await client!
+        .from("daily_interaction_usage")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("usage_date", today)
+        .single();
+
+      if (usageErr && usageErr.code !== "PGRST116") {
+        console.error("Erro ao buscar uso diário:", usageErr);
+        throw new Error("Falha ao verificar limites de interação");
+      }
+
+      const interactionsUsed = usage?.interactions_used || 0;
+      const dailyLimit = usage?.daily_limit || planLimit;
 
       return {
-        canInteract: result.canInteract,
-        remainingInteractions: result.remainingInteractions,
-        dailyLimit: result.dailyLimit,
-        planName: result.planName || "Sem plano",
-        planType: this.mapToPlanType(result.planName),
-        subscriptionStatus: result.subscriptionStatus as SubscriptionStatus,
-        currentPeriodEnd: new Date(result.currentPeriodEnd),
+        canInteract: interactionsUsed < dailyLimit,
+        remainingInteractions: Math.max(0, dailyLimit - interactionsUsed),
+        dailyLimit,
+        planName,
+        planType: this.mapToPlanType(planName),
+        subscriptionStatus: subscription.status as SubscriptionStatus,
+        currentPeriodEnd: new Date(subscription.current_period_end),
         resetTime: this.getNextResetTime(),
-        isTrialing: result.isTrialing,
-        trialEndsAt: result.trialEnd ? new Date(result.trialEnd) : undefined,
+        isTrialing: subscription.status === "trialing",
+        trialEndsAt: subscription.trial_end
+          ? new Date(subscription.trial_end)
+          : undefined,
       };
     } catch (error) {
       console.error("Erro ao verificar interações do usuário:", error);
@@ -146,8 +198,45 @@ export class UserSubscriptionService {
     }
 
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const today = this.getTodayInInteractionTZ();
 
+      // Buscar assinatura ativa com limite do plano
+      const { data: subscription, error: subErr } = await client
+        .from("user_subscriptions")
+        .select(
+          "id, plan_id, status, current_period_end, plan:subscription_plans(daily_interactions_limit)",
+        )
+        .eq("user_id", userId)
+        .in("status", ["active", "trialing"])
+        .gt("current_period_end", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (subErr && subErr.code !== "PGRST116") {
+        console.error("[SUBSCRIPTION] Erro ao buscar assinatura ativa:", subErr);
+        return {
+          success: false,
+          status: 500,
+          error: "Erro ao buscar assinatura",
+        };
+      }
+
+      if (!subscription) {
+        return {
+          success: false,
+          status: 403,
+          error: "Usuário sem assinatura ativa",
+        };
+      }
+
+      const plan = this.normalizePlan(subscription.plan) as
+        | { daily_interactions_limit?: number }
+        | null;
+      const planLimit =
+        plan?.daily_interactions_limit ?? Number.MAX_SAFE_INTEGER;
+
+      // Buscar uso de hoje
       const { data: usage, error: usageErr } = await client
         .from("daily_interaction_usage")
         .select("*")
@@ -168,14 +257,36 @@ export class UserSubscriptionService {
       }
 
       if (!usage) {
-        return {
-          success: false,
-          status: 404,
-          error: "Registro diário não encontrado",
-        };
+        // Cria registro somente após interação concluída
+        const { error: insertErr } = await client
+          .from("daily_interaction_usage")
+          .insert({
+            user_id: userId,
+            subscription_id: subscription.id,
+            usage_date: today,
+            interactions_used: 1,
+            daily_limit: planLimit,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+
+        if (insertErr) {
+          console.error(
+            "[SUBSCRIPTION] Erro ao criar uso diário:",
+            insertErr.message,
+          );
+          return {
+            success: false,
+            status: 500,
+            error: "Erro ao registrar uso",
+          };
+        }
+
+        return { success: true, status: 200 };
       }
 
-      if (usage.interactions_used >= usage.daily_limit) {
+      const currentLimit = usage.daily_limit ?? planLimit;
+      if (usage.interactions_used >= currentLimit) {
         return {
           success: false,
           status: 403,
@@ -187,6 +298,7 @@ export class UserSubscriptionService {
         .from("daily_interaction_usage")
         .update({
           interactions_used: usage.interactions_used + 1,
+          daily_limit: currentLimit,
           updated_at: new Date().toISOString(),
         })
         .eq("id", usage.id);
@@ -547,7 +659,7 @@ export class UserSubscriptionService {
     console.log("[getDailyUsage] Obtendo uso diário para usuário:", userId);
     try {
       const client = supabaseAdmin;
-      const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+      const today = this.getTodayInInteractionTZ(); // YYYY-MM-DD
 
       const { data, error } = await client!
         .from("daily_interaction_usage")
@@ -560,32 +672,10 @@ export class UserSubscriptionService {
       console.log("[getDailyUsage] Data de uso:", today);
       console.log("[getDailyUsage] Resultado:", data);
 
-      // Se não existe, cria o registro
-      // if (error && error.code === "PGRST116") {
-      //   const { data: created, error: createError } = await client!
-      //     .from("daily_interaction_usage")
-      //     .insert({
-      //       user_id: userId,
-      //       usage_date: today,
-      //       interactions_used: 0,
-      //       created_at: new Date().toISOString(),
-      //       updated_at: new Date().toISOString(),
-      //     })
-      //     .select("*")
-      //     .single();
-      //   console.log(
-      //     "[getDailyUsage] Criando novo registro de uso diário para usuário:",
-      //     userId
-      //   );
-      //   if (createError) {
-      //     console.error("Erro ao criar uso diário:", createError);
-      //     return null;
-      //   }
-      //   return created as DailyInteractionUsage;
-      // } else if (error) {
-      //   console.error("Erro ao buscar uso diário:", error);
-      //   return null;
-      // }
+      if (error && error.code !== "PGRST116") {
+        console.error("Erro ao buscar uso diário:", error);
+        return null;
+      }
 
       return data as DailyInteractionUsage;
     } catch (error) {
@@ -851,7 +941,7 @@ export class UserSubscriptionService {
   async resetDailyUsageOnUpgrade(userId: string, newDailyLimit: number) {
     const client = supabaseAdmin;
     if (!client) throw new Error("Supabase client não configurado");
-    const today = new Date().toISOString().split("T")[0];
+    const today = UserSubscriptionService.getTodayInInteractionTZ();
     // Verifica se já existe registro
     const { data: usage, error } = await client
       .from("daily_interaction_usage")
@@ -859,6 +949,11 @@ export class UserSubscriptionService {
       .eq("user_id", userId)
       .eq("usage_date", today)
       .single();
+
+    if (error && error.code !== "PGRST116") {
+      console.error("[resetDailyUsageOnUpgrade] Erro ao buscar uso diário:", error);
+      throw new Error("Falha ao atualizar uso diário");
+    }
 
     if (usage) {
       // Atualiza registro existente

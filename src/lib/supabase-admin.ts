@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import crypto from "crypto";
 
 // Cliente normal com anon key (para usuários)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -55,41 +56,83 @@ export function generateSessionId(): string {
   return `nutri_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-// Função para criptografar dados sensíveis
+// ============================
+// Criptografia para produção (AES-256-GCM) com fallback legacy
+// ============================
+const DATA_ENCRYPTION_KEY =
+  process.env.DATA_ENCRYPTION_KEY || process.env.ENCRYPTION_KEY || "";
+
+function getAesKey(): Buffer {
+  if (!DATA_ENCRYPTION_KEY) {
+    throw new Error(
+      "DATA_ENCRYPTION_KEY não configurada. Defina uma chave de 32 caracteres no ambiente.",
+    );
+  }
+  // Deriva 32 bytes a partir da chave informada (aceita string)
+  return crypto.createHash("sha256").update(DATA_ENCRYPTION_KEY).digest();
+}
+
+async function sha256Base16(data: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(data);
+  const hashBuffer = await crypto.webcrypto.subtle.digest("SHA-256", dataBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function encryptAesGcm(plaintext: string): string {
+  const key = getAesKey();
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+  // Formato: v1:<iv>:<ciphertext>:<tag> em base64
+  return [
+    "v1",
+    iv.toString("base64"),
+    encrypted.toString("base64"),
+    authTag.toString("base64"),
+  ].join(":");
+}
+
+function decryptAesGcm(payload: string): string {
+  const [version, ivB64, cipherB64, tagB64] = payload.split(":");
+  if (version !== "v1" || !ivB64 || !cipherB64 || !tagB64) {
+    throw new Error("Formato de criptografia inválido");
+  }
+  const key = getAesKey();
+  const iv = Buffer.from(ivB64, "base64");
+  const ciphertext = Buffer.from(cipherB64, "base64");
+  const tag = Buffer.from(tagB64, "base64");
+  const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+  decipher.setAuthTag(tag);
+  const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+  return decrypted.toString("utf8");
+}
+
+// Criptografar dados sensíveis (produção)
 export async function encryptSensitiveData(
   data: string,
 ): Promise<{ encrypted: string; hash: string }> {
-  // Em produção, use uma chave de criptografia mais robusta
-  const encoder = new TextEncoder();
-  const data_encoded = encoder.encode(data);
-
-  // Hash simples para verificação
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data_encoded);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-
-  // "Criptografia" básica (apenas para demonstração - NÃO usar em produção)
-  const encrypted = btoa(data);
-
+  const hash = await sha256Base16(data);
+  const encrypted = encryptAesGcm(data);
   return { encrypted, hash };
 }
 
-// Função para descriptografar dados sensíveis
+// Descriptografar dados sensíveis (produção)
 export async function decryptSensitiveData(
   encrypted: string,
   expectedHash: string,
 ): Promise<string | null> {
   try {
-    const decrypted = atob(encrypted);
-    const { hash } = await encryptSensitiveData(decrypted);
-
+    const decrypted = decryptAesGcm(encrypted);
+    const hash = await sha256Base16(decrypted);
     if (hash === expectedHash) {
       return decrypted;
     }
-
     return null;
   } catch (error) {
-    console.error("Erro ao descriptografar dados:", error);
+    console.error("Erro ao descriptografar dados (AES-GCM):", error);
     return null;
   }
 }
