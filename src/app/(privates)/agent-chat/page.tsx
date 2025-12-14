@@ -72,7 +72,7 @@ export function ChatKitPanel({
   >(() =>
     isBrowser && window.customElements?.get("openai-chatkit")
       ? "ready"
-      : "pending",
+      : "pending"
   );
   const [widgetInstanceKey] = useState(0);
 
@@ -116,7 +116,7 @@ export function ChatKitPanel({
     window.addEventListener("chatkit-script-loaded", handleLoaded);
     window.addEventListener(
       "chatkit-script-error",
-      handleError as EventListener,
+      handleError as EventListener
     );
 
     if (window.customElements?.get("openai-chatkit")) {
@@ -128,7 +128,7 @@ export function ChatKitPanel({
             new CustomEvent("chatkit-script-error", {
               detail:
                 "ChatKit web component is unavailable. Verify that the script URL is reachable.",
-            }),
+            })
           );
         }
       }, 5000);
@@ -138,7 +138,7 @@ export function ChatKitPanel({
       window.removeEventListener("chatkit-script-loaded", handleLoaded);
       window.removeEventListener(
         "chatkit-script-error",
-        handleError as EventListener,
+        handleError as EventListener
       );
       if (timeoutId) {
         window.clearTimeout(timeoutId);
@@ -147,7 +147,7 @@ export function ChatKitPanel({
   }, [scriptStatus, setErrorState]);
 
   const isWorkflowConfigured = Boolean(
-    WORKFLOW_ID && !WORKFLOW_ID.startsWith("wf_replace"),
+    WORKFLOW_ID && !WORKFLOW_ID.startsWith("wf_replace")
   );
 
   useEffect(() => {
@@ -226,7 +226,7 @@ export function ChatKitPanel({
           } catch (parseError) {
             console.error(
               "Failed to parse create-session response",
-              parseError,
+              parseError
             );
           }
         }
@@ -266,13 +266,14 @@ export function ChatKitPanel({
         }
       }
     },
-    [isWorkflowConfigured, setErrorState, isBlocked, user?.id],
+    [isWorkflowConfigured, setErrorState, isBlocked, user?.id]
   );
 
   const chatkit = useChatKit({
     api: { getClientSecret },
     theme: {
       colorScheme: validTheme,
+      density: "spacious",
     },
     composer: {
       attachments: {
@@ -283,9 +284,39 @@ export function ChatKitPanel({
         },
         maxCount: 4,
       },
+      placeholder: "Envie sua pergunta",
     },
     threadItemActions: {
       feedback: true,
+    },
+    startScreen: {
+      greeting: "Oi, Nutri! Como posso ajudar você hoje?",
+      prompts: [
+        {
+          label: "Preciso de um suporte na nutrição clínica",
+          prompt:
+            "Estou buscando orientações sobre nutrição clínica. Pode me ajudar?",
+          icon: "notebook-pencil",
+        },
+        {
+          label: "Preciso de um suporte na UAN",
+          prompt:
+            "Estou buscando orientações sobre nutrição em Unidades de Alimentação e Nutrição (UAN). Pode me ajudar?",
+          icon: "suitcase",
+        },
+        {
+          label: "Preciso de um suporte na nutrição hospitalar",
+          prompt:
+            "Estou buscando orientações sobre nutrição hospitalar. Pode me ajudar?",
+          icon: "book-open",
+        },
+        {
+          label: "Preciso de um suporte na gestão administrativa/docência",
+          prompt:
+            "Estou buscando orientações sobre gestão administrativa e docência em nutrição. Pode me ajudar?",
+          icon: "notebook",
+        },
+      ],
     },
     locale: "pt-BR",
     onClientTool: async (invocation: {
@@ -324,7 +355,7 @@ export function ChatKitPanel({
     onResponseStart: () => {
       responseEndedRef.current = false;
       console.log(
-        "Mensagem sendo enviada: operação customizada antes do envio",
+        "Mensagem sendo enviada: operação customizada antes do envio"
       );
       responseStartedRef.current = true;
       setErrorState({ integration: null, retryable: false });
@@ -340,12 +371,12 @@ export function ChatKitPanel({
         try {
           console.log(
             "responseStartedRef.current:",
-            responseStartedRef.current,
+            responseStartedRef.current
           );
           // Sempre incrementa, sem depender do flag
           console.log(
             "[ChatKitPanel] Incrementando uso para usuário:",
-            user.id,
+            user.id
           );
           await fetchWithAuth("/api/user-subscription/increment", {
             method: "POST",
@@ -414,7 +445,7 @@ export function ChatKitPanel({
 
 function extractErrorDetail(
   payload: Record<string, unknown> | undefined,
-  fallback: string,
+  fallback: string
 ): string {
   if (!payload) {
     return fallback;
@@ -525,7 +556,7 @@ export default function AgentChatPage() {
         setTheme(scheme);
       }
     },
-    [setTheme],
+    [setTheme]
   );
 
   return (
@@ -542,7 +573,7 @@ export default function AgentChatPage() {
                 <SidebarTrigger className="" />
               </div>
               <div className="items-center flex-row flex gap-2">
-                {subscriptionStatus?.planType === "pro" && (
+                {/* {subscriptionStatus?.planType === "pro" && (
                   <Button
                     type="button"
                     size="sm"
@@ -553,7 +584,7 @@ export default function AgentChatPage() {
                     <BookMarkedIcon className="mr-2 size-4" />
                     Prompts
                   </Button>
-                )}
+                )} */}
 
                 {user?.id &&
                   (dailyUsage === null ? (
